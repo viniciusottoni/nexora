@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <AssemblyName>Nexora.Api.Cloud</AssemblyName>
+    <UserSecretsId>donabetinha-api-cloud</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nexora.Application\Nexora.Application.csproj" />
+    <ProjectReference Include="..\Nexora.Infrastructure\Nexora.Infrastructure.csproj" />
+    <ProjectReference Include="..\Nexora.Contracts\Nexora.Contracts.csproj" />
+    <ProjectReference Include="..\Nexora.Shared\Nexora.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Movido de Nexora.Infrastructure (ADR-039: Infrastructure não pode referenciar ASP.NET
+         Core) — só Program.cs usa AddJwtBearer, então o pacote pertence aqui. -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+    <PackageReference Include="Sentry.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,28 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Text & Status" subtitle="Text hierarchy on dark + semantic status colors" -->
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin:0; background: var(--bg-base); padding: 20px; font-family: var(--font-body); display:flex; gap:28px; align-items:center; }
+  .col { flex:1; }
+  .t { display:block; margin-bottom:6px; }
+  .lbl { font-family: var(--font-display); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-tertiary); margin-bottom:10px; }
+  .dot { display:inline-flex; align-items:center; gap:9px; margin-bottom:9px; font-size:14px; color:var(--text-secondary); }
+  .dot i { width:14px; height:14px; border-radius:50%; display:inline-block; }
+</style></head>
+<body>
+  <div class="col">
+    <div class="lbl">Text</div>
+    <span class="t" style="color:var(--text-primary);font-size:18px;font-weight:600">Primary — títulos e leitura</span>
+    <span class="t" style="color:var(--text-secondary);font-size:15px">Secondary — apoio e legendas</span>
+    <span class="t" style="color:var(--text-tertiary);font-size:14px">Tertiary — meta e hints</span>
+    <span class="t" style="color:var(--text-disabled);font-size:14px">Disabled — inativo</span>
+  </div>
+  <div class="col">
+    <div class="lbl">Status</div>
+    <span class="dot"><i style="background:var(--success)"></i> Success · #22C55E</span>
+    <span class="dot"><i style="background:var(--danger)"></i> Danger · #EF4444</span>
+    <span class="dot"><i style="background:var(--warning)"></i> Warning · #FF9500</span>
+    <span class="dot"><i style="background:var(--info)"></i> Info · #4D8BFF</span>
+  </div>
+</body></html>

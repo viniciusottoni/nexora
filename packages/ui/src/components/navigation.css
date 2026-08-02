@@ -1,0 +1,191 @@
+/* Navegação — porte fiel de components/navigation/{SideNav,TopBar,SegmentedControl}.jsx
+   (Design System/). Classes nx* renomeadas para db-*; variáveis já existem em
+   packages/ui/src/tokens/*.css e não são redefinidas aqui. */
+
+/* SideNav — navegação lateral fixa de 248px (navy). Um dos dois únicos elementos
+   de chrome fixo do produto (readme.md § "Espaço, densidade e layout"). */
+.db-sidenav {
+  width: var(--sidebar-w);
+  flex: 0 0 auto;
+  background: var(--surface-inverse);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.db-sidenav--light {
+  background: var(--surface-card);
+  color: var(--text-primary);
+  border-right: var(--border-1) solid var(--border-subtle);
+}
+.db-sidenav__brand {
+  padding: var(--sp-7) var(--sp-6);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+.db-sidenav__scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--sp-3) var(--sp-4) var(--sp-8);
+}
+.db-sidenav__group {
+  font: var(--type-overline);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+  padding: var(--sp-6) var(--sp-4) var(--sp-3);
+}
+.db-sidenav--light .db-sidenav__group {
+  color: var(--text-muted);
+}
+.db-sidenav__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  height: 42px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.76);
+  font: var(--type-label);
+  cursor: pointer;
+  transition: var(--transition-control);
+  border: 0;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+.db-sidenav--light .db-sidenav__item {
+  color: var(--text-secondary);
+}
+.db-sidenav__item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.db-sidenav--light .db-sidenav__item:hover {
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+}
+.db-sidenav__item--on {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-weight: var(--fw-semibold);
+}
+.db-sidenav--light .db-sidenav__item--on {
+  background: var(--surface-brand-subtle);
+  color: var(--nx-navy-800);
+}
+.db-sidenav__count {
+  margin-left: auto;
+  font: var(--type-overline);
+  background: var(--nx-danger-500);
+  color: #fff;
+  min-width: 18px;
+  height: 18px;
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+}
+.db-sidenav__foot {
+  padding: var(--sp-5) var(--sp-6);
+  border-top: var(--border-1) solid rgba(255, 255, 255, 0.1);
+}
+.db-sidenav--light .db-sidenav__foot {
+  border-color: var(--border-subtle);
+}
+
+/* TopBar — barra superior fixa de 56px. O outro dos dois únicos elementos de
+   chrome fixo do produto. */
+.db-topbar {
+  height: var(--topbar-h);
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: 0 var(--gutter-page);
+  background: var(--surface-card);
+  border-bottom: var(--border-1) solid var(--border-subtle);
+}
+.db-topbar--sunken {
+  background: var(--surface-page);
+}
+.db-topbar--brand {
+  background: var(--brand-primary);
+  border-bottom-color: transparent;
+  color: var(--brand-on-primary);
+}
+.db-topbar__group {
+  min-width: 0;
+}
+.db-topbar__title {
+  font: var(--type-h2);
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.db-topbar__subtitle {
+  font: var(--type-caption);
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+.db-topbar--brand .db-topbar__subtitle {
+  color: rgba(255, 255, 255, 0.72);
+}
+.db-topbar__spacer {
+  flex: 1 1 auto;
+}
+.db-topbar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex: 0 0 auto;
+}
+
+/* SegmentedControl — alternador de escopo (período, canal, praça, ambiente). */
+.db-segmented-control {
+  display: inline-flex;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 2px;
+}
+.db-segmented-control button {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font: var(--type-label);
+  padding: 0 var(--sp-5);
+  height: 30px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-control);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  white-space: nowrap;
+}
+.db-segmented-control button:hover {
+  color: var(--text-primary);
+}
+.db-segmented-control button[aria-pressed='true'] {
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-weight: var(--fw-semibold);
+  box-shadow: var(--shadow-subtle);
+}
+.db-segmented-control--lg button {
+  height: 42px;
+  font-size: var(--fs-16);
+  padding: 0 var(--sp-7);
+}
+.db-segmented-control--block {
+  display: flex;
+}
+.db-segmented-control--block button {
+  flex: 1 1 0;
+  justify-content: center;
+}

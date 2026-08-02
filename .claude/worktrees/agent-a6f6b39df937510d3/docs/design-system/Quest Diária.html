@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Awaken — Quest Diária</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; background: #07080D;
+  font-family: 'Sora', sans-serif; -webkit-font-smoothing: antialiased;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+
+/* ── PHONE SHELL ─────────────────────────────── */
+.phone-shell {
+  width: 390px; height: 844px;
+  background: #0A0B12; border-radius: 44px;
+  border: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden; position: relative;
+  box-shadow: 0 60px 120px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.03);
+  display: flex; flex-direction: column;
+}
+
+/* ── STATUS BAR ──────────────────────────────── */
+.status-bar {
+  height: 44px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; background: #0A0B12;
+}
+.sb-time { font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 700; color: #F2F5FF; }
+.sb-icons { display: flex; align-items: center; gap: 5px; }
+
+/* ── TOPBAR ──────────────────────────────────── */
+.topbar {
+  height: 52px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: #0A0B12; position: relative;
+}
+.topbar-back {
+  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer; color: #AEB4D0;
+  border-radius: 10px; -webkit-tap-highlight-color: transparent;
+}
+.topbar-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px;
+}
+/* title shown in preview, hidden in active */
+.topbar-title {
+  font-family: 'Chakra Petch', sans-serif; font-size: 16px; font-weight: 700;
+  color: #F2F5FF; transition: opacity 0.3s;
+}
+/* timer hidden in preview, shown in active */
+.topbar-timer {
+  font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700;
+  color: #F2F5FF; display: flex; align-items: center; gap: 5px;
+  opacity: 0; pointer-events: none; position: absolute; left: 50%; transform: translateX(-50%);
+  transition: opacity 0.3s; white-space: nowrap;
+}
+/* right slot — empty placeholder to balance back btn */
+.topbar-right { width: 36px; }
+
+/* ── SCREEN BODY ─────────────────────────────── */
+.screen-body {
+  flex: 1; overflow-y: auto; padding: 0 20px 110px;
+  overscroll-behavior: contain;
+}
+.screen-body::-webkit-scrollbar { display: none; }
+
+/* ── PREVIEW HEADER ──────────────────────────── */
+.preview-header {
+  padding: 22px 0 4px;
+  transition: opacity 0.3s, max-height 0.4s, padding 0.3s;
+  overflow: hidden; max-height: 200px;
+}
+.type-label {
+  font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.18em; text-transform: uppercase; color: #5E6488; margin-bottom: 4px;
+}
+.type-name {
+  font-family: 'Chakra Petch', sans-serif; font-size: 24px; font-weight: 700; color: #F2F5FF;
+}
+.preview-badges {
+  display: flex; gap: 10px; margin-top: 14px;
+  transition: opacity 0.3s, max-height 0.3s;
+  overflow: hidden; max-height: 80px;
+}
+.preview-badge {
+  flex: 1; background: #161929; border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: 12px 14px;
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 600;
+}
+.preview-badge.xp { color: #FFD64A; }
+.preview-badge.time { color: #7FB0FF; }
+
+/* ── PROGRESS CARD (hidden in preview) ───────── */
+.progress-card {
+  background: #161929; border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px; padding: 16px;
+  margin-top: 16px; margin-bottom: 12px;
+  position: relative; overflow: hidden;
+  opacity: 0; max-height: 0; margin-top: 0; margin-bottom: 0;
+  transition: opacity 0.35s, max-height 0.4s, margin 0.3s;
+}
+.progress-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, #2D6FF5, #8B3FD8);
+}
+.progress-top-row {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
+}
+.status-pill {
+  font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 99px;
+  transition: background 0.3s, color 0.3s;
+  background: rgba(34,197,94,0.15); color: #22C55E;
+}
+.status-pill.paused { background: rgba(245,197,24,0.12); color: #F5C518; }
+.progress-xp-live {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #FFD64A; font-weight: 700;
+}
+.progress-count {
+  font-size: 13px; color: #5E6488; margin-bottom: 10px;
+}
+.progress-bar-track {
+  width: 100%; height: 5px; background: #262B41; border-radius: 99px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, #2D6FF5, #8B3FD8);
+  transition: width 0.5s ease;
+}
+
+/* ── ATTRIBUTES CARD (hidden in preview) ─────── */
+.attr-card {
+  background: #111320; border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px; padding: 14px 16px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 12px;
+  opacity: 0; max-height: 0; margin-bottom: 0;
+  transition: opacity 0.35s 0.05s, max-height 0.4s, margin 0.3s;
+  overflow: hidden;
+}
+.attr-title {
+  font-family: 'Chakra Petch', sans-serif; font-size: 14px; font-weight: 700; color: #F2F5FF;
+  margin-bottom: 5px;
+}
+.attr-sub { font-size: 13px; color: #474C66; }
+.attr-count { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5E6488; }
+
+/* ── SECTION LABEL ───────────────────────────── */
+.section-label {
+  font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase; color: #474C66;
+  margin-bottom: 10px; margin-top: 20px;
+}
+
+/* ── EXERCISE CARDS ──────────────────────────── */
+.ex-card {
+  background: #161929; border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px; padding: 16px;
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 8px;
+  transition: border-color 0.25s, background 0.25s, opacity 0.25s;
+  cursor: default;
+}
+.ex-card.active-mode { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.ex-card.done { border-color: rgba(34,197,94,0.25); background: rgba(34,197,94,0.04); }
+.ex-card.pending-active { opacity: 0.65; }
+
+.ex-left { width: 36px; height: 36px; flex-shrink: 0; }
+.ex-num {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2px solid #2D6FF5; display: flex; align-items: center; justify-content: center;
+  font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 700; color: #4D8BFF;
+}
+.ex-check {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.ex-check.unchecked {
+  background: rgba(255,255,255,0.04); border: 2px solid rgba(255,255,255,0.15);
+}
+.ex-check.checked {
+  background: rgba(34,197,94,0.15); border: 2px solid #22C55E;
+}
+
+.ex-info { flex: 1; min-width: 0; }
+.ex-name { font-size: 15px; font-weight: 600; color: #F2F5FF; margin-bottom: 4px; transition: color 0.2s; }
+.ex-name.striked { color: #AEB4D0; text-decoration: line-through; text-decoration-color: rgba(255,255,255,0.18); }
+.ex-meta-row { display: flex; gap: 14px; }
+.ex-meta-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #5E6488; }
+.ex-done-pill {
+  background: rgba(34,197,94,0.15); color: #22C55E;
+  font-family: 'Chakra Petch', sans-serif; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px;
+  display: none;
+}
+
+.ex-right { margin-left: auto; flex-shrink: 0; text-align: right; }
+.ex-xp {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+  color: #FFD64A; opacity: 0; transition: opacity 0.3s;
+}
+
+/* ── BOTTOM BAR ──────────────────────────────── */
+.bottom-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 12px 20px 28px;
+  background: linear-gradient(0deg, #0A0B12 65%, transparent 100%);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.btn-change {
+  width: 100%; padding: 14px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px; color: #AEB4D0;
+  font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: 0.06em; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity 0.3s, max-height 0.3s, padding 0.3s, margin 0.3s;
+  overflow: hidden; max-height: 60px;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-start {
+  width: 100%; padding: 16px; border: none; border-radius: 14px; color: #fff;
+  background: linear-gradient(135deg, #2D6FF5 0%, #8B3FD8 100%);
+  font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 700;
+  letter-spacing: 0.06em; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 8px 24px rgba(45,111,245,0.35);
+  transition: opacity 0.2s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-start:active { opacity: 0.88; transform: scale(0.99); }
+.btn-pause {
+  width: 100%; padding: 15px; border-radius: 14px;
+  font-family: 'Chakra Petch', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: 0.06em; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  /* start hidden */
+  opacity: 0; max-height: 0; padding: 0; margin: 0; border: none;
+  overflow: hidden;
+  transition: opacity 0.3s, max-height 0.3s, padding 0.3s, margin 0.3s, background 0.25s, border-color 0.25s, color 0.25s;
+  background: rgba(45,111,245,0.1); border: 1px solid rgba(45,111,245,0.25); color: #7FB0FF;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── ACTIVE STATE modifiers ──────────────────── */
+body.active .topbar-title { opacity: 0; pointer-events: none; }
+body.active .topbar-timer { opacity: 1; pointer-events: auto; }
+body.active .preview-header { opacity: 0; max-height: 0; padding: 0; }
+body.active .preview-badges { opacity: 0; max-height: 0; }
+body.active .progress-card { opacity: 1; max-height: 160px; margin-top: 16px; margin-bottom: 12px; }
+body.active .attr-card { opacity: 1; max-height: 100px; margin-bottom: 12px; }
+
+body.active .ex-xp { opacity: 1; }
+body.active .ex-card { cursor: pointer; }
+body.active .btn-change { opacity: 0; max-height: 0; padding: 0; margin: 0; pointer-events: none; }
+body.active .btn-start { opacity: 0; max-height: 0; padding: 0; margin: 0; pointer-events: none; overflow: hidden; }
+body.active .btn-pause { opacity: 1; max-height: 60px; padding: 15px; margin: 0; border-width: 1px; }
+
+/* Paused tweak — just pill + button color */
+body.paused .btn-pause {
+  background: rgba(245,197,24,0.08); border-color: rgba(245,197,24,0.2); color: #F5C518;
+}
+
+/* ── COMPLETION OVERLAY ──────────────────────── */
+.completion {
+  position: absolute; inset: 0; background: #0A0B12;
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  padding: 32px 28px; animation: fadeIn 0.4s ease;
+}
+.completion.show { display: flex; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.completion-glow {
+  position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+  width: 400px; height: 400px;
+  background: radial-gradient(ellipse, rgba(245,197,24,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.completion-icon { font-size: 56px; margin-bottom: 20px; }
+.completion-title {
+  font-family: 'Chakra Petch', sans-serif; font-size: 28px; font-weight: 700;
+  background: linear-gradient(135deg, #F5C518, #FF9500);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  text-align: center; margin-bottom: 8px;
+}
+.completion-sub { font-size: 14px; color: #5E6488; text-align: center; line-height: 1.6; margin-bottom: 28px; }
+.xp-earned {
+  background: rgba(245,197,24,0.1); border: 1px solid rgba(245,197,24,0.22);
+  border-radius: 16px; padding: 20px 40px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 24px;
+}
+.xp-earned-label {
+  font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase; color: #D9A400;
+}
+.xp-earned-val { font-family: 'JetBrains Mono', monospace; font-size: 40px; font-weight: 700; color: #F5C518; }
+.completion-attrs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 28px; }
+.attr-pill {
+  padding: 6px 14px; border-radius: 99px; font-size: 12px;
+  font-family: 'Chakra Petch', sans-serif; font-weight: 600;
+  display: flex; align-items: center; gap: 5px;
+}
+
+/* ── DEV NAV ─────────────────────────────────── */
+#devnav {
+  position: fixed; left: 0; top: 50%; transform: translateY(-50%);
+  z-index: 9999; display: flex; flex-direction: column;
+  background: #07080D; border: 1px solid rgba(255,255,255,0.1);
+  border-left: none; border-radius: 0 12px 12px 0; overflow: hidden;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.6);
+}
+#devnav .nav-section {
+  padding: 10px 14px 8px; font-family: 'Chakra Petch', sans-serif;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+  color: #474C66; border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+#devnav a {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+  text-decoration: none; color: #828AAE; font-family: 'Chakra Petch', sans-serif;
+  font-size: 11px; font-weight: 600; transition: background 0.15s, color 0.15s;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+#devnav a:last-child { border-bottom: none; }
+#devnav a:hover { background: rgba(255,255,255,0.04); color: #C3C9E6; }
+#devnav a.cur { background: rgba(95,232,255,0.1); color: #5FE8FF; }
+</style>
+</head>
+<body>
+
+<!-- DEV NAV -->
+<div id="devnav">
+  <div class="nav-section">Páginas</div>
+  <a href="index.html">⊞ Hub</a>
+  <a href="Awaken Landing.html">🌐 Landing</a>
+  <a href="Awaken Admin Login.html">🔐 Login</a>
+  <a href="Awaken Admin.html">⚙️ Admin</a>
+  <a href="Quest Diária.html" class="cur">⚔️ Quest</a>
+</div>
+
+<div class="phone-shell" id="phoneShell">
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span class="sb-time" id="clockTime">9:41</span>
+    <div class="sb-icons">
+      <svg width="14" height="11" viewBox="0 0 14 11" fill="#F2F5FF"><rect x="0" y="3" width="2" height="8" rx="1"/><rect x="3" y="2" width="2" height="9" rx="1"/><rect x="6" y="1" width="2" height="10" rx="1"/><rect x="9" y="0" width="2" height="11" rx="1"/></svg>
+      <svg width="14" height="11" viewBox="0 0 24 18" fill="none" stroke="#F2F5FF" stroke-width="2"><path d="M1 6.5C5.5 2 18.5 2 23 6.5"/><path d="M4.5 10C7.5 7 16.5 7 19.5 10"/><path d="M8 13.5C9.5 12 14.5 12 16 13.5"/><circle cx="12" cy="17" r="1" fill="#F2F5FF"/></svg>
+      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3.5" stroke="#F2F5FF" stroke-opacity="0.35"/><rect x="2" y="2" width="17" height="8" rx="2" fill="#22C55E"/><path d="M24 4v4a2 2 0 0 0 0-4z" fill="#F2F5FF" fill-opacity="0.4"/></svg>
+    </div>
+  </div>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <button class="topbar-back">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="topbar-center">
+      <span class="topbar-title">Quest Diária</span>
+      <div class="topbar-timer">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7FB0FF" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span id="timerDisplay">00:00:00</span>
+      </div>
+    </div>
+    <div class="topbar-right"></div>
+  </div>
+
+  <!-- Scrollable Body -->
+  <div class="screen-body">
+
+    <!-- Preview Header -->
+    <div class="preview-header">
+      <div class="type-label">Tipo de Treino</div>
+      <div class="type-name">Treino padrão</div>
+      <div class="preview-badges">
+        <div class="preview-badge xp">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          120 XP estimado
+        </div>
+        <div class="preview-badge time">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          30 min
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Card (active only) -->
+    <div class="progress-card">
+      <div class="progress-top-row">
+        <span class="status-pill" id="statusPill">Em andamento</span>
+        <span class="progress-xp-live" id="xpLive">+0 XP</span>
+      </div>
+      <div class="progress-count" id="progressCount">0 / 3</div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Exercises label -->
+    <div class="section-label">Exercícios</div>
+
+    <!-- Exercise list -->
+    <div id="exList"></div>
+
+    <div style="height:20px;"></div>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div class="bottom-bar">
+    <button class="btn-change" onclick="alterarTreino()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Alterar tipo de treino
+    </button>
+    <button class="btn-start" onclick="iniciarQuest()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Iniciar quest
+    </button>
+    <button class="btn-pause" id="pauseBtn" onclick="togglePause()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" id="pauseIcon"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      <span id="pauseLabel">Pausar quest</span>
+    </button>
+  </div>
+
+  <!-- Completion -->
+  <div class="completion" id="completion">
+    <div class="completion-glow"></div>
+    <div class="completion-icon">🏆</div>
+    <div class="completion-title">Quest Concluída!</div>
+    <div class="completion-sub">Todos os exercícios finalizados.<br>Continue assim, Hunter.</div>
+    <div class="xp-earned">
+      <div class="xp-earned-label">XP Ganho</div>
+      <div class="xp-earned-val" id="finalXP">+120</div>
+    </div>
+    <div class="completion-attrs" id="completionAttrs"></div>
+    <button class="btn-start" style="max-width:260px;" onclick="voltarInicio()">Finalizar</button>
+  </div>
+
+</div>
+
+<script>
+// ── SCALE ─────────────────────────────────────────────────────
+function scalePhone() {
+  const shell = document.getElementById('phoneShell');
+  const vw = window.innerWidth || document.documentElement.clientWidth;
+  const vh = window.innerHeight || document.documentElement.clientHeight;
+  if (!vw || !vh) { setTimeout(scalePhone, 50); return; }
+  const scale = Math.min((vw - 32) / 390, (vh - 32) / 844, 1);
+  shell.style.transform = 'scale(' + scale + ')';
+  shell.style.transformOrigin = 'center center';
+}
+setTimeout(scalePhone, 0);
+window.addEventListener('resize', scalePhone);
+
+// ── DATA ──────────────────────────────────────────────────────
+const EXERCISES = [
+  { id:1, name:'Agachamento',     sets:2, reps:'10 reps', rest:'75s', rpe:'3-5', attr:'Força',       xp:40 },
+  { id:2, name:'Flexão de braço', sets:2, reps:'10 reps', rest:'75s', rpe:'3-5', attr:'Força',       xp:40 },
+  { id:3, name:'Prancha',         sets:2, reps:'10 reps', rest:'75s', rpe:'3-5', attr:'Resistência', xp:40 },
+];
+
+// ── STATE ─────────────────────────────────────────────────────
+let mode = 'preview'; // preview | active | paused
+let elapsed = 0;
+let timerInterval = null;
+let completed = new Set();
+
+// ── CLOCK ─────────────────────────────────────────────────────
+(function tickClock(){
+  const d = new Date();
+  document.getElementById('clockTime').textContent = d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
+  setTimeout(tickClock, 10000);
+})();
+
+// ── FORMAT ────────────────────────────────────────────────────
+function fmt(s){
+  return [Math.floor(s/3600),Math.floor((s%3600)/60),s%60]
+    .map(n=>String(n).padStart(2,'0')).join(':');
+}
+
+// ── RENDER EXERCISES ──────────────────────────────────────────
+function renderExercises() {
+  const isActive = mode !== 'preview';
+  document.getElementById('exList').innerHTML = EXERCISES.map(ex => {
+    const done = completed.has(ex.id);
+    const pending = isActive && !done;
+    return `<div class="ex-card ${isActive ? 'active-mode' : ''} ${done ? 'done' : ''} ${pending ? 'pending-active' : ''}"
+         onclick="${isActive ? 'toggleEx(' + ex.id + ')' : ''}">
+      <div class="ex-left">
+        ${isActive
+          ? `<div class="ex-check ${done ? 'checked' : 'unchecked'}">${done ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}</div>`
+          : `<div class="ex-num">${ex.id}</div>`
+        }
+      </div>
+      <div class="ex-info">
+        <div class="ex-name ${done ? 'striked' : ''}">${ex.name}</div>
+        ${isActive
+          ? `<div style="margin-top:3px;">${done ? '<span class="ex-done-pill" style="display:inline-block;">Concluída</span>' : '<span style="font-size:12px;color:#474C66;">' + ex.attr + '</span>'}</div>`
+          : `<div class="ex-meta-row">
+              <span class="ex-meta-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                ${ex.sets}x ${ex.reps}
+              </span>
+              <span class="ex-meta-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                ${ex.rest}
+              </span>
+              <span class="ex-meta-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                RPE ${ex.rpe}
+              </span>
+            </div>`
+        }
+      </div>
+      <div class="ex-right">
+        <div class="ex-xp">${isActive ? '+' + ex.xp + ' XP' : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── UPDATE ACTIVE UI ──────────────────────────────────────────
+function updateActive() {
+  const total = EXERCISES.length;
+  const done = completed.size;
+  const xpEarned = [...completed].reduce((s,id) => s + (EXERCISES.find(e=>e.id===id)?.xp||0), 0);
+  const pct = Math.round(done / total * 100);
+
+  document.getElementById('progressCount').textContent = done + ' / ' + total;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('xpLive').textContent = '+' + xpEarned + ' XP';
+
+
+  // Pause indicator
+  const paused = mode === 'paused';
+  const pill = document.getElementById('statusPill');
+  pill.textContent = paused ? 'Pausada' : 'Em andamento';
+  pill.className = 'status-pill' + (paused ? ' paused' : '');
+
+  document.getElementById('pauseLabel').textContent = paused ? 'Retomar quest' : 'Pausar quest';
+  document.getElementById('pauseIcon').innerHTML = paused
+    ? '<polygon points="5 3 19 12 5 21 5 3"/>'
+    : '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>';
+  document.getElementById('pauseBtn').style.background = paused
+    ? 'rgba(245,197,24,0.08)' : 'rgba(45,111,245,0.1)';
+  document.getElementById('pauseBtn').style.borderColor = paused
+    ? 'rgba(245,197,24,0.2)' : 'rgba(45,111,245,0.25)';
+  document.getElementById('pauseBtn').style.color = paused ? '#F5C518' : '#7FB0FF';
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────
+function iniciarQuest() {
+  mode = 'active';
+  document.body.classList.add('active');
+  document.body.classList.remove('paused');
+  elapsed = 0;
+  completed.clear();
+  renderExercises();
+  updateActive();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(function(){
+    if (mode === 'active') {
+      elapsed++;
+      document.getElementById('timerDisplay').textContent = fmt(elapsed);
+    }
+  }, 1000);
+}
+
+function togglePause() {
+  if (mode === 'active') {
+    mode = 'paused';
+    document.body.classList.add('paused');
+  } else if (mode === 'paused') {
+    mode = 'active';
+    document.body.classList.remove('paused');
+  }
+  updateActive();
+}
+
+function toggleEx(id) {
+  if (mode === 'paused') return;
+  if (completed.has(id)) { completed.delete(id); }
+  else { completed.add(id); }
+  renderExercises();
+  updateActive();
+  if (completed.size === EXERCISES.length) { setTimeout(showComplete, 500); }
+}
+
+function showComplete() {
+  clearInterval(timerInterval);
+  const total = EXERCISES.reduce((s,e)=>s+e.xp,0);
+  document.getElementById('finalXP').textContent = '+' + total + ' XP';
+  const attrColors = {'Força':'#FF5A3C','Resistência':'#2D6FF5','Agilidade':'#22D3A7','Vitalidade':'#F5C518','Foco':'#A65CEE','Sabedoria':'#5FE8FF'};
+  const attrs = [...new Set(EXERCISES.map(e=>e.attr))];
+  document.getElementById('completionAttrs').innerHTML = attrs.map(a =>
+    `<span class="attr-pill" style="background:${attrColors[a]||'#2D6FF5'}22;color:${attrColors[a]||'#4D8BFF'};border:1px solid ${attrColors[a]||'#2D6FF5'}33;">+${a}</span>`
+  ).join('');
+  document.getElementById('completion').classList.add('show');
+}
+
+function voltarInicio() {
+  clearInterval(timerInterval);
+  elapsed = 0; completed.clear(); mode = 'preview';
+  document.body.classList.remove('active','paused');
+  document.getElementById('timerDisplay').textContent = '00:00:00';
+  document.getElementById('completion').classList.remove('show');
+  renderExercises();
+}
+
+function alterarTreino() { alert('Disponível em breve.'); }
+
+// ── INIT ──────────────────────────────────────────────────────
+renderExercises();
+</script>
+</body>
+</html>

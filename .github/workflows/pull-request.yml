@@ -1,0 +1,100 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Qualidade
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test:coverage
+      # A cobertura crítica de domínio (>=90%, sem infraestrutura) agora é responsabilidade do
+      # backend .NET — Nexora.UnitTests contra Nexora.Domain (ver Docs/10-Estrategia-
+      # de-Testes-e-Qualidade.md e ADR-036/037). TODO: adicionar job `dotnet test` equivalente
+      # quando o pipeline .NET (build/test) for definido em CI — hoje só validado localmente.
+
+  governance:
+    name: Governança
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Meta-testes das travas
+        run: node --test infra/scripts/governance.test.mjs infra/scripts/openapi-compatibility.test.mjs infra/scripts/release-version.test.mjs infra/scripts/pipeline-meta.test.mjs infra/scripts/scheduled-checks.test.mjs
+      - name: ADR-010, ADR-013, ADR-019 e RLS estático
+        run: pnpm governance
+
+  # Cenário Gherkin "Suíte de isolamento obrigatória" (US-007) — Nexora.IntegrationTests roda contra
+  # PostgreSQL real via Testcontainers.PostgreSql (RLS real, nunca provider InMemory — ADR-038 "Como
+  # validar"); os ubuntu-latest runners do GitHub Actions já vêm com Docker, então Testcontainers
+  # funciona sem `services:` adicional. Confirmado localmente (25 testes, `dotnet test
+  # backend/Nexora.slnx --filter "FullyQualifiedName~IntegrationTests"`) antes de entrar aqui.
+  integration:
+    name: Integração e RLS
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Isolamento multi-tenant (Testcontainers.PostgreSql, RLS real — ADR-004/ADR-038)
+        run: dotnet test backend/Nexora.slnx --filter "FullyQualifiedName~IntegrationTests"
+
+  # Cenário Gherkin "Quebra de contrato de API" (US-007) — Nexora.Api.Cloud já expõe Swagger/OpenAPI
+  # nativo (Swashbuckle.AspNetCore, AddSwaggerGen/AddEndpointsApiExplorer em Program.cs). O snapshot
+  # versionado (infra/cloud/openapi/v1.snapshot.json) é gerado por
+  # `dotnet run --project backend/src/Nexora.Api.Cloud -- --generate-openapi-snapshot <arquivo>`
+  # (não abre porta HTTP, só materializa o documento a partir dos metadados de controller) e
+  # comparado pela mesma lógica de breaking-change de infra/scripts/openapi-compatibility.ts.
+  openapi:
+    name: Contrato OpenAPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Gerar OpenAPI da revisão atual
+        run: dotnet run --project backend/src/Nexora.Api.Cloud --configuration Release -- --generate-openapi-snapshot ${{ runner.temp }}/openapi.current.json
+      - name: Comparar com o snapshot versionado (ADR-021 — quebra exige nova versão de path /v2)
+        run: npx tsx infra/scripts/openapi-compatibility.ts --baseline infra/cloud/openapi/v1.snapshot.json --current ${{ runner.temp }}/openapi.current.json
+
+  security:
+    name: Segurança
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: SCA — vulnerabilidade crítica bloqueia
+        run: pnpm audit --audit-level=critical
+      - name: Inicializar SAST CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - name: Analisar código
+        uses: github/codeql-action/analyze@v3
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm build

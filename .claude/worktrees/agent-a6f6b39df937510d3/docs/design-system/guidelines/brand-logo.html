@@ -1,0 +1,18 @@
+<!-- @dsCard group="Brand" viewport="700x260" name="Logo" subtitle="The glowing-eyes mark, the AWAKEN wordmark, and the full lockup — always on deep void" -->
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin:0; background: var(--grad-void); padding: 24px; font-family: var(--font-body); }
+  .grid { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; align-items:stretch; }
+  .cell { background:var(--bg-surface); border:1px solid var(--border-default); border-radius:var(--radius-lg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:20px 14px; }
+  .cell img { display:block; }
+  .cap { font-family:var(--font-display); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-tertiary); }
+</style></head>
+<body>
+  <div class="grid">
+    <div class="cell"><img src="../assets/logo-mark.png" alt="Awaken mark" style="height:104px" /><span class="cap">Mark</span></div>
+    <div class="cell"><img src="../assets/logo-wordmark.png" alt="AWAKEN wordmark" style="width:100%;max-width:200px" /><span class="cap">Wordmark</span></div>
+    <div class="cell"><img src="../assets/logo-full.png" alt="Awaken full logo" style="height:150px" /><span class="cap">Full lockup</span></div>
+  </div>
+</body></html>

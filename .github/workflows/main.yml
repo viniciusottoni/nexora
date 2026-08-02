@@ -1,0 +1,63 @@
+name: Main e Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: main-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+
+  # Cenário Gherkin "Build verde publica imagens" (US-007) — infra/cloud/api-edge.Dockerfile e
+  # api-cloud.Dockerfile já foram reescritos (US-006) para multi-stage build real de
+  # Nexora.Api.Edge/Nexora.Api.Cloud (`docker build -f infra/cloud/<app>.Dockerfile .` a partir da
+  # RAIZ do monorepo, confirmado localmente com `docker build`). Versão semântica de ADR-029, via
+  # o mesmo infra/scripts/release-version.ts já usado/testado por US-003 — MAJOR.MINOR.PATCH do
+  # package.json na tag `vX.Y.Z`, ou `X.Y.Z-main.<sha7>` fora de tag.
+  images:
+    name: Imagens
+    needs: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: staging
+    strategy:
+      matrix:
+        application: [api-edge, api-cloud]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Versão semântica (ADR-029)
+        id: version
+        run: echo "value=$(npx tsx infra/scripts/release-version.ts)" >> "$GITHUB_OUTPUT"
+      - name: Autenticar no GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build e publicar ${{ matrix.application }}
+        run: |
+          set -euo pipefail
+          # ghcr.io exige nome de imagem em minúsculas; github.repository preserva o case do
+          # repositório/organização, então normaliza aqui em vez de assumir que já está em minúsculas.
+          repository_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          image="ghcr.io/$repository_lower/${{ matrix.application }}"
+          docker build -f "infra/cloud/${{ matrix.application }}.Dockerfile" -t "$image:${{ steps.version.outputs.value }}" .
+          docker push "$image:${{ steps.version.outputs.value }}"
+
+  # Deploy automático de STAGING (não produção — ADR-029 "Ambientes": staging nasce de todo merge
+  # em main; produção exige aprovação manual e fica fora desta história, US-007 §3.2) fica fora
+  # desta tarefa: não existe ainda destino de staging (host/orquestrador) documentado no pacote —
+  # publicar a imagem versionada é o requisito do Gherkin acima; o rollout em si é US futura.

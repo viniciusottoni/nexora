@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Nexora.IntegrationTests</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Nexora.Infrastructure\Nexora.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Nexora.Application\Nexora.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Respawn" />
+    <!-- Monta o pipeline MediatR real (US-001, teste do audit_log via RecordCrossTenantAccessAttemptCommand). -->
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <!-- ValidationBehavior real no pipeline dos testes de ProvisionTenant (US-002). -->
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+  </ItemGroup>
+
+</Project>

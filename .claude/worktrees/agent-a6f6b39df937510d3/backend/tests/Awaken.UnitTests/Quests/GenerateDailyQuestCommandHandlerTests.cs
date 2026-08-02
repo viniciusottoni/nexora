@@ -1,0 +1,282 @@
+using Awaken.Application.Common.Interfaces;
+using Awaken.Application.Progression.Services;
+using Awaken.Application.Quests.Commands.GenerateDailyQuest;
+using Awaken.Domain.Entities.Auth;
+using Awaken.Domain.Entities.Onboarding;
+using Awaken.Domain.Entities.Quests;
+using Awaken.Domain.Repositories;
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Awaken.Domain.Entities.Progression;
+
+namespace Awaken.UnitTests.Quests;
+
+public class GenerateDailyQuestCommandHandlerTests
+{
+    private readonly Mock<IQuestRepository> _questRepository = new();
+    private readonly Mock<IUserRepository> _userRepository = new();
+    private readonly Mock<IUserProfileRepository> _userProfileRepository = new();
+    private readonly Mock<IHunterProgressionRepository> _hunterProgressionRepository = new();
+    private readonly Mock<IWorkoutGeneratorService> _workoutGeneratorService = new();
+    private readonly Mock<ICurrentUserService> _currentUserService = new();
+    private readonly Mock<IDateTimeService> _dateTimeService = new();
+    private readonly Mock<IUserDateService> _userDateService = new();
+    private readonly Mock<IDailyQuestPenaltyService> _dailyQuestPenaltyService = new();
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
+    private readonly Mock<ILogger<GenerateDailyQuestCommandHandler>> _logger = new();
+
+    private static readonly Guid UserId = Guid.NewGuid();
+    private static readonly DateOnly Today = new(2026, 6, 22);
+    private static readonly DateTime UtcNow = new(2026, 6, 22, 8, 0, 0, DateTimeKind.Utc);
+
+    private const string WorkoutJson = """
+    {
+      "title": "Daily Quest",
+      "description": "Full body",
+      "durationMinutes": 30,
+      "exercises": [
+        { "name": "Squat", "sets": 3, "repsMin": 10, "repsMax": 15, "restSeconds": 90, "targetRpe": "6-8" }
+      ]
+    }
+    """;
+
+    public GenerateDailyQuestCommandHandlerTests()
+    {
+        _currentUserService.Setup(s => s.UserId).Returns(UserId);
+        _dateTimeService.Setup(s => s.TodayUtc).Returns(Today);
+        _dateTimeService.Setup(s => s.UtcNow).Returns(UtcNow);
+        _userDateService.Setup(s => s.TodayLocal).Returns(Today);
+        _dailyQuestPenaltyService
+            .Setup(s => s.ApplyForUserBeforeDateAsync(UserId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DailyPenaltyRolloverSummary(0, 0));
+        _workoutGeneratorService
+            .Setup(s => s.GenerateWorkoutJsonAsync(
+                UserId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<UserProfile?>(), It.IsAny<HunterProgression?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WorkoutGenerationResult(
+                WorkoutJson, IsPersonalized: true, GenerationMethod: "catalog_rules", AppliedFiltersJson: "{}"));
+    }
+
+    private GenerateDailyQuestCommandHandler CreateHandler() => new(
+        _questRepository.Object,
+        _userRepository.Object,
+        _userProfileRepository.Object,
+        _hunterProgressionRepository.Object,
+        _workoutGeneratorService.Object,
+        _currentUserService.Object,
+        _dateTimeService.Object,
+        _userDateService.Object,
+        _dailyQuestPenaltyService.Object,
+        _unitOfWork.Object,
+        _logger.Object);
+
+    private static User BuildUser()
+    {
+        var user = User.Create("hunter@awaken.app", "hash", "Hunter");
+        user.StartTrial(UtcNow.AddDays(7));
+        return user;
+    }
+
+    [Fact]
+    public async Task CA001_GeneratesQuest_CompatibleWithProfile_WhenNoneExistsToday()
+    {
+        _questRepository
+            .Setup(r => r.GetByUserIdAndDateAsync(UserId, "daily", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Quest?)null);
+        _userRepository.Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(BuildUser());
+        _userProfileRepository
+            .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserProfile.Create(UserId, goal: "gain_muscle", availableMinutesPerWorkout: 30));
+
+        var result = await CreateHandler().Handle(new GenerateDailyQuestCommand(), CancellationToken.None);
+
+        result.Type.Should().Be("daily");
+        result.Workout.Should().NotBeNull();
+        result.Workout!.DurationMinutes.Should().Be(30);
+        result.Workout.Exercises.Should().NotBeEmpty();
+        result.IsConfirmed.Should().BeFalse();
+        _questRepository.Verify(r => r.AddAsync(It.IsAny<Quest>(), It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _logger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("daily_quest_generated") &&
+                    v.ToString()!.Contains($"userId={UserId}") &&
+                    v.ToString()!.Contains("questType=daily")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RN007_GeneratedQuestStartsUnconfirmed()
+    {
+        _questRepository
+            .Setup(r => r.GetByUserIdAndDateAsync(UserId, "daily", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Quest?)null);
+        _userRepository.Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(BuildUser());
+        _userProfileRepository
+            .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserProfile.Create(UserId));
+
+        var result = await CreateHandler().Handle(new GenerateDailyQuestCommand(), CancellationToken.None);
+
+        result.IsConfirmed.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task US047_RN002_IsIdempotent_ReturnsExistingQuest_WhenAlreadyGeneratedToday()
+    {
+        var questDateUtc = Today.ToDateTime(TimeOnly.MinValue);
+        var existing = Quest.Create(UserId, questDateUtc, "pt-BR", "key");
+        existing.AssignWorkout(WorkoutJson, DateTime.UtcNow);
+        _questRepository
+            .Setup(r => r.GetByUserIdAndDateAsync(UserId, "daily", questDateUtc, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(new GenerateDailyQuestCommand(), CancellationToken.None);
+
+        result.Id.Should().Be(existing.Id);
+        _questRepository.Verify(r => r.AddAsync(It.IsAny<Quest>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _logger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("daily_quest_generated")),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task CA002_MicroQuest_RequestsWorkoutWithinAvailableTime()
+    {
+        _questRepository
+            .Setup(r => r.GetByUserIdAndDateAsync(UserId, "daily", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Quest?)null);
+        _userRepository.Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(BuildUser());
+        string? capturedProfileJson = null;
+        _userProfileRepository
+            .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserProfile.Create(UserId, availableMinutesPerWorkout: 10));
+        _workoutGeneratorService
+            .Setup(s => s.GenerateWorkoutJsonAsync(UserId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<UserProfile?>(), It.IsAny<HunterProgression?>(), It.IsAny<CancellationToken>()))
+            .Callback<Guid, string, string, UserProfile?, HunterProgression?, CancellationToken>((_, _, json, _, _, _) => capturedProfileJson = json)
+            .ReturnsAsync(new WorkoutGenerationResult(
+                WorkoutJson, IsPersonalized: true, GenerationMethod: "catalog_rules", AppliedFiltersJson: "{}"));
+
+        await CreateHandler().Handle(new GenerateDailyQuestCommand(), CancellationToken.None);
+
+        capturedProfileJson.Should().Contain("\"availableMinutesPerWorkout\":10");
+    }
+
+    [Fact]
+    public async Task US044_QuestReflectsPersonalizationFlagFromGenerator()
+    {
+        _questRepository
+            .Setup(r => r.GetByUserIdAndDateAsync(UserId, "daily", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Quest?)null);
+        _userRepository.Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(BuildUser());
+        _userProfileRepository
+            .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserProfile.Create(UserId));
+        _workoutGeneratorService
+            .Setup(s => s.GenerateWorkoutJsonAsync(UserId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<UserProfile?>(), It.IsAny<HunterProgression?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WorkoutGenerationResult(
+                WorkoutJson, IsPersonalized: false, GenerationMethod: "fallback_template", AppliedFiltersJson: "{}"));
+
+        var result = await CreateHandler().Handle(new GenerateDailyQuestCommand(), CancellationToken.None);
+
+        result.IsPersonalized.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task US049_RegistersGenerationAudit_OnNewQuest()
+    {
+        Quest? addedQuest = null;
+        _questRepository
+            .Setup(r => r.GetByUserIdAndDateAsync(UserId, "daily", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Quest?)null);
+        _questRepository
+            .Setup(r => r.AddAsync(It.IsAny<Quest>(), It.IsAny<CancellationToken>()))
+            .Callback<Quest, CancellationToken>((q, _) => addedQuest = q)
+            .Returns(Task.CompletedTask);
+        _userRepository.Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(BuildUser());
+        _userProfileRepository
+            .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserProfile.Create(UserId, goal: "gain_muscle"));
+        _workoutGeneratorService
+            .Setup(s => s.GenerateWorkoutJsonAsync(UserId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<UserProfile?>(), It.IsAny<HunterProgression?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WorkoutGenerationResult(
+                WorkoutJson, IsPersonalized: true, GenerationMethod: "catalog_rules", AppliedFiltersJson: "{\"physicalPains\":[]}"));
+
+        await CreateHandler().Handle(new GenerateDailyQuestCommand(), CancellationToken.None);
+
+        addedQuest.Should().NotBeNull();
+        addedQuest!.GenerationReason.Should().Be("rules");
+        addedQuest.GenerationMethod.Should().Be("catalog_rules");
+        addedQuest.ProfileSnapshotJson.Should().Contain("\"goal\":\"gain_muscle\"");
+        addedQuest.AppliedFiltersJson.Should().Be("{\"physicalPains\":[]}");
+    }
+
+    // US-238/US-240: quando o gerador resolve o dia do programa, a quest grava o
+    // dia resolvido e o snapshot do blueprint para auditoria (RN-008/US-049).
+    [Fact]
+    public async Task US240_AssignsResolvedProgramDayAndBlueprint_WhenGeneratorResolvesThem()
+    {
+        Quest? addedQuest = null;
+        _questRepository
+            .Setup(r => r.GetByUserIdAndDateAsync(UserId, "daily", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Quest?)null);
+        _questRepository
+            .Setup(r => r.AddAsync(It.IsAny<Quest>(), It.IsAny<CancellationToken>()))
+            .Callback<Quest, CancellationToken>((q, _) => addedQuest = q)
+            .Returns(Task.CompletedTask);
+        _userRepository.Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(BuildUser());
+        _userProfileRepository
+            .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserProfile.Create(UserId, goal: "gain_muscle"));
+        _workoutGeneratorService
+            .Setup(s => s.GenerateWorkoutJsonAsync(UserId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<UserProfile?>(), It.IsAny<HunterProgression?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WorkoutGenerationResult(
+                WorkoutJson, IsPersonalized: true, GenerationMethod: "catalog_rules", AppliedFiltersJson: "{}",
+                ResolvedProgramKey: "abc", ResolvedDayKey: "C", ResolvedDayIndex: 3, SplitMapVersion: "v1",
+                DailyWorkoutBlueprintJson: "{\"programKey\":\"abc\"}"));
+
+        await CreateHandler().Handle(new GenerateDailyQuestCommand(), CancellationToken.None);
+
+        addedQuest.Should().NotBeNull();
+        addedQuest!.ResolvedProgramKey.Should().Be("abc");
+        addedQuest.ResolvedDayKey.Should().Be("C");
+        addedQuest.ResolvedDayIndex.Should().Be(3);
+        addedQuest.SplitMapVersion.Should().Be("v1");
+        addedQuest.DailyWorkoutBlueprintJson.Should().Be("{\"programKey\":\"abc\"}");
+    }
+
+    // RN-009: programa sem split clássico (ex.: perfect_2/system) -> gerador
+    // retorna os campos de dia resolvido nulos, e a quest não os grava (permanece null).
+    [Fact]
+    public async Task US240_LeavesResolvedProgramDayNull_WhenGeneratorDoesNotResolveDay()
+    {
+        Quest? addedQuest = null;
+        _questRepository
+            .Setup(r => r.GetByUserIdAndDateAsync(UserId, "daily", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Quest?)null);
+        _questRepository
+            .Setup(r => r.AddAsync(It.IsAny<Quest>(), It.IsAny<CancellationToken>()))
+            .Callback<Quest, CancellationToken>((q, _) => addedQuest = q)
+            .Returns(Task.CompletedTask);
+        _userRepository.Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(BuildUser());
+        _userProfileRepository
+            .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserProfile.Create(UserId));
+
+        await CreateHandler().Handle(new GenerateDailyQuestCommand(), CancellationToken.None);
+
+        addedQuest.Should().NotBeNull();
+        addedQuest!.ResolvedProgramKey.Should().BeNull();
+        addedQuest.DailyWorkoutBlueprintJson.Should().BeNull();
+    }
+}

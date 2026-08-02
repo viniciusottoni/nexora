@@ -1,0 +1,35 @@
+{
+  "name": "dona-betinha",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22 <25"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "turbo run lint && pnpm governance",
+    "typecheck": "turbo run typecheck",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "governance": "tsx infra/scripts/governance.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.54.1",
+    "@types/node": "^24.1.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.32.0",
+    "eslint-plugin-import": "^2.32.0",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.3",
+    "turbo": "^2.5.5",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.38.0",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,24 @@
+/*
+ * Ponte de compatibilidade. Componentes de autenticação/pareamento (PIN, operator
+ * bar, device pairing) não fazem parte de nenhum ui_kit documentado no Design
+ * System — nasceram antes dele. Em vez de reescrever essas telas, os nomes de
+ * variável antigos apontam para os tokens reais, então o valor computado já é o
+ * correto (vermelho/creme do tenant, Inter, 12px) sem duplicar estado em JS.
+ */
+:root {
+  --color-primary: var(--brand-primary);
+  --color-on-primary: var(--brand-on-primary);
+  --color-secondary: var(--brand-secondary);
+  --color-surface: var(--brand-surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-text: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border-default);
+  --color-success: var(--nx-success-500);
+  --color-warning: var(--nx-warning-500);
+  --color-danger: var(--nx-danger-600);
+  --font-body: var(--brand-font);
+  --brand-font-body: var(--brand-font);
+  --brand-font-display: var(--font-display);
+  --radius-base: var(--brand-radius);
+}

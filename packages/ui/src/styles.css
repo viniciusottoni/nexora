@@ -1,0 +1,165 @@
+@import './tokens/fonts.css';
+@import './tokens/colors.css';
+@import './tokens/typography.css';
+@import './tokens/spacing.css';
+@import './tokens/shape.css';
+@import './tokens/motion.css';
+@import './tokens/surfaces.css';
+@import './tokens/tenants.css';
+@import './tokens/legacy-aliases.css';
+@import './tokens/base.css';
+@import './branding/branding-preview.css';
+@import './auth/auth.css';
+@import './components/core-extra.css';
+@import './components/forms-extra.css';
+@import './components/data.css';
+@import './components/feedback.css';
+@import './components/navigation.css';
+@import './components/operacao.css';
+
+.db-theme {
+  min-height: 100%;
+  color: var(--text-primary);
+  background:
+    radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--brand-secondary) 12%, transparent), transparent 32rem),
+    var(--brand-surface);
+  font: var(--type-body);
+  line-height: var(--lh-normal);
+}
+
+/* Button — porte fiel de components/core/Button.jsx (Design System/) */
+.db-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  font-family: var(--brand-font);
+  font-weight: var(--fw-semibold);
+  border: var(--border-1) solid transparent;
+  border-radius: var(--brand-radius);
+  cursor: pointer;
+  transition: var(--transition-control);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.db-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.db-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.db-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.db-button--sm { height: var(--density-desk-control); padding: 0 var(--sp-5); font-size: var(--fs-13); }
+.db-button--md { height: 40px; padding: 0 var(--sp-6); font-size: var(--fs-14); }
+.db-button--lg { height: var(--density-touch-min); padding: 0 var(--sp-7); font-size: var(--fs-16); }
+.db-button--touch { height: var(--density-touch-lg); padding: 0 var(--sp-8); font-size: var(--fs-18); }
+.db-button--block { width: 100%; }
+
+.db-button--primary { background: var(--brand-primary); color: var(--brand-on-primary); }
+.db-button--primary:hover:not(:disabled) { background: var(--brand-primary-hover, var(--action-primary-hover)); }
+.db-button--primary:active:not(:disabled) { background: var(--brand-primary-active, var(--action-primary-active)); }
+.db-button--accent { background: var(--action-accent); color: var(--action-accent-text); }
+.db-button--accent:hover:not(:disabled) { background: var(--action-accent-hover); }
+.db-button--secondary { background: var(--surface-card); color: var(--text-primary); border-color: var(--border-default); box-shadow: var(--shadow-subtle); }
+.db-button--secondary:hover:not(:disabled) { background: var(--surface-sunken); border-color: var(--border-strong); }
+.db-button--ghost { background: transparent; color: var(--text-secondary); }
+.db-button--ghost:hover:not(:disabled) { background: var(--surface-sunken); color: var(--text-primary); }
+.db-button--danger { background: var(--nx-danger-600); color: #fff; }
+.db-button--danger:hover:not(:disabled) { background: var(--nx-danger-700); }
+.db-button--danger:focus-visible { box-shadow: var(--focus-ring-danger); }
+
+/* Field — porte fiel de components/forms/Field.jsx */
+.db-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+.db-field__label {
+  font: var(--type-label);
+  color: var(--text-secondary);
+  display: flex;
+  gap: var(--sp-2);
+  align-items: baseline;
+}
+.db-field__required { color: var(--nx-danger-500); }
+.db-field__hint { font: var(--type-caption); color: var(--text-muted); }
+.db-field__error {
+  font: var(--type-caption);
+  color: var(--text-danger);
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+/* Input — porte fiel de components/forms/Input.jsx (controle nu; rótulo/erro vêm do Field) */
+.db-input {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  background: var(--surface-card);
+  border: var(--border-1) solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 0 var(--sp-5);
+  transition: var(--transition-control);
+  min-width: 0;
+}
+.db-input:focus-within { border-color: var(--border-brand); box-shadow: var(--focus-ring); }
+.db-input--md { height: var(--density-desk-control); }
+.db-input--lg { height: var(--density-touch-min); }
+.db-input--invalid { border-color: var(--border-danger); }
+.db-input--invalid:focus-within { box-shadow: var(--focus-ring-danger); }
+.db-input--disabled { background: var(--surface-sunken); color: var(--text-disabled); }
+.db-input__control {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+.db-input--lg .db-input__control { font: var(--type-body-lg); }
+.db-input__control::placeholder { color: var(--text-disabled); }
+.db-input__adornment { font: var(--type-caption); color: var(--text-muted); flex: 0 0 auto; }
+.db-input--numeric .db-input__control { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+
+/* Card — porte fiel de components/core/Card.jsx */
+.db-card {
+  background: var(--surface-card);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--brand-radius);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.db-card--flat { box-shadow: none; }
+.db-card--raised { box-shadow: var(--shadow-raised); }
+.db-card--interactive { cursor: pointer; transition: box-shadow var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard); }
+.db-card--interactive:hover { box-shadow: var(--shadow-raised); border-color: var(--border-default); }
+.db-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  padding: var(--sp-6) var(--sp-6) 0;
+}
+.db-card__title { font: var(--type-h3); color: var(--text-primary); }
+.db-card__subtitle { font: var(--type-caption); color: var(--text-muted); margin-top: var(--sp-1); }
+.db-card__actions { display: flex; gap: var(--sp-3); align-items: center; }
+.db-card__body { padding: var(--sp-6); min-width: 0; }
+.db-card__body--tight { padding: var(--sp-5); }
+.db-card__body--none { padding: 0; }
+.db-card__foot {
+  padding: var(--sp-5) var(--sp-6);
+  border-top: var(--border-1) solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-4);
+}

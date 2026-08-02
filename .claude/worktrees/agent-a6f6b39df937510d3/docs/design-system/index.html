@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Awaken — Projeto</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Sora:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--void:#07080D;--ink-950:#0A0B12;--ink-850:#111320;--ink-800:#161929;--ink-700:#1D2133;--blue-500:#2D6FF5;--blue-400:#4D8BFF;--purple-500:#8B3FD8;--mist-100:#F2F5FF;--mist-300:#C3C9E6;--mist-500:#828AAE;--mist-600:#5E6488;--mist-700:#474C66;--green-500:#22C55E;--border-subtle:rgba(255,255,255,0.06);--border-default:rgba(255,255,255,0.10);}
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0;font-family:'Sora',sans-serif;background:var(--void);color:var(--mist-300);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;-webkit-font-smoothing:antialiased;}
+h1,h2,h3{font-family:'Chakra Petch',sans-serif;font-weight:700;letter-spacing:-0.01em;margin:0;}
+
+.logo{height:48px;filter:drop-shadow(0 0 24px rgba(45,111,245,0.5));margin-bottom:28px;}
+.title{font-size:13px;color:var(--mist-600);font-family:'Chakra Petch',sans-serif;letter-spacing:0.16em;text-transform:uppercase;margin-bottom:48px;}
+
+.cards{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;padding:0 24px;}
+.card{background:var(--ink-850);border:1px solid var(--border-subtle);border-radius:18px;padding:28px 28px 24px;width:280px;display:flex;flex-direction:column;gap:0;text-decoration:none;color:inherit;position:relative;overflow:hidden;transition:border-color 0.2s,transform 0.2s;}
+.card:hover{border-color:var(--border-default);transform:translateY(-3px);}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.card.landing::before{background:linear-gradient(90deg,var(--blue-500),var(--purple-500));}
+.card.login::before{background:linear-gradient(90deg,var(--purple-500),#FF5EAD);}
+.card.admin::before{background:linear-gradient(90deg,var(--green-500),var(--blue-500));}
+
+.card-icon{font-size:28px;margin-bottom:18px;}
+.card-label{font-family:'Chakra Petch',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;margin-bottom:6px;}
+.card.landing .card-label{color:var(--blue-400);}
+.card.login .card-label{color:#C088F6;}
+.card.admin .card-label{color:var(--green-500);}
+.card h3{font-size:17px;color:var(--mist-100);margin-bottom:10px;}
+.card p{font-size:13px;color:var(--mist-600);line-height:1.6;margin:0 0 22px;}
+.card-link{display:inline-flex;align-items:center;gap:6px;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-top:auto;}
+.card.landing .card-link{color:var(--blue-400);}
+.card.login .card-link{color:#C088F6;}
+.card.admin .card-link{color:var(--green-500);}
+
+.note{margin-top:40px;font-size:12px;color:var(--mist-700);display:flex;align-items:center;gap:8px;}
+.note::before,.note::after{content:'';flex:1;height:1px;background:var(--border-subtle);max-width:80px;}
+</style>
+</head>
+<body>
+  <img src="uploads/logo-8b85c8c0.png" alt="Awaken" class="logo">
+  <p class="title">Selecione uma página para testar</p>
+
+  <div class="cards">
+
+    <a href="Awaken Landing.html" class="card landing">
+      <div class="card-icon">🌐</div>
+      <div class="card-label">Público</div>
+      <h3>Landing Page</h3>
+      <p>Site de divulgação do app — hero, features, screenshots, planos e FAQ.</p>
+      <span class="card-link">Abrir →</span>
+    </a>
+
+    <a href="Awaken Admin Login.html" class="card login">
+      <div class="card-icon">🔐</div>
+      <div class="card-label">Acesso Restrito</div>
+      <h3>Admin Login</h3>
+      <p>Tela de login com e-mail + senha e verificação MFA em 2 etapas.</p>
+      <span class="card-link">Abrir →</span>
+    </a>
+
+    <a href="Awaken Admin.html" class="card admin">
+      <div class="card-icon">⚙️</div>
+      <div class="card-label">Painel</div>
+      <h3>Admin Dashboard</h3>
+      <p>Dashboard completo com KPIs, tickets, bugs, segurança, logs e relatórios.</p>
+      <span class="card-link">Abrir →</span>
+    </a>
+
+  </div>
+
+  <p class="note">awaken.app · admin acessível apenas por URL direta</p>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Awaken Admin — Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#07080D;--ink-950:#0A0B12;--ink-900:#0E1019;--ink-850:#111320;
+  --ink-800:#161929;--ink-700:#1D2133;--ink-600:#262B41;
+  --blue-500:#2D6FF5;--blue-400:#4D8BFF;--blue-300:#7FB0FF;
+  --purple-500:#8B3FD8;--gold-500:#F5C518;
+  --mist-100:#F2F5FF;--mist-300:#C3C9E6;--mist-400:#AEB4D0;
+  --mist-500:#828AAE;--mist-600:#5E6488;--mist-700:#474C66;
+  --green-500:#22C55E;--red-500:#EF4444;
+  --border-subtle:rgba(255,255,255,0.06);--border-default:rgba(255,255,255,0.10);
+  --border-focus:rgba(77,139,255,0.6);
+}
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0;font-family:'Sora',system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#111A35 0%,#0A0B12 50%,#07080D 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--mist-100);-webkit-font-smoothing:antialiased;}
+h2,h3{font-family:'Chakra Petch',system-ui,sans-serif;font-weight:700;letter-spacing:-0.02em;margin:0;}
+
+.card{background:var(--ink-850);border:1px solid var(--border-default);border-radius:20px;padding:44px 40px;width:100%;max-width:420px;position:relative;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,0.6);}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--blue-500),var(--purple-500));}
+
+.logo-wrap{display:flex;justify-content:center;margin-bottom:28px;}
+.logo-wrap img{height:64px;filter:drop-shadow(0 0 24px rgba(45,111,245,0.5));}
+
+.step{display:none;flex-direction:column;gap:0;}
+.step.active{display:flex;}
+
+.step-label{font-family:'Chakra Petch',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--blue-400);margin-bottom:8px;text-align:center;}
+.step h2{font-size:22px;text-align:center;margin-bottom:6px;}
+.step .sub{font-size:13px;color:var(--mist-500);text-align:center;margin-bottom:28px;line-height:1.6;}
+
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+label{font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--mist-600);}
+input[type="email"],input[type="password"],input[type="text"]{background:rgba(255,255,255,0.04);border:1px solid var(--border-default);border-radius:10px;padding:13px 16px;font-family:'Sora',sans-serif;font-size:15px;color:var(--mist-100);width:100%;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
+input::placeholder{color:var(--mist-700);}
+input:focus{border-color:var(--blue-400);box-shadow:0 0 0 3px rgba(77,139,255,0.15);}
+
+.forgot{text-align:right;margin-top:-8px;margin-bottom:8px;}
+.forgot a{font-size:12px;color:var(--blue-400);text-decoration:none;}
+.forgot a:hover{color:var(--blue-300);}
+
+.btn-main{width:100%;padding:14px;background:linear-gradient(135deg,var(--blue-500),var(--purple-500));color:#fff;font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;border:none;border-radius:10px;cursor:pointer;transition:opacity 0.2s,transform 0.15s;margin-bottom:16px;}
+.btn-main:hover{opacity:0.9;transform:translateY(-1px);}
+.btn-main:active{transform:translateY(0);}
+.btn-main:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+
+.divider{display:flex;align-items:center;gap:12px;margin:4px 0 16px;color:var(--mist-700);font-size:12px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border-subtle);}
+
+.btn-google{width:100%;padding:13px;background:var(--ink-800);border:1px solid var(--border-default);border-radius:10px;color:var(--mist-300);font-family:'Sora',sans-serif;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:border-color 0.2s,background 0.2s;}
+.btn-google:hover{border-color:rgba(255,255,255,0.2);background:var(--ink-700);}
+.btn-google svg{flex-shrink:0;}
+
+.mfa-digits{display:flex;gap:10px;justify-content:center;margin:20px 0;}
+.mfa-digits input{width:48px;height:56px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;background:rgba(255,255,255,0.04);border:1px solid var(--border-default);border-radius:10px;color:var(--mist-100);outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
+.mfa-digits input:focus{border-color:var(--blue-400);box-shadow:0 0 0 3px rgba(77,139,255,0.15);}
+
+.mfa-hint{font-size:12px;color:var(--mist-600);text-align:center;margin-bottom:20px;}
+.mfa-hint a{color:var(--blue-400);text-decoration:none;}
+
+.back-btn{background:none;border:none;color:var(--mist-600);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;margin:0 auto 20px;font-family:'Sora',sans-serif;padding:0;}
+.back-btn:hover{color:var(--mist-300);}
+
+.error-msg{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#FCA5A5;margin-bottom:16px;display:none;}
+.error-msg.show{display:block;}
+
+.footer-note{margin-top:20px;text-align:center;font-size:12px;color:var(--mist-700);}
+
+.progress-dots{display:flex;gap:6px;justify-content:center;margin-bottom:24px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--ink-600);transition:background 0.2s;}
+.dot.active{background:var(--blue-500);}
+.dot.done{background:var(--green-500);}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo-wrap">
+    <img src="uploads/logo-8b85c8c0.png" alt="Awaken">
+  </div>
+
+  <div class="progress-dots" id="dots">
+    <div class="dot active" id="d1"></div>
+    <div class="dot" id="d2"></div>
+  </div>
+
+  <!-- STEP 1: Credentials -->
+  <div class="step active" id="step1">
+    <div class="step-label">Painel Administrativo</div>
+    <h2>Entrar</h2>
+    <p class="sub">Acesso restrito. Apenas administradores autorizados.</p>
+    <div class="error-msg" id="err1">E-mail ou senha incorretos.</div>
+    <div class="form-group">
+      <label>E-mail</label>
+      <input type="email" id="email" placeholder="admin@awaken.app" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="forgot"><a href="#">Esqueci minha senha</a></div>
+    <button class="btn-main" id="loginBtn" onclick="doLogin()">Entrar</button>
+    <div class="divider">ou</div>
+    <button class="btn-google" onclick="doLogin()">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Entrar com Google
+    </button>
+    <div class="footer-note">Ambiente seguro · Sessão criptografada</div>
+  </div>
+
+  <!-- STEP 2: MFA -->
+  <div class="step" id="step2">
+    <button class="back-btn" onclick="back()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Voltar
+    </button>
+    <div class="step-label">Verificação em 2 Etapas</div>
+    <h2>Confirmar Identidade</h2>
+    <p class="sub">Digite o código de 6 dígitos do seu app autenticador.</p>
+    <div class="mfa-digits" id="mfaDigits">
+      <input type="text" maxlength="1" oninput="mfaNext(this,0)" onkeydown="mfaBack(event,0)">
+      <input type="text" maxlength="1" oninput="mfaNext(this,1)" onkeydown="mfaBack(event,1)">
+      <input type="text" maxlength="1" oninput="mfaNext(this,2)" onkeydown="mfaBack(event,2)">
+      <input type="text" maxlength="1" oninput="mfaNext(this,3)" onkeydown="mfaBack(event,3)">
+      <input type="text" maxlength="1" oninput="mfaNext(this,4)" onkeydown="mfaBack(event,4)">
+      <input type="text" maxlength="1" oninput="mfaNext(this,5)" onkeydown="mfaBack(event,5)">
+    </div>
+    <p class="mfa-hint">Não tem acesso ao autenticador? <a href="#">Usar código de recuperação</a></p>
+    <button class="btn-main" id="mfaBtn" disabled onclick="doMfa()">Verificar</button>
+  </div>
+</div>
+
+<script>
+function doLogin() {
+  const email = document.getElementById('email').value;
+  const pass = document.getElementById('password').value;
+  const err = document.getElementById('err1');
+  if (!email || !pass) { err.textContent = 'Preencha e-mail e senha.'; err.classList.add('show'); return; }
+  err.classList.remove('show');
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Verificando...';
+  setTimeout(() => {
+    btn.disabled = false; btn.textContent = 'Entrar';
+    document.getElementById('step1').classList.remove('active');
+    document.getElementById('step2').classList.add('active');
+    document.getElementById('d1').classList.remove('active'); document.getElementById('d1').classList.add('done');
+    document.getElementById('d2').classList.add('active');
+    document.querySelector('#mfaDigits input').focus();
+  }, 900);
+}
+function back() {
+  document.getElementById('step2').classList.remove('active');
+  document.getElementById('step1').classList.add('active');
+  document.getElementById('d1').classList.remove('done'); document.getElementById('d1').classList.add('active');
+  document.getElementById('d2').classList.remove('active');
+  document.querySelectorAll('#mfaDigits input').forEach(i => i.value = '');
+  document.getElementById('mfaBtn').disabled = true;
+}
+function mfaNext(el, idx) {
+  el.value = el.value.replace(/\D/,'');
+  const inputs = document.querySelectorAll('#mfaDigits input');
+  if (el.value && idx < 5) inputs[idx+1].focus();
+  const filled = [...inputs].every(i => i.value.length === 1);
+  document.getElementById('mfaBtn').disabled = !filled;
+}
+function mfaBack(e, idx) {
+  if (e.key === 'Backspace') {
+    const inputs = document.querySelectorAll('#mfaDigits input');
+    if (!inputs[idx].value && idx > 0) { inputs[idx-1].focus(); inputs[idx-1].value = ''; }
+    document.getElementById('mfaBtn').disabled = true;
+  }
+}
+function doMfa() {
+  const btn = document.getElementById('mfaBtn');
+  btn.disabled = true; btn.textContent = 'Verificando...';
+  setTimeout(() => { window.location.href = 'Awaken Admin.html'; }, 800);
+}
+document.getElementById('email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('password').focus(); });
+document.getElementById('password').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+</script>
+<!-- DEV NAV -->
+<div id="devnav" style="position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:9999;display:flex;flex-direction:column;gap:0;background:#07080D;border:1px solid rgba(255,255,255,0.1);border-left:none;border-radius:0 12px 12px 0;overflow:hidden;box-shadow:4px 0 24px rgba(0,0,0,0.6);">
+  <div style="padding:10px 14px 8px;font-family:'Chakra Petch',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#474C66;border-bottom:1px solid rgba(255,255,255,0.06);">Páginas</div>
+  <a href="index.html" title="Índice" style="display:flex;align-items:center;gap:8px;padding:10px 14px;text-decoration:none;color:#828AAE;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;transition:background 0.15s,color 0.15s;border-bottom:1px solid rgba(255,255,255,0.04);" onmouseover="this.style.background='rgba(255,255,255,0.04)';this.style.color='#C3C9E6'" onmouseout="this.style.background='';this.style.color='#828AAE'">⊞ <span>Hub</span></a>
+  <a href="Awaken Landing.html" title="Landing" style="display:flex;align-items:center;gap:8px;padding:10px 14px;text-decoration:none;color:#828AAE;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;transition:background 0.15s,color 0.15s;border-bottom:1px solid rgba(255,255,255,0.04);" onmouseover="this.style.background='rgba(255,255,255,0.04)';this.style.color='#C3C9E6'" onmouseout="this.style.background='';this.style.color='#828AAE'">🌐 <span>Landing</span></a>
+  <a href="Awaken Admin Login.html" title="Login" style="display:flex;align-items:center;gap:8px;padding:10px 14px;text-decoration:none;background:rgba(139,63,216,0.12);color:#C088F6;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);">🔐 <span>Login</span></a>
+  <a href="Awaken Admin.html" title="Admin" style="display:flex;align-items:center;gap:8px;padding:10px 14px;text-decoration:none;color:#828AAE;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;transition:background 0.15s,color 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)';this.style.color='#C3C9E6'" onmouseout="this.style.background='';this.style.color='#828AAE'">⚙️ <span>Admin</span></a>
+</div>
+</body>
+</html>

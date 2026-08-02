@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Awaken — Desperte o Guerreiro em Você</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700;800&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void:#07080D; --ink-950:#0A0B12; --ink-900:#0E1019; --ink-850:#111320;
+  --ink-800:#161929; --ink-700:#1D2133; --ink-600:#262B41; --ink-500:#333A55;
+  --blue-700:#1B47C2; --blue-600:#2057E0; --blue-500:#2D6FF5; --blue-400:#4D8BFF; --blue-300:#7FB0FF;
+  --purple-700:#5A1F9E; --purple-500:#8B3FD8; --purple-400:#A65CEE; --purple-300:#C088F6;
+  --gold-500:#F5C518; --gold-400:#FFD64A; --cyan-400:#5FE8FF;
+  --mist-100:#F2F5FF; --mist-300:#C3C9E6; --mist-400:#AEB4D0;
+  --mist-500:#828AAE; --mist-600:#5E6488; --mist-700:#474C66;
+  --green-500:#22C55E; --red-500:#EF4444;
+  --border-subtle:rgba(255,255,255,0.06); --border-default:rgba(255,255,255,0.10);
+  --border-strong:rgba(127,176,255,0.28);
+}
+*,*::before,*::after{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0;font-family:'Sora',system-ui,sans-serif;font-size:15px;line-height:1.6;color:var(--mist-100);background:var(--ink-950);-webkit-font-smoothing:antialiased;}
+h1,h2,h3,h4{font-family:'Chakra Petch',system-ui,sans-serif;font-weight:700;line-height:1.1;letter-spacing:-0.02em;margin:0;}
+*{scrollbar-width:thin;scrollbar-color:var(--ink-600) transparent;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:68px;background:rgba(10,11,18,0.8);backdrop-filter:blur(20px);border-bottom:1px solid var(--border-subtle);transition:background 0.3s;}
+.nav-logo{display:flex;align-items:center;}
+.nav-logo img{height:38px;}
+.nav-links{display:flex;gap:36px;}
+.nav-links a{font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--mist-500);text-decoration:none;transition:color 0.2s;}
+.nav-links a:hover{color:var(--mist-100);}
+.nav-right{display:flex;align-items:center;gap:16px;}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:linear-gradient(135deg,#2D6FF5,#8B3FD8);color:#fff;font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;border:none;border-radius:8px;cursor:pointer;text-decoration:none;transition:opacity 0.2s,transform 0.15s;}
+.btn-primary:hover{opacity:0.9;transform:translateY(-1px);}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:transparent;color:var(--mist-300);font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;border:1px solid var(--border-default);border-radius:8px;cursor:pointer;text-decoration:none;transition:border-color 0.2s,color 0.2s;}
+.btn-ghost:hover{border-color:var(--blue-400);color:var(--blue-300);}
+
+/* LANG SWITCHER */
+.lang-switcher{display:flex;gap:4px;align-items:center;}
+.lang-btn{background:none;border:none;cursor:pointer;font-size:20px;padding:4px 5px;border-radius:6px;opacity:0.4;transition:opacity 0.2s,transform 0.15s;line-height:1;}
+.lang-btn:hover{opacity:0.8;transform:scale(1.12);}
+.lang-btn.active{opacity:1;}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 90px;background:radial-gradient(120% 90% at 50% 0%,#141A33 0%,#0A0B12 55%,#07080D 100%);position:relative;overflow:hidden;}
+.hero-glow-a{position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:900px;height:600px;background:radial-gradient(ellipse,rgba(45,111,245,0.12) 0%,transparent 70%);pointer-events:none;}
+.hero-glow-b{position:absolute;bottom:-120px;left:50%;transform:translateX(-50%);width:800px;height:400px;background:radial-gradient(ellipse,rgba(139,63,216,0.09) 0%,transparent 70%);pointer-events:none;}
+.hero-logo{width:180px;margin-bottom:36px;filter:drop-shadow(0 0 48px rgba(45,111,245,0.55));position:relative;z-index:1;}
+.hero-eyebrow{font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--blue-400);margin-bottom:18px;position:relative;z-index:1;}
+.hero h1{font-size:clamp(44px,7.5vw,88px);background:linear-gradient(140deg,#ffffff 0%,#7FB0FF 45%,#C088F6 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:24px;position:relative;z-index:1;}
+.hero-sub{font-size:clamp(15px,1.8vw,19px);color:var(--mist-400);max-width:560px;margin:0 auto 52px;line-height:1.7;position:relative;z-index:1;}
+.hero-actions{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;position:relative;z-index:1;}
+.btn-store{display:inline-flex;align-items:center;gap:12px;padding:14px 26px;background:var(--ink-800);border:1px solid var(--border-default);border-radius:14px;color:var(--mist-100);text-decoration:none;transition:border-color 0.2s,background 0.2s,transform 0.15s;}
+.btn-store:hover{border-color:var(--blue-400);background:var(--ink-700);transform:translateY(-2px);}
+.btn-store svg{flex-shrink:0;opacity:0.85;}
+.btn-store-text small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--mist-500);font-family:'Chakra Petch',sans-serif;}
+.btn-store-text strong{display:block;font-family:'Chakra Petch',sans-serif;font-size:17px;font-weight:700;letter-spacing:0.01em;}
+.hero-scroll{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--mist-700);font-size:11px;font-family:'Chakra Petch',sans-serif;letter-spacing:0.1em;text-transform:uppercase;z-index:1;animation:bounce 2s infinite;}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(6px);}}
+
+/* STATS */
+.stats-bar{background:var(--ink-900);border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle);padding:36px 48px;display:flex;justify-content:center;gap:80px;flex-wrap:wrap;}
+.stat-item{text-align:center;}
+.stat-number{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;color:var(--mist-100);line-height:1;margin-bottom:6px;}
+.stat-number em{color:var(--blue-400);font-style:normal;}
+.stat-label{font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--mist-600);}
+
+/* SECTIONS */
+section{padding:100px 24px;}
+.inner{max-width:1100px;margin:0 auto;}
+.eyebrow{font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--blue-400);margin-bottom:14px;}
+.section-title{font-size:clamp(28px,4vw,44px);margin-bottom:18px;}
+.section-desc{font-size:16px;color:var(--mist-400);max-width:540px;line-height:1.7;margin-bottom:64px;}
+
+/* HOW IT WORKS */
+.how-section{background:var(--ink-900);}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:28px;}
+.step{background:var(--ink-850);border:1px solid var(--border-subtle);border-radius:16px;padding:36px 28px;position:relative;overflow:hidden;}
+.step::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--blue-500),var(--purple-500));}
+.step-num{font-family:'JetBrains Mono',monospace;font-size:52px;font-weight:700;color:rgba(127,176,255,0.12);line-height:1;margin-bottom:20px;}
+.step h3{font-size:19px;margin-bottom:12px;}
+.step p{color:var(--mist-500);font-size:14px;line-height:1.7;margin:0;}
+
+/* FEATURES */
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:20px;}
+.feat{background:var(--ink-850);border:1px solid var(--border-subtle);border-radius:16px;padding:28px;transition:border-color 0.2s,transform 0.2s;}
+.feat:hover{border-color:rgba(127,176,255,0.22);transform:translateY(-3px);}
+.feat-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px;}
+.feat h3{font-size:16px;margin-bottom:9px;}
+.feat p{font-size:13px;color:var(--mist-500);line-height:1.7;margin:0;}
+
+/* SCREENSHOTS */
+.screens-section{background:var(--ink-900);overflow:hidden;}
+.screens-row{display:flex;gap:20px;justify-content:center;align-items:flex-end;flex-wrap:wrap;margin-top:64px;}
+.phone{background:#06060e;border-radius:30px;border:1.5px solid var(--border-default);overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.03);flex-shrink:0;}
+.phone img{display:block;width:100%;}
+.phone.lg{width:220px;}
+.phone.md{width:192px;transform:translateY(20px);}
+.phone.sm{width:168px;transform:translateY(40px);}
+
+/* PRICING */
+.price-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:24px;max-width:1000px;}
+.price-card{background:var(--ink-850);border:1px solid var(--border-subtle);border-radius:20px;padding:36px;position:relative;}
+.price-card.featured{border-color:var(--blue-500);background:linear-gradient(180deg,rgba(45,111,245,0.09) 0%,var(--ink-850) 100%);}
+.price-card.trial{border-color:rgba(245,197,24,0.3);background:linear-gradient(180deg,rgba(245,197,24,0.06) 0%,var(--ink-850) 100%);}
+.price-badge{position:absolute;top:-1px;left:50%;transform:translateX(-50%);color:#fff;font-family:'Chakra Petch',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;padding:5px 16px;border-radius:0 0 10px 10px;white-space:nowrap;}
+.price-badge.badge-premium{background:linear-gradient(135deg,var(--blue-500),var(--purple-500));}
+.price-badge.badge-trial{background:linear-gradient(135deg,#F5C518,#FF9500);}
+.price-plan{font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--mist-500);margin-bottom:8px;}
+.price-amount{display:flex;align-items:baseline;gap:4px;margin-bottom:8px;}
+.price-val{font-family:'JetBrains Mono',monospace;font-size:52px;font-weight:700;line-height:1;color:var(--mist-100);}
+.price-store-note{margin-bottom:8px;display:flex;align-items:center;gap:8px;padding:10px 0;}
+.price-store-note span{font-family:'Chakra Petch',sans-serif;font-size:12px;color:var(--mist-500);letter-spacing:0.06em;}
+.price-tagline{font-size:13px;color:var(--mist-500);margin-bottom:28px;min-height:36px;}
+.price-feats{list-style:none;padding:0;margin:0 0 32px;display:flex;flex-direction:column;gap:11px;}
+.price-feats li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--mist-300);}
+.price-feats li::before{content:'✓';color:var(--green-500);font-weight:700;flex-shrink:0;font-family:'Chakra Petch',sans-serif;margin-top:1px;}
+.price-feats li.off{color:var(--mist-700);}
+.price-feats li.off::before{content:'×';color:var(--mist-700);}
+
+/* FAQ */
+.faq-section{background:var(--ink-900);}
+.faq-list{display:flex;flex-direction:column;gap:10px;max-width:740px;}
+.faq-item{background:var(--ink-850);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden;transition:border-color 0.2s;}
+.faq-item.open{border-color:var(--border-strong);}
+.faq-q{width:100%;background:none;border:none;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;color:var(--mist-100);font-family:'Chakra Petch',sans-serif;font-size:15px;font-weight:600;text-align:left;gap:16px;}
+.faq-arrow{color:var(--mist-600);transition:transform 0.25s;flex-shrink:0;}
+.faq-item.open .faq-arrow{transform:rotate(180deg);color:var(--blue-400);}
+.faq-a{max-height:0;overflow:hidden;transition:max-height 0.3s ease,padding 0.3s;color:var(--mist-400);font-size:14px;line-height:1.75;padding:0 24px;}
+.faq-item.open .faq-a{max-height:300px;padding:0 24px 20px;}
+
+/* FOOTER */
+footer{background:var(--void);border-top:1px solid var(--border-subtle);padding:64px 48px 40px;}
+.footer-inner{max-width:1100px;margin:0 auto;}
+.footer-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:48px;margin-bottom:48px;}
+.footer-brand img{height:38px;margin-bottom:14px;}
+.footer-brand p{font-size:13px;color:var(--mist-700);max-width:260px;line-height:1.6;}
+.footer-col h4{font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--mist-600);margin-bottom:18px;}
+.footer-col ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:11px;}
+.footer-col ul a{font-size:13px;color:var(--mist-700);text-decoration:none;transition:color 0.2s;}
+.footer-col ul a:hover{color:var(--mist-300);}
+.footer-bottom{border-top:1px solid var(--border-subtle);padding-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+.footer-copy{font-size:12px;color:var(--mist-700);}
+
+/* LEGAL MODAL */
+.legal-modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.78);backdrop-filter:blur(5px);align-items:center;justify-content:center;padding:24px;}
+.legal-modal-overlay.open{display:flex;}
+.legal-modal-box{background:var(--ink-850);border:1px solid var(--border-default);border-radius:20px;max-width:660px;width:100%;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;}
+.legal-modal-head{padding:22px 28px 18px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.legal-modal-head h2{font-family:'Chakra Petch',sans-serif;font-size:17px;font-weight:700;color:var(--mist-100);margin:0;}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--mist-600);font-size:26px;line-height:1;padding:0 4px;transition:color 0.2s;}
+.modal-close:hover{color:var(--mist-100);}
+.legal-modal-body{padding:24px 28px;overflow-y:auto;flex:1;font-size:13px;color:var(--mist-400);line-height:1.85;}
+.legal-modal-body h3{font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--blue-400);margin:22px 0 7px;}
+.legal-modal-body h3:first-child{margin-top:0;}
+.legal-modal-body p{margin:0 0 10px;}
+.legal-modal-foot{padding:14px 28px;border-top:1px solid var(--border-subtle);display:flex;justify-content:flex-end;flex-shrink:0;}
+
+@media(max-width:768px){
+  nav{padding:0 20px;}
+  .nav-links{display:none;}
+  .lang-btn{font-size:17px;padding:3px 4px;}
+  .stats-bar{gap:40px;padding:28px 20px;}
+  section{padding:70px 20px;}
+  footer{padding:48px 20px 32px;}
+  .screens-row .phone.sm{display:none;}
+  .phone.lg{width:210px;}
+  .phone.md{width:185px;}
+}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo">
+    <img src="uploads/logo-8b85c8c0.png" alt="Awaken">
+  </div>
+  <div class="nav-links">
+    <a href="#como-funciona" data-i18n="nav-how">Como Funciona</a>
+    <a href="#features" data-i18n="nav-features">Funcionalidades</a>
+    <a href="#app" data-i18n="nav-app">O App</a>
+    <a href="#precos" data-i18n="nav-pricing">Planos</a>
+    <a href="#faq" data-i18n="nav-faq">FAQ</a>
+  </div>
+  <div class="nav-right">
+    <div class="lang-switcher">
+      <button class="lang-btn active" data-lang="pt" title="Português (Brasil)">🇧🇷</button>
+      <button class="lang-btn" data-lang="en" title="English">🇺🇸</button>
+      <button class="lang-btn" data-lang="es" title="Español">🇪🇸</button>
+      <button class="lang-btn" data-lang="fr" title="Français">🇫🇷</button>
+    </div>
+    <a href="#hero" class="btn-primary" data-i18n="nav-cta">Baixar Grátis</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="hero">
+  <div class="hero-glow-a"></div>
+  <div class="hero-glow-b"></div>
+  <img src="uploads/logo-8b85c8c0.png" alt="Awaken" class="hero-logo">
+  <p class="hero-eyebrow" data-i18n="hero-eyebrow">Fitness Gamificado · RPG · Anime · Evolução</p>
+  <h1 data-i18n-html="hero-h1">Desperte o Guerreiro<br>em Você</h1>
+  <p class="hero-sub" data-i18n="hero-sub">Transforme cada treino em uma quest épica. Ganhe XP, evolua atributos e suba de Rank — como um personagem de anime, mas na vida real.</p>
+  <div class="hero-actions">
+    <a href="#" class="btn-store">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="var(--mist-300)"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+      <span class="btn-store-text">
+        <small data-i18n="store-ios-small">Baixar na</small>
+        <strong data-i18n="store-ios-big">App Store</strong>
+      </span>
+    </a>
+    <a href="#" class="btn-store">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="var(--mist-300)"><path d="M3.18 23.76c.33.18.7.19 1.06.02l12.79-7.17-2.78-2.78-11.07 9.93zM20.75 9.5l-2.79-1.56L14.96 11l3 3 2.79-1.57c.8-.45.8-1.99 0-2.43zM2.14.47C1.85.78 1.67 1.24 1.67 1.84v20.32c0 .6.18 1.06.48 1.37l.07.07L13.15 12.5v-.25L2.22.4l-.08.07z"/></svg>
+      <span class="btn-store-text">
+        <small data-i18n="store-android-small">Disponível no</small>
+        <strong data-i18n="store-android-big">Google Play</strong>
+      </span>
+    </a>
+  </div>
+  <div class="hero-scroll">
+    <span data-i18n="hero-scroll">Explorar</span>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 10l5 5 5-5"/></svg>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-number">12<em>k+</em></div>
+    <div class="stat-label" data-i18n="stat-hunters">Hunters Ativos</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">340<em>k+</em></div>
+    <div class="stat-label" data-i18n="stat-workouts">Treinos Concluídos</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">4.9<em>★</em></div>
+    <div class="stat-label" data-i18n="stat-rating">Nota nas Lojas</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">98<em>%</em></div>
+    <div class="stat-label" data-i18n="stat-satisfaction">Satisfação</div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="como-funciona">
+  <div class="inner">
+    <p class="eyebrow" data-i18n="how-eyebrow">Como Funciona</p>
+    <h2 class="section-title" data-i18n="how-title">Sua Jornada em 3 Passos</h2>
+    <p class="section-desc" data-i18n="how-desc">Simples de começar. Impossível de parar.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3 data-i18n="step1-title">Crie seu Personagem</h3>
+        <p data-i18n="step1-desc">Informe seu objetivo, nível atual e limitações. O Awaken monta seu perfil de Hunter e define seus atributos iniciais.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3 data-i18n="step2-title">Receba suas Quests</h3>
+        <p data-i18n="step2-desc">Quests diárias adaptadas ao seu perfil com exercícios, séries e reps. Cada treino evolui atributos específicos do seu personagem.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3 data-i18n="step3-title">Evolua e Suba de Rank</h3>
+        <p data-i18n="step3-desc">Acumule XP, desbloqueie Ranks do E ao SSS, entre em Raids nacionais e veja seu corpo e personagem evoluírem juntos.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="inner">
+    <p class="eyebrow" data-i18n="feat-eyebrow">Funcionalidades</p>
+    <h2 class="section-title" data-i18n="feat-title">Arsenal Completo para Evoluir</h2>
+    <p class="section-desc" data-i18n="feat-desc">Tudo que você precisa para transformar seu treino em uma jornada épica.</p>
+    <div class="features-grid">
+      <div class="feat">
+        <div class="feat-icon" style="background:rgba(45,111,245,0.15);">⚔️</div>
+        <h3 data-i18n="feat1-title">Quests Personalizadas</h3>
+        <p data-i18n="feat1-desc">Treinos adaptados ao seu nível, objetivo e atributos — cada sessão é uma missão única, sem treino genérico.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon" style="background:rgba(245,197,24,0.14);">⭐</div>
+        <h3 data-i18n="feat2-title">Sistema de Rank E→SSS</h3>
+        <p data-i18n="feat2-desc">Oito Ranks de progressão, cada um com requisitos de XP e recompensas exclusivas. A evolução é visível.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon" style="background:rgba(139,63,216,0.15);">🧬</div>
+        <h3 data-i18n="feat3-title">6 Atributos RPG</h3>
+        <p data-i18n="feat3-desc">Força, Agilidade, Resistência, Vitalidade, Foco e Sabedoria — cada treino fortalece um atributo específico.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon" style="background:rgba(95,232,255,0.12);">🏰</div>
+        <h3 data-i18n="feat4-title">Dungeons e Raids</h3>
+        <p data-i18n="feat4-desc">Enfrente Dungeons solo para conquistar recompensas únicas, ou entre em Raids coletivos com hunters do Brasil e do mundo.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon" style="background:rgba(34,197,94,0.12);">📊</div>
+        <h3 data-i18n="feat5-title">Constância que Vicia</h3>
+        <p data-i18n="feat5-desc">Sequências de treino, conquistas e histórico completo. O app torna a consistência mais recompensadora que o sofá.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon" style="background:rgba(255,149,0,0.12);">🏆</div>
+        <h3 data-i18n="feat6-title">Inventário e Loja</h3>
+        <p data-i18n="feat6-desc">Colete itens épicos, desbloqueie skins exclusivas e gaste Gold na loja do hunter.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCREENSHOTS -->
+<section class="screens-section" id="app">
+  <div class="inner" style="text-align:center;">
+    <p class="eyebrow" data-i18n="app-eyebrow">O App</p>
+    <h2 class="section-title" data-i18n="app-title">Veja o Awaken em Ação</h2>
+    <p class="section-desc" style="margin:0 auto 0;" data-i18n="app-desc">Design épico, UX fluida e gamificação que prende do primeiro treino.</p>
+    <div class="screens-row">
+      <div class="phone sm">
+        <img src="uploads/WhatsApp Image 2026-06-23 at 8.24.59 AM.jpeg" alt="Perfil e Atributos">
+      </div>
+      <div class="phone lg">
+        <img src="uploads/WhatsApp Image 2026-06-23 at 8.22.35 AM.jpeg" alt="Home com Quests">
+      </div>
+      <div class="phone md">
+        <img src="uploads/WhatsApp Image 2026-06-23 at 8.24.00 AM.jpeg" alt="Quest Diária">
+      </div>
+      <div class="phone sm">
+        <img src="uploads/WhatsApp Image 2026-06-29 at 2.58.00 PM.jpeg" alt="Inventário">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="precos">
+  <div class="inner" style="text-align:center;">
+    <p class="eyebrow" data-i18n="price-eyebrow">Planos</p>
+    <h2 class="section-title" data-i18n="price-title">Escolha sua Evolução</h2>
+    <p class="section-desc" style="margin:0 auto 52px;" data-i18n="price-desc">Comece grátis. Evolua quando quiser. Sem fidelidade.</p>
+    <div class="price-grid" style="margin:0 auto;">
+
+      <!-- HUNTER LIVRE -->
+      <div class="price-card">
+        <div class="price-plan" data-i18n="free-plan">Hunter Livre</div>
+        <div class="price-amount">
+          <span class="price-val" style="font-size:38px;" data-i18n="free-val">Grátis</span>
+        </div>
+        <div class="price-tagline" data-i18n="free-tagline">Para começar a jornada e sentir o poder do Awaken.</div>
+        <ul class="price-feats">
+          <li data-i18n="free-f1">Quests diárias básicas</li>
+          <li data-i18n="free-f2">Ranks E ao C</li>
+          <li data-i18n="free-f3">3 atributos ativos</li>
+          <li data-i18n="free-f4">Acesso à loja básica</li>
+          <li class="off" data-i18n="free-off1">Raids e Dungeons</li>
+          <li class="off" data-i18n="free-off2">Todos os 6 atributos</li>
+          <li class="off" data-i18n="free-off3">Quests ilimitadas</li>
+        </ul>
+        <a href="#hero" class="btn-ghost" style="width:100%;justify-content:center;" data-i18n="free-cta">Baixar Grátis</a>
+      </div>
+
+      <!-- HUNTER TRIAL -->
+      <div class="price-card trial">
+        <div class="price-badge badge-trial" data-i18n="trial-badge">7 Dias Grátis</div>
+        <div class="price-plan" data-i18n="trial-plan">Hunter Trial</div>
+        <div class="price-amount">
+          <span class="price-val" style="font-size:42px;" data-i18n="trial-duration">7 Dias</span>
+        </div>
+        <div class="price-tagline" data-i18n="trial-tagline">Acesso completo ao Premium por 7 dias, sem cartão de crédito.</div>
+        <ul class="price-feats">
+          <li data-i18n="trial-f1">Tudo do Hunter Premium incluso</li>
+          <li data-i18n="trial-f2">Todos os Ranks, do E ao SSS</li>
+          <li data-i18n="trial-f3">6 atributos completos</li>
+          <li class="off" data-i18n="trial-off1">Itens do inventário não podem ser usados</li>
+          <li class="off" data-i18n="trial-off2">Quests não podem ser personalizadas</li>
+          <li class="off" data-i18n="trial-off3">Dungeons e Raids indisponíveis</li>
+          <li class="off" data-i18n="trial-off4">Loja bloqueada — Gold não pode ser gasto</li>
+        </ul>
+        <a href="#hero" class="btn-ghost" style="width:100%;justify-content:center;border-color:rgba(245,197,24,0.4);color:var(--gold-400);" data-i18n="trial-cta">Iniciar Trial Grátis</a>
+      </div>
+
+      <!-- HUNTER PREMIUM -->
+      <div class="price-card featured">
+        <div class="price-badge badge-premium" data-i18n="premium-badge">Mais Popular</div>
+        <div class="price-plan" data-i18n="premium-plan">Hunter Premium</div>
+        <div class="price-store-note">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mist-600)" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v4l3 3"/></svg>
+          <span data-i18n="premium-price-label">Preço disponível na loja</span>
+        </div>
+        <div class="price-tagline" data-i18n="premium-tagline">A experiência completa para hunters sérios.</div>
+        <ul class="price-feats">
+          <li data-i18n="premium-f1">Quests ilimitadas e personalizadas</li>
+          <li data-i18n="premium-f2">Todos os Ranks, do E ao SSS</li>
+          <li data-i18n="premium-f3">6 atributos completos</li>
+          <li data-i18n="premium-f4">Raids e Dungeons</li>
+          <li data-i18n="premium-f5">Itens e skins exclusivos</li>
+          <li data-i18n="premium-f6">Suporte prioritário</li>
+          <li data-i18n="premium-f7">Novidades em primeira mão</li>
+        </ul>
+        <a href="#hero" class="btn-primary" style="width:100%;justify-content:center;" data-i18n="premium-cta">Assinar Premium</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section" id="faq">
+  <div class="inner">
+    <p class="eyebrow" data-i18n="faq-eyebrow">Perguntas Frequentes</p>
+    <h2 class="section-title" data-i18n="faq-title">Tire suas Dúvidas</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="faq(this)"><span data-i18n="faq-q1">Preciso de academia ou equipamento?</span><svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="faq-a" data-i18n="faq-a1">Não. O Awaken adapta os treinos à sua realidade — casa, academia ou ao ar livre, com ou sem equipamento. O app ajusta tudo ao seu perfil.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="faq(this)"><span data-i18n="faq-q2">Como funciona o sistema de Rank?</span><svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="faq-a" data-i18n="faq-a2">O sistema vai do Rank E (iniciante) ao SSS (elite). Cada rank exige uma quantidade de XP acumulada. Quanto mais você treina e completa quests, mais XP ganha e mais rápido sobe.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="faq(this)"><span data-i18n="faq-q3">Os treinos são realmente personalizados para mim?</span><svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="faq-a" data-i18n="faq-a3">Sim. No cadastro você informa objetivos, limitações e nível atual. O sistema gera quests adaptadas e vai evoluindo conforme você progride, sempre no ritmo certo.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="faq(this)"><span data-i18n="faq-q4">O que são Dungeons e Raids?</span><svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="faq-a" data-i18n="faq-a4">Dungeons são desafios solo com recompensas únicas — você enfrenta sozinho e conquista itens e XP exclusivos. Raids são eventos coletivos onde hunters de todo o Brasil (ou do mundo) se unem para bater uma meta em comum, com recompensas especiais para os participantes.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="faq(this)"><span data-i18n="faq-q5">Posso cancelar o Premium quando quiser?</span><svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="faq-a" data-i18n="faq-a5">Sim, sem fidelidade. Cancele pelo app ou pela loja (App Store/Google Play) e mantém o acesso até o fim do período pago. Seus dados e histórico são sempre preservados.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <img src="uploads/logo-8b85c8c0.png" alt="Awaken">
+        <p data-i18n="footer-brand-desc">O app de fitness gamificado que transforma treino em jornada épica. Desperte o guerreiro em você.</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer-produto">Produto</h4>
+        <ul>
+          <li><a href="#como-funciona" data-i18n="footer-how">Como Funciona</a></li>
+          <li><a href="#features" data-i18n="footer-features">Funcionalidades</a></li>
+          <li><a href="#precos" data-i18n="footer-pricing">Planos</a></li>
+          <li><a href="#app" data-i18n="footer-app">O App</a></li>
+          <li><a href="#faq" data-i18n="footer-faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer-legal">Legal</h4>
+        <ul>
+          <li><a href="#" onclick="openLegal('terms');return false;" data-i18n="footer-terms">Termos de Uso</a></li>
+          <li><a href="#" onclick="openLegal('privacy');return false;" data-i18n="footer-privacy">Política de Privacidade</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy" data-i18n="footer-copy">© 2026 Awaken. Todos os direitos reservados.</p>
+      <p class="footer-copy">Made with ⚡ for hunters worldwide</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── i18n ──────────────────────────────────────────────────────────────────────
+const TRANSLATIONS = {
+  pt: {
+    'nav-how':'Como Funciona','nav-features':'Funcionalidades','nav-app':'O App','nav-pricing':'Planos','nav-faq':'FAQ','nav-cta':'Baixar Grátis',
+    'hero-eyebrow':'Fitness Gamificado · RPG · Anime · Evolução','hero-h1':'Desperte o Guerreiro<br>em Você','hero-sub':'Transforme cada treino em uma quest épica. Ganhe XP, evolua atributos e suba de Rank — como um personagem de anime, mas na vida real.','hero-scroll':'Explorar',
+    'store-ios-small':'Baixar na','store-ios-big':'App Store','store-android-small':'Disponível no','store-android-big':'Google Play',
+    'stat-hunters':'Hunters Ativos','stat-workouts':'Treinos Concluídos','stat-rating':'Nota nas Lojas','stat-satisfaction':'Satisfação',
+    'how-eyebrow':'Como Funciona','how-title':'Sua Jornada em 3 Passos','how-desc':'Simples de começar. Impossível de parar.',
+    'step1-title':'Crie seu Personagem','step1-desc':'Informe seu objetivo, nível atual e limitações. O Awaken monta seu perfil de Hunter e define seus atributos iniciais.',
+    'step2-title':'Receba suas Quests','step2-desc':'Quests diárias adaptadas ao seu perfil com exercícios, séries e reps. Cada treino evolui atributos específicos do seu personagem.',
+    'step3-title':'Evolua e Suba de Rank','step3-desc':'Acumule XP, desbloqueie Ranks do E ao SSS, entre em Raids nacionais e veja seu corpo e personagem evoluírem juntos.',
+    'feat-eyebrow':'Funcionalidades','feat-title':'Arsenal Completo para Evoluir','feat-desc':'Tudo que você precisa para transformar seu treino em uma jornada épica.',
+    'feat1-title':'Quests Personalizadas','feat1-desc':'Treinos adaptados ao seu nível, objetivo e atributos — cada sessão é uma missão única, sem treino genérico.',
+    'feat2-title':'Sistema de Rank E→SSS','feat2-desc':'Oito Ranks de progressão, cada um com requisitos de XP e recompensas exclusivas. A evolução é visível.',
+    'feat3-title':'6 Atributos RPG','feat3-desc':'Força, Agilidade, Resistência, Vitalidade, Foco e Sabedoria — cada treino fortalece um atributo específico.',
+    'feat4-title':'Dungeons e Raids','feat4-desc':'Enfrente Dungeons solo para conquistar recompensas únicas, ou entre em Raids coletivos com hunters do Brasil e do mundo.',
+    'feat5-title':'Constância que Vicia','feat5-desc':'Sequências de treino, conquistas e histórico completo. O app torna a consistência mais recompensadora que o sofá.',
+    'feat6-title':'Inventário e Loja','feat6-desc':'Colete itens épicos, desbloqueie skins exclusivas e gaste Gold na loja do hunter.',
+    'app-eyebrow':'O App','app-title':'Veja o Awaken em Ação','app-desc':'Design épico, UX fluida e gamificação que prende do primeiro treino.',
+    'price-eyebrow':'Planos','price-title':'Escolha sua Evolução','price-desc':'Comece grátis. Evolua quando quiser. Sem fidelidade.',
+    'free-plan':'Hunter Livre','free-val':'Grátis','free-tagline':'Para começar a jornada e sentir o poder do Awaken.',
+    'free-f1':'Quests diárias básicas','free-f2':'Ranks E ao C','free-f3':'3 atributos ativos','free-f4':'Acesso à loja básica',
+    'free-off1':'Raids e Dungeons','free-off2':'Todos os 6 atributos','free-off3':'Quests ilimitadas','free-cta':'Baixar Grátis',
+    'trial-plan':'Hunter Trial','trial-badge':'7 Dias Grátis','trial-duration':'7 Dias','trial-tagline':'Acesso completo ao Premium por 7 dias, sem cartão de crédito.',
+    'trial-f1':'Tudo do Hunter Premium incluso','trial-f2':'Todos os Ranks, do E ao SSS','trial-f3':'6 atributos completos',
+    'trial-off1':'Itens do inventário não podem ser usados','trial-off2':'Quests não podem ser personalizadas','trial-off3':'Dungeons e Raids indisponíveis','trial-off4':'Loja bloqueada — Gold não pode ser gasto',
+    'trial-cta':'Iniciar Trial Grátis',
+    'premium-plan':'Hunter Premium','premium-badge':'Mais Popular','premium-price-label':'Preço disponível na loja','premium-tagline':'A experiência completa para hunters sérios.',
+    'premium-f1':'Quests ilimitadas e personalizadas','premium-f2':'Todos os Ranks, do E ao SSS','premium-f3':'6 atributos completos','premium-f4':'Raids e Dungeons','premium-f5':'Itens e skins exclusivos','premium-f6':'Suporte prioritário','premium-f7':'Novidades em primeira mão',
+    'premium-cta':'Assinar Premium',
+    'faq-eyebrow':'Perguntas Frequentes','faq-title':'Tire suas Dúvidas',
+    'faq-q1':'Preciso de academia ou equipamento?','faq-a1':'Não. O Awaken adapta os treinos à sua realidade — casa, academia ou ao ar livre, com ou sem equipamento. O app ajusta tudo ao seu perfil.',
+    'faq-q2':'Como funciona o sistema de Rank?','faq-a2':'O sistema vai do Rank E (iniciante) ao SSS (elite). Cada rank exige uma quantidade de XP acumulada. Quanto mais você treina e completa quests, mais XP ganha e mais rápido sobe.',
+    'faq-q3':'Os treinos são realmente personalizados para mim?','faq-a3':'Sim. No cadastro você informa objetivos, limitações e nível atual. O sistema gera quests adaptadas e vai evoluindo conforme você progride, sempre no ritmo certo.',
+    'faq-q4':'O que são Dungeons e Raids?','faq-a4':'Dungeons são desafios solo com recompensas únicas — você enfrenta sozinho e conquista itens e XP exclusivos. Raids são eventos coletivos onde hunters de todo o Brasil (ou do mundo) se unem para bater uma meta em comum, com recompensas especiais para os participantes.',
+    'faq-q5':'Posso cancelar o Premium quando quiser?','faq-a5':'Sim, sem fidelidade. Cancele pelo app ou pela loja (App Store/Google Play) e mantém o acesso até o fim do período pago. Seus dados e histórico são sempre preservados.',
+    'footer-brand-desc':'O app de fitness gamificado que transforma treino em jornada épica. Desperte o guerreiro em você.',
+    'footer-produto':'Produto','footer-how':'Como Funciona','footer-features':'Funcionalidades','footer-pricing':'Planos','footer-app':'O App','footer-faq':'FAQ',
+    'footer-legal':'Legal','footer-terms':'Termos de Uso','footer-privacy':'Privacidade','footer-cookies':'Cookies',
+    'footer-copy':'© 2026 Awaken. Todos os direitos reservados.',
+  },
+  en: {
+    'nav-how':'How It Works','nav-features':'Features','nav-app':'The App','nav-pricing':'Plans','nav-faq':'FAQ','nav-cta':'Download Free',
+    'hero-eyebrow':'Gamified Fitness · RPG · Anime · Evolution','hero-h1':'Awaken the Warrior<br>Within You','hero-sub':'Turn every workout into an epic quest. Earn XP, level up attributes, and rise in Rank — like an anime character, but in real life.','hero-scroll':'Explore',
+    'store-ios-small':'Download on the','store-ios-big':'App Store','store-android-small':'Get it on','store-android-big':'Google Play',
+    'stat-hunters':'Active Hunters','stat-workouts':'Workouts Completed','stat-rating':'App Store Rating','stat-satisfaction':'Satisfaction',
+    'how-eyebrow':'How It Works','how-title':'Your Journey in 3 Steps','how-desc':'Simple to start. Impossible to stop.',
+    'step1-title':'Create Your Character','step1-desc':'Enter your goal, current level, and limitations. Awaken builds your Hunter profile and sets your initial attributes.',
+    'step2-title':'Receive Your Quests','step2-desc':'Daily quests tailored to your profile with exercises, sets, and reps. Each workout levels up specific character attributes.',
+    'step3-title':'Level Up and Rise in Rank','step3-desc':'Accumulate XP, unlock Ranks from E to SSS, join national Raids, and watch your body and character evolve together.',
+    'feat-eyebrow':'Features','feat-title':'Complete Arsenal to Evolve','feat-desc':'Everything you need to turn your workout into an epic journey.',
+    'feat1-title':'Personalized Quests','feat1-desc':'Workouts adapted to your level, goal, and attributes — each session is a unique mission, no generic training.',
+    'feat2-title':'Rank System E→SSS','feat2-desc':'Eight progression Ranks, each with XP requirements and exclusive rewards. Evolution is visible.',
+    'feat3-title':'6 RPG Attributes','feat3-desc':'Strength, Agility, Endurance, Vitality, Focus, and Wisdom — each workout strengthens a specific attribute.',
+    'feat4-title':'Dungeons & Raids','feat4-desc':'Face solo Dungeons to earn unique rewards, or join collective Raids with hunters from Brazil and around the world.',
+    'feat5-title':'Consistency that Hooks','feat5-desc':'Workout streaks, achievements, and full history. The app makes consistency more rewarding than the couch.',
+    'feat6-title':'Inventory & Shop','feat6-desc':'Collect epic items, unlock exclusive skins, and spend Gold at the hunter shop.',
+    'app-eyebrow':'The App','app-title':'See Awaken in Action','app-desc':'Epic design, smooth UX, and gamification that hooks you from the first workout.',
+    'price-eyebrow':'Plans','price-title':'Choose Your Evolution','price-desc':'Start free. Level up whenever you want. No commitment.',
+    'free-plan':'Free Hunter','free-val':'Free','free-tagline':'To start your journey and feel the power of Awaken.',
+    'free-f1':'Basic daily quests','free-f2':'Ranks E to C','free-f3':'3 active attributes','free-f4':'Basic shop access',
+    'free-off1':'Raids and Dungeons','free-off2':'All 6 attributes','free-off3':'Unlimited quests','free-cta':'Download Free',
+    'trial-plan':'Hunter Trial','trial-badge':'7 Days Free','trial-duration':'7 Days','trial-tagline':'Full Premium access for 7 days, no credit card required.',
+    'trial-f1':'Everything in Hunter Premium included','trial-f2':'All Ranks, from E to SSS','trial-f3':'6 complete attributes',
+    'trial-off1':'Inventory items cannot be used','trial-off2':'Quests cannot be customized','trial-off3':'Dungeons and Raids unavailable','trial-off4':'Shop locked — Gold cannot be spent',
+    'trial-cta':'Start Free Trial',
+    'premium-plan':'Hunter Premium','premium-badge':'Most Popular','premium-price-label':'Price available in-store','premium-tagline':'The complete experience for serious hunters.',
+    'premium-f1':'Unlimited personalized quests','premium-f2':'All Ranks, from E to SSS','premium-f3':'6 complete attributes','premium-f4':'Raids and Dungeons','premium-f5':'Exclusive items and skins','premium-f6':'Priority support','premium-f7':'First access to new features',
+    'premium-cta':'Subscribe Premium',
+    'faq-eyebrow':'Frequently Asked Questions','faq-title':'Get Your Answers',
+    'faq-q1':'Do I need a gym or equipment?','faq-a1':'No. Awaken adapts workouts to your reality — home, gym, or outdoors, with or without equipment. The app adjusts everything to your profile.',
+    'faq-q2':'How does the Rank system work?','faq-a2':'The system goes from Rank E (beginner) to SSS (elite). Each rank requires a certain amount of accumulated XP. The more you train and complete quests, the more XP you earn and the faster you rise.',
+    'faq-q3':'Are the workouts really personalized for me?','faq-a3':'Yes. During registration you enter your goals, limitations, and current level. The system generates adapted quests and evolves as you progress, always at the right pace.',
+    'faq-q4':'What are Dungeons and Raids?','faq-a4':'Dungeons are solo challenges with unique rewards — you face them alone and earn exclusive items and XP. Raids are collective events where hunters from across Brazil (or the world) unite to hit a common goal, with special rewards for all participants.',
+    'faq-q5':'Can I cancel Premium whenever I want?','faq-a5':'Yes, no commitment. Cancel through the app or store (App Store/Google Play) and keep access until the end of the paid period. Your data and history are always preserved.',
+    'footer-brand-desc':'The gamified fitness app that turns workouts into epic journeys. Awaken the warrior within you.',
+    'footer-produto':'Product','footer-how':'How It Works','footer-features':'Features','footer-pricing':'Plans','footer-app':'The App','footer-faq':'FAQ',
+    'footer-legal':'Legal','footer-terms':'Terms of Use','footer-privacy':'Privacy','footer-cookies':'Cookies',
+    'footer-copy':'© 2026 Awaken. All rights reserved.',
+  },
+  es: {
+    'nav-how':'Cómo Funciona','nav-features':'Funcionalidades','nav-app':'La App','nav-pricing':'Planes','nav-faq':'FAQ','nav-cta':'Descargar Gratis',
+    'hero-eyebrow':'Fitness Gamificado · RPG · Anime · Evolución','hero-h1':'Despierta al Guerrero<br>que Hay en Ti','hero-sub':'Convierte cada entrenamiento en una quest épica. Gana XP, evoluciona atributos y sube de Rango — como un personaje de anime, pero en la vida real.','hero-scroll':'Explorar',
+    'store-ios-small':'Descargar en','store-ios-big':'App Store','store-android-small':'Disponible en','store-android-big':'Google Play',
+    'stat-hunters':'Hunters Activos','stat-workouts':'Entrenamientos Completados','stat-rating':'Calificación en Tiendas','stat-satisfaction':'Satisfacción',
+    'how-eyebrow':'Cómo Funciona','how-title':'Tu Viaje en 3 Pasos','how-desc':'Fácil de empezar. Imposible de parar.',
+    'step1-title':'Crea tu Personaje','step1-desc':'Ingresa tu objetivo, nivel actual y limitaciones. Awaken construye tu perfil de Hunter y define tus atributos iniciales.',
+    'step2-title':'Recibe tus Quests','step2-desc':'Quests diarias adaptadas a tu perfil con ejercicios, series y repeticiones. Cada entrenamiento evoluciona atributos específicos.',
+    'step3-title':'Evoluciona y Sube de Rango','step3-desc':'Acumula XP, desbloquea Rangos de E a SSS, únete a Raids nacionales y ve cómo tu cuerpo y personaje evolucionan juntos.',
+    'feat-eyebrow':'Funcionalidades','feat-title':'Arsenal Completo para Evolucionar','feat-desc':'Todo lo que necesitas para convertir tu entrenamiento en un viaje épico.',
+    'feat1-title':'Quests Personalizadas','feat1-desc':'Entrenamientos adaptados a tu nivel, objetivo y atributos — cada sesión es una misión única, sin entrenamiento genérico.',
+    'feat2-title':'Sistema de Rango E→SSS','feat2-desc':'Ocho Rangos de progresión, cada uno con requisitos de XP y recompensas exclusivas. La evolución es visible.',
+    'feat3-title':'6 Atributos RPG','feat3-desc':'Fuerza, Agilidad, Resistencia, Vitalidad, Foco y Sabiduría — cada entrenamiento fortalece un atributo específico.',
+    'feat4-title':'Dungeons y Raids','feat4-desc':'Enfrenta Dungeons en solitario para obtener recompensas únicas, o únete a Raids colectivos con hunters de todo el mundo.',
+    'feat5-title':'Constancia que Engancha','feat5-desc':'Rachas de entrenamiento, logros e historial completo. La app hace la constancia más gratificante que el sofá.',
+    'feat6-title':'Inventario y Tienda','feat6-desc':'Colecciona ítems épicos, desbloquea skins exclusivas y gasta Gold en la tienda del hunter.',
+    'app-eyebrow':'La App','app-title':'Ve Awaken en Acción','app-desc':'Diseño épico, UX fluida y gamificación que atrapa desde el primer entrenamiento.',
+    'price-eyebrow':'Planes','price-title':'Elige tu Evolución','price-desc':'Empieza gratis. Evoluciona cuando quieras. Sin compromiso.',
+    'free-plan':'Hunter Libre','free-val':'Gratis','free-tagline':'Para comenzar el viaje y sentir el poder de Awaken.',
+    'free-f1':'Quests diarias básicas','free-f2':'Rangos E a C','free-f3':'3 atributos activos','free-f4':'Acceso a tienda básica',
+    'free-off1':'Raids y Dungeons','free-off2':'Los 6 atributos completos','free-off3':'Quests ilimitadas','free-cta':'Descargar Gratis',
+    'trial-plan':'Hunter Trial','trial-badge':'7 Días Gratis','trial-duration':'7 Días','trial-tagline':'Acceso completo al Premium por 7 días, sin tarjeta de crédito.',
+    'trial-f1':'Todo de Hunter Premium incluido','trial-f2':'Todos los Rangos, de E a SSS','trial-f3':'6 atributos completos',
+    'trial-off1':'Los ítems del inventario no pueden usarse','trial-off2':'Las quests no pueden personalizarse','trial-off3':'Dungeons y Raids no disponibles','trial-off4':'Tienda bloqueada — Gold no puede gastarse',
+    'trial-cta':'Iniciar Trial Gratis',
+    'premium-plan':'Hunter Premium','premium-badge':'Más Popular','premium-price-label':'Precio disponible en la tienda','premium-tagline':'La experiencia completa para hunters serios.',
+    'premium-f1':'Quests ilimitadas y personalizadas','premium-f2':'Todos los Rangos, de E a SSS','premium-f3':'6 atributos completos','premium-f4':'Raids y Dungeons','premium-f5':'Ítems y skins exclusivos','premium-f6':'Soporte prioritario','premium-f7':'Novedades en primicia',
+    'premium-cta':'Suscribirse al Premium',
+    'faq-eyebrow':'Preguntas Frecuentes','faq-title':'Resuelve tus Dudas',
+    'faq-q1':'¿Necesito gimnasio o equipamiento?','faq-a1':'No. Awaken adapta los entrenamientos a tu realidad — casa, gimnasio o al aire libre, con o sin equipo. La app lo ajusta todo a tu perfil.',
+    'faq-q2':'¿Cómo funciona el sistema de Rango?','faq-a2':'El sistema va del Rango E (principiante) al SSS (élite). Cada rango exige una cantidad de XP acumulada. Cuanto más entrenas y completas quests, más XP ganas.',
+    'faq-q3':'¿Los entrenamientos son realmente personalizados?','faq-a3':'Sí. Al registrarte ingresas tus objetivos, limitaciones y nivel actual. El sistema genera quests adaptadas y evoluciona conforme progresas.',
+    'faq-q4':'¿Qué son los Dungeons y los Raids?','faq-a4':'Los Dungeons son desafíos en solitario con recompensas únicas — los enfrentas solo y obtienes ítems y XP exclusivos. Los Raids son eventos colectivos donde hunters de todo el mundo se unen para alcanzar una meta común, con recompensas especiales.',
+    'faq-q5':'¿Puedo cancelar el Premium cuando quiera?','faq-a5':'Sí, sin compromiso. Cancela desde la app o la tienda (App Store/Google Play) y mantén el acceso hasta el fin del período pagado. Tus datos e historial siempre se conservan.',
+    'footer-brand-desc':'La app de fitness gamificado que convierte el entrenamiento en un viaje épico. Despierta al guerrero en ti.',
+    'footer-produto':'Producto','footer-how':'Cómo Funciona','footer-features':'Funcionalidades','footer-pricing':'Planes','footer-app':'La App','footer-faq':'FAQ',
+    'footer-legal':'Legal','footer-terms':'Términos de Uso','footer-privacy':'Privacidad','footer-cookies':'Cookies',
+    'footer-copy':'© 2026 Awaken. Todos los derechos reservados.',
+  },
+  fr: {
+    'nav-how':'Comment Ça Marche','nav-features':'Fonctionnalités','nav-app':"L'App",'nav-pricing':'Plans','nav-faq':'FAQ','nav-cta':'Télécharger Gratuitement',
+    'hero-eyebrow':'Fitness Gamifié · RPG · Anime · Évolution','hero-h1':'Éveillez le Guerrier<br>en Vous','hero-sub':"Transformez chaque entraînement en une quête épique. Gagnez de l'XP, évoluez vos attributs et montez en Grade — comme un personnage d'anime, mais dans la vraie vie.",'hero-scroll':'Explorer',
+    'store-ios-small':'Télécharger sur','store-ios-big':'App Store','store-android-small':'Disponible sur','store-android-big':'Google Play',
+    'stat-hunters':'Hunters Actifs','stat-workouts':"Entraînements Complétés",'stat-rating':'Note sur les Stores','stat-satisfaction':'Satisfaction',
+    'how-eyebrow':'Comment Ça Marche','how-title':'Votre Voyage en 3 Étapes','how-desc':'Simple à démarrer. Impossible à arrêter.',
+    'step1-title':'Créez votre Personnage','step1-desc':"Entrez votre objectif, niveau actuel et limitations. Awaken construit votre profil de Hunter et définit vos attributs initiaux.",
+    'step2-title':'Recevez vos Quêtes','step2-desc':"Quêtes quotidiennes adaptées à votre profil avec exercices, séries et répétitions. Chaque entraînement fait évoluer des attributs spécifiques.",
+    'step3-title':'Évoluez et Montez en Grade','step3-desc':"Accumulez de l'XP, débloquez des Grades de E à SSS, rejoignez des Raids nationaux et regardez votre corps et personnage évoluer ensemble.",
+    'feat-eyebrow':'Fonctionnalités','feat-title':'Arsenal Complet pour Évoluer','feat-desc':"Tout ce dont vous avez besoin pour transformer votre entraînement en voyage épique.",
+    'feat1-title':'Quêtes Personnalisées','feat1-desc':"Entraînements adaptés à votre niveau, objectif et attributs — chaque session est une mission unique, sans entraînement générique.",
+    'feat2-title':'Système de Grade E→SSS','feat2-desc':"Huit Grades de progression, chacun avec des exigences d'XP et des récompenses exclusives. L'évolution est visible.",
+    'feat3-title':'6 Attributs RPG','feat3-desc':"Force, Agilité, Endurance, Vitalité, Focus et Sagesse — chaque entraînement renforce un attribut spécifique.",
+    'feat4-title':'Donjons et Raids','feat4-desc':"Affrontez des Donjons en solo pour des récompenses uniques, ou rejoignez des Raids collectifs avec des hunters du monde entier.",
+    'feat5-title':'Constance qui Accroche','feat5-desc':"Séries d'entraînement, succès et historique complet. L'app rend la constance plus gratifiante que le canapé.",
+    'feat6-title':'Inventaire et Boutique','feat6-desc':"Collectez des objets épiques, débloquez des skins exclusives et dépensez de l'Or à la boutique du hunter.",
+    'app-eyebrow':"L'App",'app-title':'Voir Awaken en Action','app-desc':"Design épique, UX fluide et gamification qui accroche dès le premier entraînement.",
+    'price-eyebrow':'Plans','price-title':'Choisissez votre Évolution','price-desc':'Commencez gratuitement. Évoluez quand vous voulez. Sans engagement.',
+    'free-plan':'Hunter Libre','free-val':'Gratuit','free-tagline':"Pour commencer votre voyage et sentir la puissance d'Awaken.",
+    'free-f1':'Quêtes quotidiennes basiques','free-f2':'Grades E à C','free-f3':'3 attributs actifs','free-f4':'Accès à la boutique basique',
+    'free-off1':'Raids et Donjons','free-off2':'Les 6 attributs complets','free-off3':'Quêtes illimitées','free-cta':'Télécharger Gratuitement',
+    'trial-plan':'Hunter Trial','trial-badge':'7 Jours Gratuits','trial-duration':'7 Jours','trial-tagline':'Accès complet au Premium pendant 7 jours, sans carte de crédit.',
+    'trial-f1':'Tout de Hunter Premium inclus','trial-f2':'Tous les Grades, de E à SSS','trial-f3':'6 attributs complets',
+    'trial-off1':"Les objets d'inventaire ne peuvent pas être utilisés",'trial-off2':'Les quêtes ne peuvent pas être personnalisées','trial-off3':'Donjons et Raids indisponibles','trial-off4':"Boutique bloquée — l'Or ne peut pas être dépensé",
+    'trial-cta':'Démarrer le Trial Gratuit',
+    'premium-plan':'Hunter Premium','premium-badge':'Le Plus Populaire','premium-price-label':'Prix disponible en boutique','premium-tagline':"L'expérience complète pour les hunters sérieux.",
+    'premium-f1':'Quêtes illimitées et personnalisées','premium-f2':'Tous les Grades, de E à SSS','premium-f3':'6 attributs complets','premium-f4':'Raids et Donjons','premium-f5':'Objets et skins exclusifs','premium-f6':'Support prioritaire','premium-f7':'Nouveautés en avant-première',
+    'premium-cta':"S'abonner Premium",
+    'faq-eyebrow':'Questions Fréquentes','faq-title':'Vos Questions, Nos Réponses',
+    'faq-q1':"Ai-je besoin d'une salle de sport ou d'équipement ?",'faq-a1':"Non. Awaken adapte les entraînements à votre réalité — maison, salle ou en plein air, avec ou sans équipement. L'app ajuste tout à votre profil.",
+    'faq-q2':'Comment fonctionne le système de Grade ?','faq-a2':"Le système va du Grade E (débutant) au SSS (élite). Chaque grade nécessite une quantité d'XP accumulée. Plus vous vous entraînez et complétez des quêtes, plus vous gagnez d'XP.",
+    'faq-q3':'Les entraînements sont-ils vraiment personnalisés ?','faq-a3':"Oui. À l'inscription, vous entrez vos objectifs, limitations et niveau actuel. Le système génère des quêtes adaptées et évolue au fur et à mesure de votre progression.",
+    'faq-q4':'Que sont les Donjons et les Raids ?','faq-a4':"Les Donjons sont des défis en solo avec des récompenses uniques — vous les affrontez seul et gagnez des objets et XP exclusifs. Les Raids sont des événements collectifs où des hunters du monde entier s'unissent pour atteindre un objectif commun, avec des récompenses spéciales.",
+    'faq-q5':'Puis-je annuler le Premium quand je veux ?','faq-a5':"Oui, sans engagement. Annulez via l'app ou la boutique (App Store/Google Play) et gardez l'accès jusqu'à la fin de la période payée. Vos données et historique sont toujours préservés.",
+    'footer-brand-desc':"L'app de fitness gamifié qui transforme l'entraînement en voyage épique. Éveillez le guerrier en vous.",
+    'footer-produto':'Produit','footer-how':'Comment Ça Marche','footer-features':'Fonctionnalités','footer-pricing':'Plans','footer-app':"L'App",'footer-faq':'FAQ',
+    'footer-legal':'Légal','footer-terms':"Conditions d'Utilisation",'footer-privacy':'Confidentialité','footer-cookies':'Cookies',
+    'footer-copy':'© 2026 Awaken. Tous droits réservés.',
+  }
+};
+
+let currentLang = localStorage.getItem('awaken-lang') || 'pt';
+
+function setLang(lang) {
+  if (!TRANSLATIONS[lang]) return;
+  currentLang = lang;
+  localStorage.setItem('awaken-lang', lang);
+  const t = TRANSLATIONS[lang];
+  const langMap = { pt: 'pt-BR', en: 'en', es: 'es', fr: 'fr' };
+  document.documentElement.lang = langMap[lang];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.dataset.i18nHtml;
+    if (t[key] !== undefined) el.innerHTML = t[key];
+  });
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+}
+
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => setLang(btn.dataset.lang));
+});
+
+setLang(currentLang);
+
+// ── FAQ ───────────────────────────────────────────────────────────────────────
+function faq(btn) {
+  const item = btn.closest('.faq-item');
+  const open = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+  if (!open) item.classList.add('open');
+}
+
+// ── Nav scroll ────────────────────────────────────────────────────────────────
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.style.background = window.scrollY > 30 ? 'rgba(7,8,13,0.97)' : 'rgba(10,11,18,0.8)';
+});
+
+// ── Stats fade-in ─────────────────────────────────────────────────────────────
+const stats = document.querySelectorAll('.stat-number');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.style.opacity = '1'; });
+}, {threshold: 0.5});
+stats.forEach(s => { s.style.opacity = '0'; s.style.transition = 'opacity 0.6s'; observer.observe(s); });
+
+// Patch translations for modal + updated footer-privacy
+['pt','en','es','fr'].forEach(l => {
+  TRANSLATIONS[l]['modal-ok']       = {pt:'Fechar',en:'Close',es:'Cerrar',fr:'Fermer'}[l];
+  TRANSLATIONS[l]['footer-privacy'] = {pt:'Política de Privacidade',en:'Privacy Policy',es:'Política de Privacidad',fr:'Politique de Confidentialité'}[l];
+});
+
+// ── Legal content ─────────────────────────────────────────────────────────────
+const LEGAL_CONTENT = {
+  terms: {
+    pt: { title: 'Termos de Uso', html: `<h3>1. Aceite e uso</h3><p>Ao usar o Awaken, você confirma que leu estes termos e concorda em segui-los. Se não concordar, não use o app.</p><h3>2. Elegibilidade</h3><p>O uso do Awaken é destinado a pessoas com 13 anos ou mais. Usuários entre 13 e 18 anos devem obter consentimento dos responsáveis legais. Não coletamos intencionalmente dados de crianças menores de 13 anos.</p><h3>3. Conta e responsabilidade</h3><p>Você é responsável pelas informações da sua conta e pelo uso da sua senha. Não compartilhe credenciais e avise o suporte em caso de suspeita de acesso indevido.</p><h3>4. Conteúdo e limites do app</h3><p>O Awaken organiza treinos, progresso e informações relacionadas à sua jornada fitness. As sugestões são informativas e educacionais, e não substituem orientação de médico, educador físico, fisioterapeuta ou nutricionista. Consulte um profissional antes de iniciar qualquer programa de exercícios.</p><h3>5. Conduta permitida</h3><p>Não use o app para violar leis, tentar acessar dados de terceiros, fraudar assinaturas ou interferir no funcionamento do serviço.</p><h3>6. Propriedade intelectual</h3><p>Todo o conteúdo do Awaken — incluindo nome, marca, design, código-fonte, textos, ilustrações e elementos visuais — é protegido por direitos autorais e propriedade intelectual. Você não pode copiar, modificar, distribuir ou criar obras derivadas sem autorização expressa.</p><h3>7. Assinatura, pagamentos e reembolsos</h3><p>Alguns recursos requerem assinatura paga. As compras são processadas pelas lojas de aplicativos (App Store ou Google Play) e estão sujeitas às políticas de reembolso da respectiva loja. Não processamos reembolsos diretamente. Podemos alterar preços e planos com aviso prévio razoável.</p><h3>8. Limitação de responsabilidade</h3><p>O Awaken é fornecido no estado em que se encontra. Na máxima extensão permitida por lei, não nos responsabilizamos por lesões, danos à saúde, perdas financeiras ou qualquer dano indireto decorrente do uso do app ou dos treinos sugeridos. Você assume os riscos inerentes à prática de atividade física.</p><h3>9. Indenização</h3><p>Você concorda em defender e indenizar o Awaken e seus representantes contra quaisquer reclamações resultantes do mau uso do serviço ou violação destes termos.</p><h3>10. Encerramento</h3><p>Podemos restringir o acesso em caso de abuso, fraude ou violação destes termos. Você pode encerrar sua conta a qualquer momento pelo app.</p><h3>11. Lei aplicável e disputas</h3><p>Estes termos são regidos pelas leis do Brasil, com foro eleito na Comarca de São Paulo/SP. Para usuários fora do Brasil, disputas serão resolvidas preferencialmente por arbitragem amigável antes de qualquer ação judicial, respeitadas as leis locais aplicáveis.</p><h3>12. Contato</h3><p>Dúvidas podem ser enviadas pelo canal de suporte do app ou por e-mail ao time Awaken.</p><p style="margin-top:20px;font-size:11px;color:var(--mist-700);">Versão 1.0 · Em vigor desde 29/06/2026</p>` },
+    en: { title: 'Terms of Use', html: `<h3>1. Acceptance of Terms</h3><p>By using Awaken, you confirm that you have read these terms and agree to follow them. If you do not agree, do not use the app.</p><h3>2. Eligibility</h3><p>Awaken is intended for users aged 13 or older. Users between 13 and 18 must obtain parental or guardian consent. We do not knowingly collect data from children under 13.</p><h3>3. Account and Responsibility</h3><p>You are responsible for your account information and password. Do not share credentials and notify support if you suspect unauthorized access.</p><h3>4. Content and App Limitations</h3><p>Awaken organizes workouts, progress and information related to your fitness journey. Suggestions are informational and educational, and do not replace advice from a physician, personal trainer, physiotherapist or nutritionist. Consult a professional before starting any exercise program.</p><h3>5. Permitted Conduct</h3><p>Do not use the app to violate laws, attempt to access third-party data, commit subscription fraud or interfere with the service.</p><h3>6. Intellectual Property</h3><p>All Awaken content including name, brand, design, source code, texts, illustrations and visual elements is protected by copyright and intellectual property law. You may not copy, modify, distribute or create derivative works without express authorization.</p><h3>7. Subscription, Payments and Refunds</h3><p>Some features require a paid subscription. Purchases are processed by app stores (App Store or Google Play) and subject to their respective refund policies. We do not process refunds directly. We may change prices and plans with reasonable prior notice.</p><h3>8. Limitation of Liability</h3><p>Awaken is provided as is. To the fullest extent permitted by law, we are not liable for injuries, health damages, financial losses or any indirect damages arising from use of the app or suggested workouts. You assume the inherent risks of physical exercise.</p><h3>9. Indemnification</h3><p>You agree to defend and indemnify Awaken and its representatives against any claims arising from misuse of the service or violation of these terms.</p><h3>10. Termination</h3><p>We may restrict access in cases of abuse, fraud or violation of these terms. You may close your account at any time through the app.</p><h3>11. Governing Law and Disputes</h3><p>These terms are governed by the laws of Brazil, with exclusive jurisdiction in São Paulo, SP. For users outside Brazil, disputes will preferably be resolved through amicable arbitration before any legal action, in compliance with applicable local laws.</p><h3>12. Contact</h3><p>Questions can be submitted through the app support channel or by email to the Awaken team.</p><p style="margin-top:20px;font-size:11px;color:var(--mist-700);">Version 1.0 · Effective from 2026-06-29</p>` },
+    es: { title: 'Términos de Uso', html: `<h3>1. Aceptación de términos</h3><p>Al usar Awaken, confirmas que has leído estos términos y aceptas seguirlos. Si no estás de acuerdo, no uses la app.</p><h3>2. Elegibilidad</h3><p>Awaken está destinado a usuarios de 13 años o más. Los usuarios de entre 13 y 18 años deben obtener el consentimiento de sus padres o tutores. No recopilamos intencionalmente datos de menores de 13 años.</p><h3>3. Cuenta y responsabilidad</h3><p>Eres responsable de la información de tu cuenta y contraseña. No compartas credenciales y notifica al soporte si sospechas acceso no autorizado.</p><h3>4. Contenido y límites del app</h3><p>Awaken organiza entrenamientos, progreso e información relacionada con tu viaje fitness. Las sugerencias son informativas y educativas, y no reemplazan el consejo de médico, entrenador, fisioterapeuta o nutricionista. Consulta a un profesional antes de iniciar cualquier programa de ejercicios.</p><h3>5. Conducta permitida</h3><p>No uses la app para violar leyes, intentar acceder a datos de terceros, cometer fraude de suscripción o interferir con el servicio.</p><h3>6. Propiedad intelectual</h3><p>Todo el contenido de Awaken está protegido por derechos de autor y propiedad intelectual. No puedes copiar, modificar, distribuir o crear obras derivadas sin autorización expresa.</p><h3>7. Suscripción, pagos y reembolsos</h3><p>Algunas funciones requieren suscripción de pago. Las compras son procesadas por las tiendas de aplicaciones (App Store o Google Play) y están sujetas a sus políticas de reembolso. No procesamos reembolsos directamente.</p><h3>8. Limitación de responsabilidad</h3><p>Awaken se proporciona tal como está. No somos responsables de lesiones, daños a la salud, pérdidas financieras o cualquier daño indirecto derivado del uso de la app. Asumes los riesgos inherentes a la práctica de actividad física.</p><h3>9. Indemnización</h3><p>Aceptas defender e indemnizar a Awaken y sus representantes contra cualquier reclamación derivada del mal uso del servicio o violación de estos términos.</p><h3>10. Rescisión</h3><p>Podemos restringir el acceso en casos de abuso, fraude o violación de estos términos. Puedes cerrar tu cuenta en cualquier momento desde la app.</p><h3>11. Ley aplicable y disputas</h3><p>Estos términos se rigen por las leyes de Brasil. Para usuarios fuera de Brasil, las disputas se resolverán preferiblemente mediante arbitraje amigable antes de cualquier acción legal.</p><h3>12. Contacto</h3><p>Las preguntas pueden enviarse a través del canal de soporte de la app o por correo electrónico al equipo de Awaken.</p><p style="margin-top:20px;font-size:11px;color:var(--mist-700);">Versión 1.0 · Vigente desde el 29/06/2026</p>` },
+    fr: { title: "Conditions d'Utilisation", html: `<h3>1. Acceptation des conditions</h3><p>En utilisant Awaken, vous confirmez avoir lu ces conditions et acceptez de les suivre. Si vous n'êtes pas d'accord, n'utilisez pas l'app.</p><h3>2. Éligibilité</h3><p>Awaken est destiné aux utilisateurs âgés de 13 ans ou plus. Les utilisateurs de 13 à 18 ans doivent obtenir le consentement parental ou tutoral. Nous ne collectons pas intentionnellement des données d'enfants de moins de 13 ans.</p><h3>3. Compte et responsabilité</h3><p>Vous êtes responsable des informations de votre compte et de votre mot de passe. Ne partagez pas vos identifiants et contactez le support si vous suspectez un accès non autorisé.</p><h3>4. Contenu et limites de l'app</h3><p>Awaken organise des entraînements, des progrès et des informations liées à votre parcours fitness. Les suggestions sont informatives et éducatives, et ne remplacent pas l'avis d'un médecin, coach, physiothérapeute ou nutritionniste. Consultez un professionnel avant de commencer tout programme d'exercice.</p><h3>5. Conduite autorisée</h3><p>N'utilisez pas l'app pour violer des lois, tenter d'accéder aux données de tiers, commettre une fraude d'abonnement ou interférer avec le service.</p><h3>6. Propriété intellectuelle</h3><p>Tout le contenu d'Awaken est protégé par le droit d'auteur et la propriété intellectuelle. Vous ne pouvez pas copier, modifier, distribuer ou créer des œuvres dérivées sans autorisation expresse.</p><h3>7. Abonnement, paiements et remboursements</h3><p>Certaines fonctionnalités nécessitent un abonnement payant. Les achats sont traités par les boutiques d'applications (App Store ou Google Play) et soumis à leurs politiques de remboursement. Nous ne traitons pas les remboursements directement.</p><h3>8. Limitation de responsabilité</h3><p>Awaken est fourni tel quel. Nous ne sommes pas responsables des blessures, dommages à la santé, pertes financières ou tout dommage indirect résultant de l'utilisation de l'app. Vous assumez les risques inhérents à la pratique d'activité physique.</p><h3>9. Indemnisation</h3><p>Vous acceptez de défendre et d'indemniser Awaken et ses représentants contre toute réclamation résultant d'une mauvaise utilisation du service ou d'une violation de ces conditions.</p><h3>10. Résiliation</h3><p>Nous pouvons restreindre l'accès en cas d'abus, de fraude ou de violation de ces conditions. Vous pouvez fermer votre compte à tout moment via l'app.</p><h3>11. Droit applicable et litiges</h3><p>Ces conditions sont régies par les lois du Brésil. Pour les utilisateurs hors Brésil, les litiges seront de préférence résolus par arbitrage amiable avant toute action légale.</p><h3>12. Contact</h3><p>Les questions peuvent être soumises via le canal de support de l'app ou par e-mail à l'équipe Awaken.</p><p style="margin-top:20px;font-size:11px;color:var(--mist-700);">Version 1.0 · En vigueur depuis le 29/06/2026</p>` }
+  },
+  privacy: {
+    pt: { title: 'Política de Privacidade', html: `<h3>1. Dados que coletamos</h3><p>Podemos coletar: nome, e-mail, idioma, sessão, status de acesso, preferências, métricas de uso, dados de treino, informações físicas informadas pelo usuário (idade, peso, altura, sexo biológico, limitações, dores, objetivos), dados de assinatura e registros de erro.</p><h3>2. Base legal para o tratamento</h3><p>Tratamos seus dados com base no consentimento (art. 7, I da LGPD), na execução do contrato de uso do app (art. 7, V), no interesse legítimo para segurança e melhoria do serviço (art. 7, IX) e no cumprimento de obrigações legais (art. 7, II). Você pode retirar o consentimento a qualquer momento mediante exclusão da conta.</p><h3>3. Como usamos os dados</h3><p>Usamos os dados para: criar e autenticar contas, personalizar treinos e experiência, salvar progresso, exibir conteúdo adequado, melhorar estabilidade do app, prevenir abusos e atender solicitações de suporte.</p><h3>4. Compartilhamento e fornecedores</h3><p>Não vendemos seus dados pessoais. Podemos compartilhá-los com fornecedores que operam o serviço: Firebase (Google) para autenticação, analytics, notificações push e crash logs; RevenueCat para gerenciamento de assinaturas; Cloudflare R2 para armazenamento de avatares e imagens; OpenAI / Azure OpenAI para geração de treinos com dados minimizados. Esses fornecedores são contratualmente obrigados a proteger seus dados.</p><h3>5. Transferência internacional</h3><p>Os fornecedores acima podem processar dados em servidores fora do Brasil (EUA, UE). Essas transferências são realizadas com base em salvaguardas adequadas, conforme art. 33 da LGPD, incluindo cláusulas contratuais padrão.</p><h3>6. Retenção e segurança</h3><p>Mantemos os dados pelo tempo necessário para prestar o serviço e cumprir obrigações legais. Utilizamos medidas técnicas e organizacionais para proteger as informações. Comunicaremos incidentes relevantes conforme exigido por lei.</p><h3>7. Seus direitos (LGPD)</h3><p>Você pode solicitar: acesso, correção, portabilidade, anonimização, bloqueio ou exclusão dos seus dados. Residentes da Califórnia (CCPA) têm direitos adicionais sobre coleta e uso de dados. Para exercer seus direitos, entre em contato pelo suporte ou por privacy@awaken.app.</p><h3>8. Dados de saúde e sensíveis</h3><p>Dados físicos como peso, altura, limitações e dores são considerados dados sensíveis sob a LGPD (art. 11). Coletamos esses dados exclusivamente com seu consentimento expresso para personalizar seu plano de treino.</p><h3>9. Menores</h3><p>Não coletamos intencionalmente dados de crianças menores de 13 anos (COPPA). O uso por menores entre 13 e 18 anos requer consentimento dos responsáveis legais.</p><h3>10. Cookies e rastreamento</h3><p>O app pode utilizar identificadores de sessão, tokens e ferramentas de analytics para melhorar a experiência. Não utilizamos cookies de publicidade de terceiros.</p><h3>11. Encarregado de dados (DPO)</h3><p>Nos termos do art. 41 da LGPD, o canal oficial para solicitações de privacidade é: privacy@awaken.app</p><h3>12. Alterações nesta política</h3><p>Alterações relevantes serão comunicadas no app ou por e-mail com antecedência razoável. O uso continuado após a notificação constitui aceite das mudanças.</p><p style="margin-top:20px;font-size:11px;color:var(--mist-700);">Versão 1.0 · Em vigor desde 29/06/2026</p>` },
+    en: { title: 'Privacy Policy', html: `<h3>1. Data We Collect</h3><p>We may collect: name, email, language, session, access status, preferences, usage metrics, workout data, user-provided physical information (age, weight, height, biological sex, limitations, pain points, goals), subscription data and error logs.</p><h3>2. Legal Basis for Processing</h3><p>We process your data based on consent, contract performance, legitimate interest for security and service improvement, and compliance with legal obligations. You may withdraw consent at any time by deleting your account.</p><h3>3. How We Use Your Data</h3><p>We use data to: create and authenticate accounts, personalize workouts and experience, save progress, display appropriate content, improve app stability, prevent abuse and handle support requests.</p><h3>4. Sharing and Providers</h3><p>We do not sell your personal data. We may share it with providers: Firebase (Google) for authentication, analytics, push notifications and crash logs; RevenueCat for subscription management; Cloudflare R2 for avatar and image storage; OpenAI and Azure OpenAI for workout generation with minimized data. These providers are contractually required to protect your data.</p><h3>5. International Transfers</h3><p>Providers above may process data on servers outside Brazil (US, EU). These transfers rely on appropriate safeguards including standard contractual clauses.</p><h3>6. Retention and Security</h3><p>We retain data as long as needed to provide the service and meet legal obligations. We apply technical and organizational measures to protect information. We will report relevant incidents as required by law.</p><h3>7. Your Rights (LGPD / CCPA)</h3><p>You may request access, correction, portability, anonymization, blocking or deletion of your data. California residents (CCPA) have additional rights regarding data collection and use. To exercise your rights, contact support or privacy@awaken.app.</p><h3>8. Health and Sensitive Data</h3><p>Physical data such as weight, height, limitations and pain points is sensitive data. We collect it exclusively with your express consent to personalize your training plan.</p><h3>9. Minors</h3><p>We do not knowingly collect data from children under 13 (COPPA). Use by minors aged 13 to 18 requires parental or guardian consent.</p><h3>10. Cookies and Tracking</h3><p>The app may use session identifiers, tokens and analytics tools to improve experience. We do not use third-party advertising cookies.</p><h3>11. Data Protection Officer</h3><p>The official channel for privacy and data protection requests is: privacy@awaken.app</p><h3>12. Changes to This Policy</h3><p>Significant changes will be communicated in the app or by email with reasonable advance notice. Continued use after notification constitutes acceptance.</p><p style="margin-top:20px;font-size:11px;color:var(--mist-700);">Version 1.0 · Effective from 2026-06-29</p>` },
+    es: { title: 'Política de Privacidad', html: `<h3>1. Datos que recopilamos</h3><p>Podemos recopilar: nombre, correo electrónico, idioma, sesión, estado de acceso, preferencias, métricas de uso, datos de entrenamiento, información física proporcionada por el usuario (edad, peso, altura, sexo biológico, limitaciones, dolores, objetivos), datos de suscripción y registros de error.</p><h3>2. Base legal del tratamiento</h3><p>Tratamos tus datos basándonos en el consentimiento, la ejecución del contrato, el interés legítimo para la seguridad y mejora del servicio, y el cumplimiento de obligaciones legales. Puedes retirar el consentimiento en cualquier momento eliminando tu cuenta.</p><h3>3. Cómo usamos los datos</h3><p>Usamos los datos para: crear y autenticar cuentas, personalizar entrenamientos y experiencia, guardar el progreso, mostrar contenido apropiado, mejorar la estabilidad de la app, prevenir abusos y gestionar solicitudes de soporte.</p><h3>4. Compartir y proveedores</h3><p>No vendemos tus datos personales. Podemos compartirlos con proveedores que operan el servicio: Firebase (Google), RevenueCat, Cloudflare R2, OpenAI y Azure OpenAI. Estos proveedores están contractualmente obligados a proteger tus datos.</p><h3>5. Transferencias internacionales</h3><p>Los proveedores anteriores pueden procesar datos en servidores fuera de Brasil (EE.UU., UE). Estas transferencias se realizan con salvaguardias adecuadas, incluidas cláusulas contractuales estándar.</p><h3>6. Retención y seguridad</h3><p>Conservamos los datos el tiempo necesario para prestar el servicio y cumplir las obligaciones legales. Aplicamos medidas técnicas y organizativas para proteger la información.</p><h3>7. Tus derechos</h3><p>Puedes solicitar: acceso, corrección, portabilidad, anonimización, bloqueo o eliminación de tus datos. Para ejercer tus derechos, contacta al soporte o a privacy@awaken.app.</p><h3>8. Datos de salud y sensibles</h3><p>Los datos físicos como peso, altura, limitaciones y dolores son datos sensibles. Los recopilamos exclusivamente con tu consentimiento expreso para personalizar tu plan de entrenamiento.</p><h3>9. Menores</h3><p>No recopilamos intencionalmente datos de menores de 13 años (COPPA). El uso por menores de 13 a 18 años requiere el consentimiento de los padres o tutores.</p><h3>10. Cookies y rastreo</h3><p>La app puede usar identificadores de sesión, tokens y herramientas de analytics para mejorar la experiencia. No utilizamos cookies publicitarias de terceros.</p><h3>11. Responsable de protección de datos</h3><p>El canal oficial para solicitudes de privacidad es: privacy@awaken.app</p><h3>12. Cambios en esta política</h3><p>Los cambios significativos se comunicarán en la app o por correo electrónico con un aviso previo razonable.</p><p style="margin-top:20px;font-size:11px;color:var(--mist-700);">Versión 1.0 · Vigente desde el 29/06/2026</p>` },
+    fr: { title: 'Politique de Confidentialité', html: `<h3>1. Données que nous collectons</h3><p>Nous pouvons collecter : nom, e-mail, langue, session, statut d'accès, préférences, métriques d'utilisation, données d'entraînement, informations physiques fournies par l'utilisateur (âge, poids, taille, sexe biologique, limitations, douleurs, objectifs), données d'abonnement et journaux d'erreurs.</p><h3>2. Base légale du traitement</h3><p>Nous traitons vos données sur la base du consentement, de l'exécution du contrat, de l'intérêt légitime pour la sécurité et l'amélioration du service, et du respect des obligations légales. Vous pouvez retirer votre consentement à tout moment en supprimant votre compte.</p><h3>3. Comment nous utilisons les données</h3><p>Nous utilisons les données pour : créer et authentifier des comptes, personnaliser les entraînements et l'expérience, sauvegarder la progression, afficher un contenu approprié, améliorer la stabilité de l'app, prévenir les abus et traiter les demandes de support.</p><h3>4. Partage et prestataires</h3><p>Nous ne vendons pas vos données personnelles. Nous pouvons les partager avec des prestataires : Firebase (Google), RevenueCat, Cloudflare R2, OpenAI et Azure OpenAI. Ces prestataires sont contractuellement tenus de protéger vos données.</p><h3>5. Transferts internationaux</h3><p>Les prestataires ci-dessus peuvent traiter des données sur des serveurs hors du Brésil (États-Unis, UE). Ces transferts reposent sur des garanties appropriées, notamment des clauses contractuelles types.</p><h3>6. Conservation et sécurité</h3><p>Nous conservons les données aussi longtemps que nécessaire pour fournir le service et respecter les obligations légales. Nous appliquons des mesures techniques et organisationnelles pour protéger les informations.</p><h3>7. Vos droits</h3><p>Vous pouvez demander l'accès, la correction, la portabilité, l'anonymisation, le blocage ou la suppression de vos données. Pour exercer vos droits, contactez le support ou privacy@awaken.app.</p><h3>8. Données de santé et sensibles</h3><p>Les données physiques telles que le poids, la taille, les limitations et les douleurs sont des données sensibles. Nous les collectons exclusivement avec votre consentement exprès pour personnaliser votre plan d'entraînement.</p><h3>9. Mineurs</h3><p>Nous ne collectons pas intentionnellement des données d'enfants de moins de 13 ans (COPPA). L'utilisation par des mineurs de 13 à 18 ans nécessite le consentement parental ou tutoral.</p><h3>10. Cookies et suivi</h3><p>L'app peut utiliser des identifiants de session, des jetons et des outils d'analytics pour améliorer l'expérience. Nous n'utilisons pas de cookies publicitaires tiers.</p><h3>11. Délégué à la protection des données</h3><p>Le canal officiel pour les demandes de confidentialité est : privacy@awaken.app</p><h3>12. Modifications de cette politique</h3><p>Les modifications importantes seront communiquées dans l'app ou par e-mail avec un préavis raisonnable.</p><p style="margin-top:20px;font-size:11px;color:var(--mist-700);">Version 1.0 · En vigueur depuis le 29/06/2026</p>` }
+  }
+};
+
+function openLegal(doc) {
+  const c = LEGAL_CONTENT[doc][currentLang] || LEGAL_CONTENT[doc].pt;
+  document.getElementById('modal-title').textContent = c.title;
+  document.getElementById('modal-body').innerHTML = c.html;
+  document.getElementById('legal-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLegal() {
+  document.getElementById('legal-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('legal-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeLegal();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLegal();
+});
+</script>
+
+<!-- LEGAL MODAL -->
+<div id="legal-modal" class="legal-modal-overlay">
+  <div class="legal-modal-box">
+    <div class="legal-modal-head">
+      <h2 id="modal-title"></h2>
+      <button class="modal-close" onclick="closeLegal()">×</button>
+    </div>
+    <div class="legal-modal-body" id="modal-body"></div>
+    <div class="legal-modal-foot">
+      <button class="btn-primary" onclick="closeLegal()" data-i18n="modal-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEV NAV -->
+<div id="devnav" style="position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:9999;display:flex;flex-direction:column;gap:0;background:#07080D;border:1px solid rgba(255,255,255,0.1);border-left:none;border-radius:0 12px 12px 0;overflow:hidden;box-shadow:4px 0 24px rgba(0,0,0,0.6);">
+  <div style="padding:10px 14px 8px;font-family:'Chakra Petch',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#474C66;border-bottom:1px solid rgba(255,255,255,0.06);">Páginas</div>
+  <a href="index.html" title="Índice" style="display:flex;align-items:center;gap:8px;padding:10px 14px;text-decoration:none;color:#828AAE;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;transition:background 0.15s,color 0.15s;border-bottom:1px solid rgba(255,255,255,0.04);" onmouseover="this.style.background='rgba(255,255,255,0.04)';this.style.color='#C3C9E6'" onmouseout="this.style.background='';this.style.color='#828AAE'">⊞ <span>Hub</span></a>
+  <a href="Awaken Landing.html" title="Landing" style="display:flex;align-items:center;gap:8px;padding:10px 14px;text-decoration:none;background:rgba(45,111,245,0.12);color:#7FB0FF;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);">🌐 <span>Landing</span></a>
+  <a href="Awaken Admin Login.html" title="Login" style="display:flex;align-items:center;gap:8px;padding:10px 14px;text-decoration:none;color:#828AAE;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;transition:background 0.15s,color 0.15s;border-bottom:1px solid rgba(255,255,255,0.04);" onmouseover="this.style.background='rgba(255,255,255,0.04)';this.style.color='#C3C9E6'" onmouseout="this.style.background='';this.style.color='#828AAE'">🔐 <span>Login</span></a>
+  <a href="Awaken Admin.html" title="Admin" style="display:flex;align-items:center;gap:8px;padding:10px 14px;text-decoration:none;color:#828AAE;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;transition:background 0.15s,color 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)';this.style.color='#C3C9E6'" onmouseout="this.style.background='';this.style.color='#828AAE'">⚙️ <span>Admin</span></a>
+</div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+using Microsoft.EntityFrameworkCore;
+
+namespace Nexora.Infrastructure.Persistence;
+
+public partial class AppDbContext
+{
+    public DbSet<Domain.Platform.Tenant> Tenants => Set<Domain.Platform.Tenant>();
+    public DbSet<Domain.Platform.TenantConfig> TenantConfigs => Set<Domain.Platform.TenantConfig>();
+    public DbSet<Domain.Platform.Store> Stores => Set<Domain.Platform.Store>();
+    public DbSet<Domain.Platform.Station> Stations => Set<Domain.Platform.Station>();
+    public DbSet<Domain.Platform.EdgeInstallation> EdgeInstallations => Set<Domain.Platform.EdgeInstallation>();
+    public DbSet<Domain.Platform.AppUser> Users => Set<Domain.Platform.AppUser>();
+    public DbSet<Domain.Platform.OwnerInvite> OwnerInvites => Set<Domain.Platform.OwnerInvite>();
+    public DbSet<Domain.Platform.EmailOutbox> EmailOutboxes => Set<Domain.Platform.EmailOutbox>();
+    public DbSet<Domain.Platform.Role> Roles => Set<Domain.Platform.Role>();
+    public DbSet<Domain.Platform.UserRole> UserRoles => Set<Domain.Platform.UserRole>();
+    public DbSet<Domain.Platform.Device> Devices => Set<Domain.Platform.Device>();
+    public DbSet<Domain.Platform.AuthAttempt> AuthAttempts => Set<Domain.Platform.AuthAttempt>();
+    public DbSet<Domain.Platform.AuthSession> AuthSessions => Set<Domain.Platform.AuthSession>();
+    public DbSet<Domain.Platform.InstallationNonce> InstallationNonces => Set<Domain.Platform.InstallationNonce>();
+    public DbSet<Domain.Platform.PairingCode> PairingCodes => Set<Domain.Platform.PairingCode>();
+    public DbSet<Domain.Platform.AuditLog> AuditLogs => Set<Domain.Platform.AuditLog>();
+    public DbSet<Domain.Platform.IdempotencyKey> IdempotencyKeys => Set<Domain.Platform.IdempotencyKey>();
+    public DbSet<Domain.Platform.DomainEvent> DomainEvents => Set<Domain.Platform.DomainEvent>();
+    public DbSet<Domain.Platform.MediaAsset> MediaAssets => Set<Domain.Platform.MediaAsset>();
+    public DbSet<Domain.Platform.TenantSecret> TenantSecrets => Set<Domain.Platform.TenantSecret>();
+}

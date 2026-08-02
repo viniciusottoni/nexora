@@ -1,0 +1,80 @@
+name: Qualidade Agendada
+
+on:
+  schedule:
+    - cron: '0 5 * * *'
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-quality
+  cancel-in-progress: false
+
+jobs:
+  chaos-offline:
+    name: Caos offline
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 5 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CHAOS_EDGE_URL: ${{ secrets.CHAOS_EDGE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Confirmar operação local com nuvem isolada
+        run: node infra/scripts/chaos-offline.mjs
+
+  data-integrity:
+    name: Integridade e recálculo
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 5 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nexora_scheduled
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d nexora_scheduled"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:55432/nexora_scheduled
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm db:generate
+      - run: pnpm db:deploy
+      - name: data-integrity
+        run: node infra/scripts/data-integrity.mjs
+      - name: metrics-recalculation
+        run: node infra/scripts/metrics-recalculation.mjs
+
+  load-test:
+    name: Carga semanal
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 6 * * 0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      LOAD_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+      LOAD_PATH: /v1/health
+      LOAD_REQUESTS: 120
+      LOAD_CONCURRENCY: 20
+      LOAD_MAX_P95_MS: 3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Smoke concorrente de staging
+        run: node infra/scripts/load-smoke.mjs

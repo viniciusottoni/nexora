@@ -1,0 +1,65 @@
+:root{
+  /* Aliases semânticos — é isto que os componentes consomem */
+  --text-primary:var(--nx-gray-900);
+  --text-secondary:var(--nx-gray-600);
+  --text-muted:var(--nx-gray-500);
+  --text-disabled:var(--nx-gray-400);
+  --text-inverse:var(--nx-white);
+  --text-brand:var(--nx-navy-800);
+  --text-link:var(--nx-blue-600);
+  --text-link-hover:var(--nx-navy-800);
+  --text-success:var(--nx-success-600);
+  --text-warning:var(--nx-warning-600);
+  --text-danger:var(--nx-danger-600);
+
+  --surface-page:var(--nx-gray-50);
+  --surface-card:var(--nx-white);
+  --surface-raised:var(--nx-white);
+  --surface-sunken:var(--nx-gray-100);
+  --surface-inverse:var(--nx-navy-900);
+  --surface-brand:var(--nx-navy-800);
+  --surface-brand-subtle:var(--nx-blue-50);
+  --surface-accent-subtle:var(--nx-teal-100);
+  --surface-success-subtle:var(--nx-success-100);
+  --surface-warning-subtle:var(--nx-warning-100);
+  --surface-danger-subtle:var(--nx-danger-100);
+  --surface-overlay:rgba(7,23,49,.55);
+
+  --border-subtle:var(--nx-gray-200);
+  --border-default:var(--nx-gray-300);
+  --border-strong:var(--nx-gray-400);
+  --border-brand:var(--nx-navy-600);
+  --border-danger:var(--nx-danger-500);
+
+  /* Ação: por padrão a plataforma Nexora usa o navy da marca */
+  --action-primary:var(--nx-navy-800);
+  --action-primary-hover:var(--nx-navy-700);
+  --action-primary-active:var(--nx-navy-900);
+  --action-primary-text:var(--nx-white);
+  --action-accent:var(--nx-green-600);
+  --action-accent-hover:var(--nx-green-700);
+  --action-accent-text:var(--nx-white);
+
+  /* Tokens de marca do tenant — sobrescritos em runtime (doc 02, §5.2) */
+  --brand-primary:var(--nx-navy-800);
+  --brand-secondary:var(--nx-cyan-500);
+  --brand-surface:var(--nx-gray-50);
+  --brand-on-primary:var(--nx-white);
+  --brand-font:var(--font-sans);
+  --brand-radius:var(--radius-brand);
+}
+
+/* Superfícies escuras da cozinha: o KDS é lido a 1,5 m, em ambiente com calor e
+   luz forte — fundo escuro e cor de estado saturada (doc otimização, §6.2) */
+[data-surface="kds"]{
+  --surface-page:#0B1620;
+  --surface-card:#12212E;
+  --surface-sunken:#0A1319;
+  --surface-raised:#182C3C;
+  --border-subtle:#22384A;
+  --border-default:#2E4A60;
+  --text-primary:#F2F7FB;
+  --text-secondary:#9DB2C4;
+  --text-muted:#728799;
+  --text-inverse:var(--nx-navy-900);
+}

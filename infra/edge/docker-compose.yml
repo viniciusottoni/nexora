@@ -1,0 +1,133 @@
+name: replay-edge
+
+# Nomes de variável no formato Section__Key (convenção de configuração hierárquica do
+# ASP.NET Core — cada uma liga a uma classe de Options em Nexora.Api.Edge/Nexora.Infrastructure;
+# ver csproj/Program.cs de Nexora.Api.Edge). Antes da correção do gap P0-1 (US-006) este bloco
+# usava nomes de variável da stack Node/Prisma morta (DATABASE_URL, REDIS_HOST, JWT_SECRET soltos
+# etc.) que o backend .NET real nunca leu — a ponte para o backend estava quebrada mesmo com a
+# imagem certa. EDGE_STORE_ID fica de fora deliberadamente: nenhuma Options class do Api.Edge
+# consome loja isolada do tenant hoje (StoreId é resolvido de outra forma pelo próprio processo de
+# instalação); não recriar uma variável sem consumidor real.
+x-runtime-environment: &runtime-environment
+  ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-replay_edge};Username=${EDGE_DB_RUNTIME_USER};Password=${EDGE_DB_RUNTIME_PASSWORD}
+  Redis__Host: redis
+  Redis__Port: '6379'
+  Edge__Installation__TenantId: ${EDGE_TENANT_ID}
+  Edge__Installation__InstallationId: ${INSTALLATION_ID}
+  Edge__Installation__SyncEndpoint: ${SYNC_ENDPOINT}
+  Auth__Jwt__Secret: ${JWT_SECRET}
+  Devices__Security__Pepper: ${DEVICE_HASH_PEPPER}
+  Auth__Secrets__PinLookupPepper: ${PIN_LOOKUP_PEPPER}
+  App__Version: ${APP_VERSION}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-replay_edge}
+      POSTGRES_USER: ${EDGE_DB_ADMIN_USER}
+      POSTGRES_PASSWORD: ${EDGE_DB_ADMIN_PASSWORD}
+      EDGE_DB_RUNTIME_USER: ${EDGE_DB_RUNTIME_USER}
+      EDGE_DB_RUNTIME_PASSWORD: ${EDGE_DB_RUNTIME_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${EDGE_DB_ADMIN_USER} -d ${POSTGRES_DB:-replay_edge}']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [backend]
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes', '--save', '60', '1']
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [backend]
+
+  # Aplica as migrations do EF Core (Nexora.Infrastructure/Persistence/Migrations, ADR-038) contra
+  # o Postgres do compose e encerra — substitui `pnpm --filter @db/db prisma:deploy` (stack Node
+  # morta). MESMA imagem do api-edge (dotnet Nexora.Api.Edge.dll); o modo "--migrate" só roda
+  # DbContext.Database.MigrateAsync() e sai, sem abrir porta HTTP (ver Program.cs). Conecta como
+  # EDGE_DB_ADMIN_USER (superusuário do Postgres do compose, não o papel de runtime) porque
+  # CREATE TABLE/ALTER TABLE ENABLE ROW LEVEL SECURITY exige privilégio que o papel de runtime
+  # deliberadamente não tem (postgres-init/10-runtime-role.sh, ADR-004).
+  migrator:
+    image: ${EDGE_API_IMAGE:?EDGE_API_IMAGE imutável obrigatório}
+    restart: 'no'
+    command: ['--migrate']
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-replay_edge};Username=${EDGE_DB_ADMIN_USER};Password=${EDGE_DB_ADMIN_PASSWORD}
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [backend]
+
+  # Sem serviço "bootstrap-import" separado: a carga inicial (catálogo/configuração/loja) é
+  # baixada pelo próprio install.sh (download_initial_load, autenticado por assinatura Ed25519 —
+  # sem crachá de instalação ainda existir) e importada via o endpoint HTTP
+  # POST /v1/installation/bootstrap/import, já servido pelo processo normal do api-edge
+  # (Nexora.Api.Edge.Controllers.InstallationController) — não um binário/processo separado como
+  # na stack Node (import-bootstrap.js). Sem serviço "sync-worker" separado: a sincronização
+  # periódica com a nuvem é o BackgroundService Nexora.Infrastructure.Installation.SyncOutboxWorker,
+  # registrado via AddHostedService no MESMO processo do api-edge (Program.cs) — não um processo
+  # Node adicional (sync-worker.js). Os dois containers da stack antiga desapareceram porque a
+  # lógica migrou para dentro do próprio api-edge, não porque foi removida.
+  api-edge:
+    image: ${EDGE_API_IMAGE:?EDGE_API_IMAGE imutável obrigatório}
+    restart: unless-stopped
+    environment: *runtime-environment
+    group_add: ['${EDGE_CONTAINER_GID:-1000}']
+    depends_on:
+      migrator: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    volumes:
+      - ${EDGE_KEYS_DIR:-/etc/replay-edge/keys}:/run/secrets/edge:ro
+      - ${EDGE_STATE_DIR:-/var/lib/replay-edge/install}:/var/lib/replay-edge/install:ro
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '-', 'http://127.0.0.1:3000/v1/health']
+      interval: 10s
+      timeout: 3s
+      start_period: 30s
+      retries: 12
+    labels: { com.centurylinklabs.watchtower.enable: 'true' }
+    networks: [backend, lan]
+
+  web:
+    image: ${EDGE_WEB_IMAGE:?EDGE_WEB_IMAGE imutável obrigatório}
+    restart: unless-stopped
+    depends_on:
+      api-edge: { condition: service_healthy }
+    ports: ['80:80', '443:443']
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${EDGE_TLS_DIR:-/etc/replay-edge/tls}:/etc/nginx/tls:ro
+    healthcheck:
+      test: ['CMD', 'wget', '--no-check-certificate', '-q', '-O', '-', 'https://127.0.0.1/healthz']
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    labels: { com.centurylinklabs.watchtower.enable: 'true' }
+    networks: [lan]
+
+  watchtower:
+    image: containrrr/watchtower:1.7.1
+    restart: unless-stopped
+    command: ['--label-enable', '--cleanup', '--rolling-restart', '--schedule', '0 0 4 * * *']
+    environment: { TZ: '${TZ:-America/Fortaleza}' }
+    volumes: [/var/run/docker.sock:/var/run/docker.sock]
+    networks: [lan]
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  backend: { internal: true }
+  lan:

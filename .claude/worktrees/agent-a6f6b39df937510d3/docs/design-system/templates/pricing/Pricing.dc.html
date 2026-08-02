@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Pricing — Planos S-Rank" description="Tela de planos up-front: teste de 7 dias, mensal e anual com destaque de desconto." -->
+<helmet>
+  <script src="./ds-base.js"></script>
+  <style>
+    html, body { margin: 0; background: var(--bg-void); }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<div data-screen-label="Pricing" style="min-height:100vh; background:var(--grad-void); display:flex; justify-content:center; padding:28px 0 40px;">
+  <div style="width:100%; max-width:440px; padding:0 22px; display:flex; flex-direction:column;">
+
+    <!-- Header -->
+    <img src="../../assets/logo-wordmark.png" alt="AWAKEN" style="width:118px; align-self:center; margin-bottom:26px;" />
+
+    <div style="font-family:var(--font-display); font-size:12px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--blue-300);">Planos · S-Rank</div>
+    <h1 style="font-family:var(--font-display); font-size:28px; font-weight:700; line-height:1.08; color:var(--text-primary); margin:8px 0 0;">Escolha como despertar</h1>
+    <p style="font-size:14px; line-height:1.55; color:var(--text-tertiary); margin:10px 0 22px;">Acesso total ao S-Rank, do seu jeito. Sem letras miúdas, cancele quando quiser.</p>
+
+    <div style="display:flex; flex-direction:column; gap:14px;">
+
+      <!-- ============ CARD 1 — TESTE 7 DIAS ============ -->
+      <div style="position:relative; border-radius:var(--radius-lg); padding:20px; background:var(--bg-surface); border:1px solid var(--border-default); box-shadow:var(--shadow-md), var(--inset-sheen); transition:transform var(--dur-base) var(--ease-out);" style-hover="transform:translateY(-2px);">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:9px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue-300)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>
+            <span style="font-family:var(--font-display); font-weight:700; font-size:18px; color:var(--text-primary);">Teste grátis</span>
+          </div>
+          <span style="display:inline-flex; align-items:center; height:22px; padding:0 9px; font-family:var(--font-display); font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; border-radius:var(--radius-pill); background:color-mix(in srgb, var(--blue-500) 16%, transparent); color:var(--blue-300); border:1px solid color-mix(in srgb, var(--blue-500) 30%, transparent);">7 dias</span>
+        </div>
+
+        <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:14px;">
+          <span style="font-family:var(--font-display); font-weight:700; font-size:30px; color:var(--text-primary); font-variant-numeric:tabular-nums;">R$ 0</span>
+          <span style="font-size:13px; color:var(--text-tertiary);">por 7 dias · sem cartão</span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:9px; margin-bottom:14px;">
+          <div style="display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--text-secondary);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Acesso total ao S-Rank por 7 dias</div>
+          <div style="display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--text-secondary);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Quests ilimitadas e personalizadas por IA</div>
+        </div>
+
+        <!-- Honest limitation note -->
+        <div style="display:flex; align-items:flex-start; gap:9px; padding:11px 12px; margin-bottom:16px; border-radius:var(--radius-md); background:rgba(255,255,255,0.03); border:1px solid var(--border-subtle);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-top:1px;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span style="font-size:12.5px; line-height:1.45; color:var(--text-tertiary);">Durante o teste você <span style="color:var(--text-secondary); font-weight:600;">não recebe nem usa itens</span>. Eles ficam guardados até você assinar.</span>
+        </div>
+
+        <button style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; height:48px; font-family:var(--font-display); font-size:15px; font-weight:600; letter-spacing:0.02em; text-transform:uppercase; border-radius:var(--radius-md); cursor:pointer; background:var(--bg-elevated); color:var(--text-primary); border:1px solid var(--border-default); transition:filter var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);" style-hover="filter:brightness(1.12); border-color:var(--border-strong);" style-active="transform:scale(0.96);">Começar teste grátis</button>
+      </div>
+
+      <!-- ============ CARD 2 — MENSAL ============ -->
+      <div style="position:relative; border-radius:var(--radius-lg); padding:20px; background:var(--bg-surface); border:1px solid var(--border-default); box-shadow:var(--shadow-md), var(--inset-sheen); transition:transform var(--dur-base) var(--ease-out);" style-hover="transform:translateY(-2px);">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:9px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue-300)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
+            <span style="font-family:var(--font-display); font-weight:700; font-size:18px; color:var(--text-primary);">Mensal</span>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:14px;">
+          <span style="font-family:var(--font-display); font-weight:700; font-size:30px; color:var(--text-primary); font-variant-numeric:tabular-nums;">R$ 14,90</span>
+          <span style="font-size:13px; color:var(--text-tertiary);">/mês</span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:9px; margin-bottom:18px;">
+          <div style="display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--text-secondary);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Tudo do S-Rank, sempre liberado</div>
+          <div style="display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--text-secondary);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Master Quests · nutrição completa · sem anúncios</div>
+          <div style="display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--text-secondary);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Cancele quando quiser</div>
+        </div>
+
+        <button style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; height:48px; font-family:var(--font-display); font-size:15px; font-weight:600; letter-spacing:0.02em; text-transform:uppercase; border-radius:var(--radius-md); cursor:pointer; background:var(--grad-energy); color:var(--text-on-primary); border:1px solid transparent; transition:filter var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);" style-hover="filter:brightness(1.08); box-shadow:var(--glow-blue);" style-active="transform:scale(0.96);">Assinar mensal</button>
+      </div>
+
+      <!-- ============ CARD 3 — ANUAL (DESTAQUE) ============ -->
+      <div style="position:relative; border-radius:var(--radius-lg); padding:20px; background:linear-gradient(135deg, rgba(245,197,24,0.10), rgba(255,149,0,0.05)), var(--bg-surface); border:1px solid color-mix(in srgb, var(--gold-500) 55%, transparent); box-shadow:0 0 0 1px color-mix(in srgb, var(--gold-500) 20%, transparent), 0 0 30px color-mix(in srgb, var(--gold-500) 26%, transparent), var(--inset-sheen); transition:transform var(--dur-base) var(--ease-out);" style-hover="transform:translateY(-2px);">
+
+        <!-- Discount ribbon -->
+        <span style="position:absolute; top:-11px; right:18px; display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 11px; font-family:var(--font-display); font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; white-space:nowrap; border-radius:var(--radius-pill); background:var(--grad-xp); color:var(--text-on-gold); box-shadow:var(--glow-gold);">−45% no anual</span>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:9px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>
+            <span style="font-family:var(--font-display); font-weight:700; font-size:18px; color:var(--text-primary);">Anual</span>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:4px;">
+          <span style="font-family:var(--font-display); font-weight:700; font-size:30px; color:var(--text-primary); font-variant-numeric:tabular-nums;">R$ 99,90</span>
+          <span style="font-size:13px; color:var(--text-tertiary);">/ano</span>
+        </div>
+        <div style="font-size:12.5px; color:var(--gold-400); font-weight:600; margin-bottom:14px; font-variant-numeric:tabular-nums;">≈ R$ 8,32/mês · economize 45% vs. mensal</div>
+
+        <div style="display:flex; flex-direction:column; gap:9px; margin-bottom:18px;">
+          <div style="display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--text-secondary);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Tudo do plano mensal, o ano inteiro</div>
+          <div style="display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--text-secondary);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Quase 2 meses grátis por ano</div>
+          <div style="display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--text-secondary);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Card de perfil animado · prioridade no suporte</div>
+        </div>
+
+        <button style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; height:48px; font-family:var(--font-display); font-size:15px; font-weight:600; letter-spacing:0.02em; text-transform:uppercase; border-radius:var(--radius-md); cursor:pointer; background:var(--grad-xp); color:var(--text-on-gold); border:1px solid transparent; box-shadow:var(--glow-gold); transition:filter var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);" style-hover="filter:brightness(1.08);" style-active="transform:scale(0.96);">Assinar anual · melhor valor</button>
+      </div>
+
+    </div>
+
+    <!-- Footer microcopy -->
+    <p style="text-align:center; font-size:11.5px; line-height:1.5; color:var(--text-disabled); margin:18px 0 0;">Preços em BRL · renova automaticamente · cancele quando quiser.<br/><span style="color:var(--blue-300); cursor:pointer;">Restaurar compra</span></p>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:440,&quot;height&quot;:960}}"></script>
+</body>
+</html>

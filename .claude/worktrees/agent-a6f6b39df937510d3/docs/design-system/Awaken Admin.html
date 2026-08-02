@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Awaken Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#07080D;--ink-950:#0A0B12;--ink-900:#0E1019;--ink-850:#111320;
+  --ink-800:#161929;--ink-700:#1D2133;--ink-600:#262B41;--ink-500:#333A55;
+  --blue-500:#2D6FF5;--blue-400:#4D8BFF;--blue-300:#7FB0FF;
+  --purple-500:#8B3FD8;--purple-400:#A65CEE;--purple-300:#C088F6;
+  --gold-500:#F5C518;--gold-400:#FFD64A;--cyan-400:#5FE8FF;
+  --mist-100:#F2F5FF;--mist-300:#C3C9E6;--mist-400:#AEB4D0;
+  --mist-500:#828AAE;--mist-600:#5E6488;--mist-700:#474C66;
+  --green-500:#22C55E;--red-500:#EF4444;--orange-500:#FF9500;
+  --border-subtle:rgba(255,255,255,0.06);--border-default:rgba(255,255,255,0.10);
+  --sidebar-w:220px;--topbar-h:60px;
+}
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0;font-family:'Sora',system-ui,sans-serif;font-size:14px;color:var(--mist-300);background:var(--ink-950);-webkit-font-smoothing:antialiased;height:100vh;overflow:hidden;}
+h1,h2,h3,h4,h5{font-family:'Chakra Petch',system-ui,sans-serif;font-weight:700;letter-spacing:-0.01em;margin:0;}
+*{scrollbar-width:thin;scrollbar-color:var(--ink-600) transparent;}
+*::-webkit-scrollbar{width:5px;height:5px;}
+*::-webkit-scrollbar-thumb{background:var(--ink-600);border-radius:99px;}
+
+/* LAYOUT */
+.shell{display:flex;height:100vh;}
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--void);border-right:1px solid var(--border-subtle);display:flex;flex-direction:column;overflow:hidden;}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{height:var(--topbar-h);flex-shrink:0;background:var(--ink-950);border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:16px;}
+.content{flex:1;overflow-y:auto;padding:28px 28px 40px;}
+
+/* SIDEBAR */
+.sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border-subtle);}
+.sb-logo img{height:32px;filter:drop-shadow(0 0 10px rgba(45,111,245,0.4));}
+.sb-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;cursor:pointer;color:var(--mist-600);font-size:13px;font-weight:500;transition:background 0.15s,color 0.15s;border:none;background:none;width:100%;text-align:left;font-family:'Sora',sans-serif;}
+.nav-item svg{flex-shrink:0;opacity:0.7;}
+.nav-item:hover{background:var(--ink-900);color:var(--mist-400);}
+.nav-item.active{background:rgba(45,111,245,0.12);color:var(--blue-300);}
+.nav-item.active svg{opacity:1;}
+.nav-badge{margin-left:auto;background:var(--red-500);color:#fff;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:2px 6px;border-radius:99px;min-width:18px;text-align:center;}
+.nav-sep{height:1px;background:var(--border-subtle);margin:8px 0;}
+.sb-user{padding:14px 16px;border-top:1px solid var(--border-subtle);display:flex;align-items:center;gap:10px;}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue-500),var(--purple-500));display:flex;align-items:center;justify-content:center;font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+.sb-user-info{min-width:0;}
+.sb-user-name{font-size:13px;font-weight:600;color:var(--mist-300);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-user-role{font-size:11px;color:var(--mist-700);font-family:'Chakra Petch',sans-serif;letter-spacing:0.08em;text-transform:uppercase;}
+
+/* TOPBAR */
+.topbar-search{flex:1;max-width:360px;position:relative;}
+.topbar-search input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:9px;padding:8px 14px 8px 36px;font-size:13px;color:var(--mist-300);font-family:'Sora',sans-serif;outline:none;transition:border-color 0.2s;}
+.topbar-search input:focus{border-color:var(--blue-400);}
+.topbar-search input::placeholder{color:var(--mist-700);}
+.topbar-search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--mist-700);pointer-events:none;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.tb-icon{width:36px;height:36px;background:none;border:1px solid var(--border-subtle);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--mist-600);transition:border-color 0.2s,color 0.2s;position:relative;}
+.tb-icon:hover{border-color:var(--border-default);color:var(--mist-400);}
+.tb-badge{position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--red-500);border-radius:50%;font-size:9px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;}
+.topbar-title{font-family:'Chakra Petch',sans-serif;font-size:15px;font-weight:700;color:var(--mist-400);letter-spacing:0.04em;}
+.tb-separator{width:1px;height:20px;background:var(--border-subtle);}
+
+/* CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.kpi{background:var(--ink-850);border:1px solid var(--border-subtle);border-radius:14px;padding:20px;position:relative;overflow:hidden;}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.blue::after{background:var(--blue-500);}
+.kpi.purple::after{background:var(--purple-500);}
+.kpi.gold::after{background:var(--gold-500);}
+.kpi.green::after{background:var(--green-500);}
+.kpi-label{font-family:'Chakra Petch',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--mist-600);margin-bottom:10px;}
+.kpi-val{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:var(--mist-100);line-height:1;margin-bottom:8px;}
+.kpi-delta{font-size:12px;display:flex;align-items:center;gap:4px;}
+.kpi-delta.up{color:var(--green-500);}
+.kpi-delta.down{color:var(--red-500);}
+.kpi-delta.neutral{color:var(--mist-600);}
+
+.row2{display:grid;grid-template-columns:1fr 360px;gap:16px;margin-bottom:24px;}
+.card{background:var(--ink-850);border:1px solid var(--border-subtle);border-radius:14px;padding:20px;}
+.card-title{font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mist-500);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.card-title span{color:var(--mist-600);font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;}
+
+/* TABLES */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{font-family:'Chakra Petch',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--mist-700);padding:10px 12px;text-align:left;border-bottom:1px solid var(--border-subtle);}
+td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--mist-400);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.tbl-name{color:var(--mist-200,#dde2f4);font-weight:500;}
+
+/* BADGES */
+.rank-badge{font-family:'Chakra Petch',sans-serif;font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;letter-spacing:0.06em;}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px;flex-shrink:0;}
+.pill{font-size:11px;font-family:'Chakra Petch',sans-serif;font-weight:600;padding:3px 10px;border-radius:99px;letter-spacing:0.06em;text-transform:uppercase;}
+.pill-blue{background:rgba(45,111,245,0.15);color:var(--blue-300);}
+.pill-green{background:rgba(34,197,94,0.13);color:var(--green-500);}
+.pill-orange{background:rgba(255,149,0,0.13);color:var(--orange-500);}
+.pill-red{background:rgba(239,68,68,0.13);color:var(--red-500);}
+.pill-purple{background:rgba(139,63,216,0.15);color:var(--purple-300);}
+.pill-gray{background:rgba(255,255,255,0.06);color:var(--mist-600);}
+
+/* FILTERS */
+.filter-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
+.filter-btn{padding:7px 14px;background:var(--ink-800);border:1px solid var(--border-subtle);border-radius:8px;font-size:12px;color:var(--mist-600);cursor:pointer;font-family:'Chakra Petch',sans-serif;font-weight:600;letter-spacing:0.06em;transition:all 0.15s;}
+.filter-btn:hover{border-color:var(--border-default);color:var(--mist-400);}
+.filter-btn.active{background:rgba(45,111,245,0.12);border-color:var(--blue-500);color:var(--blue-300);}
+.search-sm{padding:7px 12px 7px 32px;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:8px;font-size:13px;color:var(--mist-300);font-family:'Sora',sans-serif;outline:none;min-width:200px;transition:border-color 0.2s;}
+.search-sm:focus{border-color:var(--blue-400);}
+.search-sm::placeholder{color:var(--mist-700);}
+.search-wrap{position:relative;}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--mist-700);}
+
+/* PROGRESS BARS */
+.bar-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.bar-label{font-size:12px;color:var(--mist-500);min-width:120px;}
+.bar-track{flex:1;height:6px;background:var(--ink-600);border-radius:99px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:99px;transition:width 0.6s;}
+.bar-val{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mist-400);min-width:52px;text-align:right;}
+
+/* TIMELINE */
+.timeline{display:flex;flex-direction:column;gap:0;}
+.tl-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-subtle);}
+.tl-item:last-child{border-bottom:none;}
+.tl-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.tl-content{flex:1;min-width:0;}
+.tl-main{font-size:13px;color:var(--mist-300);line-height:1.5;}
+.tl-main strong{color:var(--mist-100);}
+.tl-meta{display:flex;gap:12px;margin-top:4px;font-size:11px;color:var(--mist-700);font-family:'JetBrains Mono',monospace;}
+
+/* SECTION HEADER */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;}
+.page-title h2{font-size:20px;color:var(--mist-100);margin-bottom:4px;}
+.page-title p{font-size:13px;color:var(--mist-600);margin:0;}
+
+/* CHARTS */
+.chart-area{width:100%;height:140px;position:relative;}
+.chart-area svg{width:100%;height:100%;}
+
+/* ACTIVITY FEED */
+.feed{display:flex;flex-direction:column;gap:0;max-height:320px;overflow-y:auto;}
+.feed-item{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid var(--border-subtle);}
+.feed-item:last-child{border-bottom:none;}
+.feed-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.feed-body{flex:1;min-width:0;}
+.feed-text{font-size:13px;color:var(--mist-400);line-height:1.4;}
+.feed-text strong{color:var(--mist-100);}
+.feed-time{font-size:11px;color:var(--mist-700);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+
+/* SECTION: hidden by default */
+.section{display:none;}
+.section.active{display:block;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <img src="uploads/logo-8b85c8c0.png" alt="Awaken Admin">
+  </div>
+  <nav class="sb-nav" id="sidenav">
+    <button class="nav-item active" onclick="nav(this,'dashboard')" data-s="dashboard">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" onclick="nav(this,'users')" data-s="users">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M17 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></svg>
+      Usuários
+    </button>
+    <button class="nav-item" onclick="nav(this,'tickets')" data-s="tickets">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="m10 14 11-11"/></svg>
+      Tickets
+      <span class="nav-badge">43</span>
+    </button>
+    <button class="nav-item" onclick="nav(this,'bugs')" data-s="bugs">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="6" width="8" height="14" rx="4"/><path d="M8 9H5m3 4H4m4 4H5M16 9h3m-3 4h4m-4 4h3M9.5 3l1.5 3m4-3-1.5 3"/></svg>
+      Bugs
+      <span class="nav-badge" style="background:var(--orange-500);">7</span>
+    </button>
+    <button class="nav-item" onclick="nav(this,'security')" data-s="security">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Segurança
+    </button>
+    <div class="nav-sep"></div>
+    <button class="nav-item" onclick="nav(this,'audit')" data-s="audit">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Audit Log
+    </button>
+    <button class="nav-item" onclick="nav(this,'events')" data-s="events">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Eventos
+    </button>
+    <button class="nav-item" onclick="nav(this,'engagement')" data-s="engagement">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Engajamento
+    </button>
+    <button class="nav-item" onclick="nav(this,'reports')" data-s="reports">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><polyline points="8 13 8 17"/><polyline points="12 11 12 17"/><polyline points="16 15 16 17"/></svg>
+      Relatórios
+    </button>
+  </nav>
+  <div class="sb-user">
+    <div class="sb-avatar">VA</div>
+    <div class="sb-user-info">
+      <div class="sb-user-name">Vinícius Admin</div>
+      <div class="sb-user-role">Super Admin</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Buscar usuários, tickets, eventos...">
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="tb-separator"></div>
+      <button class="tb-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div class="tb-badge">5</div>
+      </button>
+      <button class="tb-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      </button>
+      <a href="Awaken Admin Login.html" style="text-decoration:none;">
+        <button class="tb-icon" title="Sair">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </a>
+    </div>
+  </header>
+
+  <div class="content" id="content">
+    <!-- JS renders sections here -->
+  </div>
+</div>
+</div>
+
+<!-- DEV NAV -->
+<div id="devnav" style="position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:9999;display:flex;flex-direction:column;gap:0;background:#07080D;border:1px solid rgba(255,255,255,0.1);border-left:none;border-radius:0 12px 12px 0;overflow:hidden;box-shadow:4px 0 24px rgba(0,0,0,0.6);">
+  <div style="padding:10px 14px 8px;font-family:'Chakra Petch',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#474C66;border-bottom:1px solid rgba(255,255,255,0.06);">Páginas</div>
+  <a href="index.html" title="Índice" style="display:flex;align-items:center;gap:8px;padding:10px 14px;text-decoration:none;color:#828AAE;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;transition:background 0.15s,color 0.15s;border-bottom:1px solid rgba(255,255,255,0.04);" onmouseover="this.style.background='rgba(255,255,255,0.04)';this.style.color='#C3C9E6'" onmouseout="this.style.background='';this.style.color='#828AAE'">⊞ <span>Hub</span></a>
+  <a href="Awaken Landing.html" title="Landing" style="display:flex;align-items:center;gap:8px;padding:10px 14px;text-decoration:none;color:#828AAE;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;transition:background 0.15s,color 0.15s;border-bottom:1px solid rgba(255,255,255,0.04);" onmouseover="this.style.background='rgba(255,255,255,0.04)';this.style.color='#C3C9E6'" onmouseout="this.style.background='';this.style.color='#828AAE'">🌐 <span>Landing</span></a>
+  <a href="Awaken Admin Login.html" title="Login" style="display:flex;align-items:center;gap:8px;padding:10px 14px;text-decoration:none;color:#828AAE;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;transition:background 0.15s,color 0.15s;border-bottom:1px solid rgba(255,255,255,0.04);" onmouseover="this.style.background='rgba(255,255,255,0.04)';this.style.color='#C3C9E6'" onmouseout="this.style.background='';this.style.color='#828AAE'">🔐 <span>Login</span></a>
+  <a href="Awaken Admin.html" title="Admin" style="display:flex;align-items:center;gap:8px;padding:10px 14px;text-decoration:none;background:rgba(34,197,94,0.1);color:#22C55E;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;">⚙️ <span>Admin</span></a>
+</div>
+
+<script>
+// ─── MOCK DATA ────────────────────────────────────────────────────────────────
+const ranks = {E:'#6B7280',D:'#22C55E',C:'#3B82F6',B:'#A855F7',A:'#EAB308',S:'#EF4444',SS:'#FF5EAD',SSS:'#5FE8FF'};
+const users = [
+  {id:'U-0921',name:'Vinícius Ottoni',email:'v.ottoni@email.com',rank:'B',xp:'4.820',plan:'Premium',status:'active',joined:'12/01/26'},
+  {id:'U-0920',name:'Ana Ferreira',email:'ana.f@email.com',rank:'A',xp:'9.140',plan:'Premium',status:'active',joined:'08/01/26'},
+  {id:'U-0919',name:'Lucas Mendes',email:'l.mendes@email.com',rank:'C',xp:'2.310',plan:'Free',status:'active',joined:'15/01/26'},
+  {id:'U-0918',name:'Carla Santos',email:'carla.s@email.com',rank:'S',xp:'18.400',plan:'Premium',status:'active',joined:'03/12/25'},
+  {id:'U-0917',name:'Rafael Lima',email:'r.lima@email.com',rank:'D',xp:'890',plan:'Free',status:'inactive',joined:'20/02/26'},
+  {id:'U-0916',name:'Juliana Costa',email:'ju.costa@email.com',rank:'E',xp:'120',plan:'Free',status:'active',joined:'01/06/26'},
+  {id:'U-0915',name:'Pedro Alves',email:'p.alves@email.com',rank:'SS',xp:'31.200',plan:'Premium',status:'active',joined:'11/09/25'},
+  {id:'U-0914',name:'Fernanda Rocha',email:'fe.rocha@email.com',rank:'B',xp:'5.600',plan:'Premium',status:'suspended',joined:'17/03/26'},
+];
+const tickets = [
+  {id:'TK-0211',title:'XP não creditado após quest',user:'Lucas Mendes',priority:'high',status:'open',cat:'Bug',date:'23/06/26'},
+  {id:'TK-0210',title:'Raid não aparece na lista',user:'Ana Ferreira',priority:'high',status:'open',cat:'Bug',date:'23/06/26'},
+  {id:'TK-0209',title:'Cobrança duplicada no cartão',user:'Carla Santos',priority:'critical',status:'in_progress',cat:'Financeiro',date:'22/06/26'},
+  {id:'TK-0208',title:'Não consigo mudar foto de perfil',user:'Rafael Lima',priority:'medium',status:'open',cat:'UX',date:'22/06/26'},
+  {id:'TK-0207',title:'App trava na tela de loading',user:'Pedro Alves',priority:'high',status:'in_progress',cat:'Bug',date:'21/06/26'},
+  {id:'TK-0206',title:'Exercício errado na quest',user:'Juliana Costa',priority:'low',status:'resolved',cat:'Conteúdo',date:'20/06/26'},
+  {id:'TK-0205',title:'Notificações não chegam',user:'Fernanda Rocha',priority:'medium',status:'closed',cat:'Infra',date:'19/06/26'},
+];
+const bugs = [
+  {id:'BG-047',title:'Crash ao abrir inventário em iOS 17.5',component:'Inventário',sev:'critical',status:'open',reporter:'Sistema',date:'23/06/26'},
+  {id:'BG-046',title:'XP não atualiza em tempo real',component:'Gamificação',sev:'high',status:'in_progress',reporter:'v.ottoni',date:'23/06/26'},
+  {id:'BG-045',title:'Token JWT expira antes de 24h',component:'Auth',sev:'high',status:'open',reporter:'Sistema',date:'22/06/26'},
+  {id:'BG-044',title:'Imagem de perfil não carrega no Android 14',component:'Perfil',sev:'medium',status:'in_progress',reporter:'l.mendes',date:'22/06/26'},
+  {id:'BG-043',title:'Raid finaliza antes do prazo',component:'Raids',sev:'high',status:'fixed',reporter:'Sistema',date:'21/06/26'},
+  {id:'BG-042',title:'Push notification duplicada',component:'Notificações',sev:'medium',status:'open',reporter:'p.alves',date:'20/06/26'},
+  {id:'BG-041',title:'Leaderboard mostra ordem errada',component:'Ranking',sev:'low',status:'open',reporter:'a.ferreira',date:'19/06/26'},
+];
+const secEvents = [
+  {time:'23/06 09:41',type:'Brute Force',ip:'189.63.44.128',desc:'47 tentativas de login em 2 min',sev:'critical'},
+  {time:'23/06 08:15',type:'Login Suspeito',ip:'45.32.199.7',desc:'Login de país incomum: Rússia',sev:'high'},
+  {time:'23/06 07:02',type:'Rate Limit',ip:'187.102.33.90',desc:'API endpoint /auth atingiu limite',sev:'medium'},
+  {time:'22/06 23:51',type:'Token Inválido',ip:'192.168.0.1',desc:'900 tokens expirados rejeitados',sev:'low'},
+  {time:'22/06 18:30',type:'SQL Probe',ip:'91.108.56.200',desc:'Tentativa de injeção SQL detectada',sev:'critical'},
+  {time:'22/06 14:10',type:'Scraping',ip:'104.21.88.45',desc:'Varredura de endpoint de usuários',sev:'medium'},
+];
+const auditLog = [
+  {time:'23/06 10:01',actor:'admin@awaken.app',action:'Suspendeu usuário #U-0914',ip:'186.192.33.4',type:'admin'},
+  {time:'23/06 09:47',actor:'Sistema',action:'Backup diário concluído — 2.4 GB',ip:'—',type:'system'},
+  {time:'23/06 09:12',actor:'admin@awaken.app',action:'Editou plano de v.ottoni para Premium',ip:'186.192.33.4',type:'admin'},
+  {time:'23/06 08:30',actor:'Sistema',action:'Raid "Desafio Semanal" criada automaticamente',ip:'—',type:'system'},
+  {time:'22/06 23:00',actor:'Sistema',action:'Rollover de XP diário processado — 12.847 users',ip:'—',type:'system'},
+  {time:'22/06 18:44',actor:'admin@awaken.app',action:'Bloqueou IP 91.108.56.200',ip:'186.192.33.4',type:'admin'},
+  {time:'22/06 15:20',actor:'admin@awaken.app',action:'Exportou relatório de usuários (CSV)',ip:'186.192.33.4',type:'admin'},
+  {time:'22/06 12:10',actor:'Sistema',action:'Deploy v2.4.1 em produção — OK',ip:'—',type:'system'},
+];
+const eventFreq = [
+  {name:'quest_complete',count:45213,color:'#2D6FF5'},
+  {name:'xp_gained',count:43100,color:'#F5C518'},
+  {name:'login',count:32418,color:'#22C55E'},
+  {name:'session_start',count:28940,color:'#4D8BFF'},
+  {name:'raid_join',count:5620,color:'#8B3FD8'},
+  {name:'rank_up',count:3934,color:'#A65CEE'},
+  {name:'purchase',count:1234,color:'#FF9500'},
+  {name:'item_equip',count:6780,color:'#5FE8FF'},
+];
+const dauData = [2100,2350,2200,2800,3100,2900,3100,2950,3200,3400,3100,3500,3241,3610];
+const labels7 = ['10/06','11/06','12/06','13/06','14/06','15/06','16/06','17/06','18/06','19/06','20/06','21/06','22/06','23/06'];
+
+// ─── CHART HELPERS ─────────────────────────────────────────────────────────
+function linePath(data,W,H,pad){
+  const max=Math.max(...data),min=Math.min(...data)*0.92,rng=max-min||1;
+  const pts=data.map((v,i)=>{
+    const x=(i/(data.length-1))*(W-pad*2)+pad;
+    const y=H-pad-((v-min)/rng)*(H-pad*2);
+    return[x,y];
+  });
+  const d=pts.map((p,i)=>`${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  const area=`${d} L${pts[pts.length-1][0]},${H-pad} L${pts[0][0]},${H-pad} Z`;
+  return{d,area,pts};
+}
+
+// ─── SECTIONS ──────────────────────────────────────────────────────────────
+const pages = {
+
+dashboard:()=>`
+<div class="kpi-grid">
+  <div class="kpi blue"><div class="kpi-label">Total Usuários</div><div class="kpi-val">12.847</div><div class="kpi-delta up">↑ +342 esta semana</div></div>
+  <div class="kpi purple"><div class="kpi-label">DAU</div><div class="kpi-val">3.241</div><div class="kpi-delta up">↑ 25.2% do base</div></div>
+  <div class="kpi gold"><div class="kpi-label">Tickets Abertos</div><div class="kpi-val">43</div><div class="kpi-delta down">↑ +8 hoje</div></div>
+  <div class="kpi green"><div class="kpi-label">MRR</div><div class="kpi-val">R$28.4k</div><div class="kpi-delta up">↑ +12% vs mês ant.</div></div>
+</div>
+<div class="row2">
+  <div class="card">
+    <div class="card-title">Usuários Ativos Diários <span>últimos 14 dias</span></div>
+    <div class="chart-area" id="dau-chart"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--mist-700);">
+      ${labels7.filter((_,i)=>i%2===0).map(l=>`<span>${l}</span>`).join('')}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Atividade Recente</div>
+    <div class="feed" id="feed"></div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-title">Top Eventos (últimas 24h)</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;" id="top-events"></div>
+</div>`,
+
+users:()=>`
+<div class="page-header">
+  <div class="page-title"><h2>Usuários</h2><p>12.847 hunters cadastrados</p></div>
+  <button class="filter-btn active" style="background:linear-gradient(135deg,var(--blue-500),var(--purple-500));color:#fff;border-color:transparent;">+ Exportar CSV</button>
+</div>
+<div class="filter-bar">
+  <div class="search-wrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="search-sm" placeholder="Buscar usuário..."></div>
+  ${['Todos','Premium','Free','Suspenso'].map((l,i)=>`<button class="filter-btn${i===0?' active':''}">${l}</button>`).join('')}
+</div>
+<div class="card"><div class="tbl-wrap"><table>
+  <thead><tr><th>ID</th><th>Nome</th><th>Rank</th><th>XP</th><th>Plano</th><th>Status</th><th>Desde</th><th></th></tr></thead>
+  <tbody>${users.map(u=>`<tr>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mist-700);">${u.id}</td>
+    <td><div class="tbl-name">${u.name}</div><div style="font-size:11px;color:var(--mist-700);">${u.email}</div></td>
+    <td><span class="rank-badge" style="background:${ranks[u.rank]}22;color:${ranks[u.rank]};">${u.rank}</span></td>
+    <td style="font-family:'JetBrains Mono',monospace;">${u.xp}</td>
+    <td><span class="pill ${u.plan==='Premium'?'pill-purple':'pill-gray'}">${u.plan}</span></td>
+    <td><span style="display:flex;align-items:center;gap:4px;font-size:12px;"><span class="status-dot" style="background:${u.status==='active'?'var(--green-500)':u.status==='inactive'?'var(--mist-600)':'var(--red-500)'};"></span>${u.status==='active'?'Ativo':u.status==='inactive'?'Inativo':'Suspenso'}</span></td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${u.joined}</td>
+    <td style="text-align:right;"><button class="filter-btn" style="padding:4px 10px;font-size:11px;">Ver</button></td>
+  </tr>`).join('')}</tbody>
+</table></div></div>`,
+
+tickets:()=>`
+<div class="page-header">
+  <div class="page-title"><h2>Tickets de Suporte</h2><p>43 abertos · 12 em progresso · 89 resolvidos</p></div>
+</div>
+<div class="filter-bar">
+  ${['Todos','Abertos','Em Progresso','Resolvidos','Fechados'].map((l,i)=>`<button class="filter-btn${i===0?' active':''}">${l}</button>`).join('')}
+  <div class="search-wrap" style="margin-left:auto;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="search-sm" placeholder="Buscar ticket..."></div>
+</div>
+<div class="card"><div class="tbl-wrap"><table>
+  <thead><tr><th>ID</th><th>Título</th><th>Usuário</th><th>Categoria</th><th>Prioridade</th><th>Status</th><th>Data</th><th></th></tr></thead>
+  <tbody>${tickets.map(t=>{
+    const pc={critical:'pill-red',high:'pill-orange',medium:'pill-blue',low:'pill-gray'}[t.priority];
+    const sc={open:'pill-red',in_progress:'pill-orange',resolved:'pill-green',closed:'pill-gray'}[t.status];
+    const sl={open:'Aberto',in_progress:'Em Progresso',resolved:'Resolvido',closed:'Fechado'}[t.status];
+    const pl={critical:'Crítico',high:'Alto',medium:'Médio',low:'Baixo'}[t.priority];
+    return`<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mist-700);">${t.id}</td>
+      <td class="tbl-name">${t.title}</td>
+      <td style="font-size:12px;">${t.user}</td>
+      <td><span class="pill pill-gray">${t.cat}</span></td>
+      <td><span class="pill ${pc}">${pl}</span></td>
+      <td><span class="pill ${sc}">${sl}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${t.date}</td>
+      <td style="text-align:right;"><button class="filter-btn" style="padding:4px 10px;font-size:11px;">Abrir</button></td>
+    </tr>`;}).join('')}</tbody>
+</table></div></div>`,
+
+bugs:()=>`
+<div class="page-header">
+  <div class="page-title"><h2>Bug Tracker</h2><p>7 ativos · 1 crítico · 3 alto</p></div>
+  <button class="filter-btn active" style="background:rgba(239,68,68,0.12);color:var(--red-500);border-color:rgba(239,68,68,0.3);">+ Reportar Bug</button>
+</div>
+<div class="filter-bar">
+  ${['Todos','Crítico','Alto','Médio','Baixo','Corrigido'].map((l,i)=>`<button class="filter-btn${i===0?' active':''}">${l}</button>`).join('')}
+</div>
+<div class="card"><div class="tbl-wrap"><table>
+  <thead><tr><th>ID</th><th>Título</th><th>Componente</th><th>Severidade</th><th>Status</th><th>Reportado por</th><th>Data</th></tr></thead>
+  <tbody>${bugs.map(b=>{
+    const sc={critical:'pill-red',high:'pill-orange',medium:'pill-blue',low:'pill-gray'}[b.sev];
+    const ss={open:'pill-red',in_progress:'pill-orange',fixed:'pill-green'}[b.status];
+    const sl={critical:'Crítico',high:'Alto',medium:'Médio',low:'Baixo'}[b.sev];
+    const stl={open:'Aberto',in_progress:'Em Correção',fixed:'Corrigido'}[b.status];
+    return`<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mist-700);">${b.id}</td>
+      <td class="tbl-name">${b.title}</td>
+      <td><span class="pill pill-gray">${b.component}</span></td>
+      <td><span class="pill ${sc}">${sl}</span></td>
+      <td><span class="pill ${ss}">${stl}</span></td>
+      <td style="font-size:12px;font-family:'JetBrains Mono',monospace;">${b.reporter}</td>
+      <td style="font-size:12px;font-family:'JetBrains Mono',monospace;">${b.date}</td>
+    </tr>`;}).join('')}</tbody>
+</table></div></div>`,
+
+security:()=>`
+<div class="page-header">
+  <div class="page-title"><h2>Segurança</h2><p>Monitoramento de ameaças em tempo real</p></div>
+</div>
+<div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+  <div class="kpi" style="border-color:rgba(239,68,68,0.3)"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--red-500)"></div><div class="kpi-label">Falhas de Login (24h)</div><div class="kpi-val" style="color:var(--red-500);">1.247</div><div class="kpi-delta down">↑ +340 vs ontem</div></div>
+  <div class="kpi" style="border-color:rgba(255,149,0,0.3)"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--orange-500)"></div><div class="kpi-label">IPs Bloqueados</div><div class="kpi-val" style="color:var(--orange-500);">18</div><div class="kpi-delta neutral">2 adicionados hoje</div></div>
+  <div class="kpi" style="border-color:rgba(34,197,94,0.3)"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--green-500)"></div><div class="kpi-label">Uptime</div><div class="kpi-val" style="color:var(--green-500);">99.97%</div><div class="kpi-delta up">↑ SLA cumprido</div></div>
+</div>
+<div class="card">
+  <div class="card-title">Feed de Alertas <span id="sec-time">atualizado agora</span></div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Horário</th><th>Tipo</th><th>IP</th><th>Descrição</th><th>Severidade</th><th></th></tr></thead>
+    <tbody>${secEvents.map(e=>{
+      const sc={critical:'pill-red',high:'pill-orange',medium:'pill-blue',low:'pill-gray'}[e.sev];
+      const sl={critical:'Crítico',high:'Alto',medium:'Médio',low:'Baixo'}[e.sev];
+      return`<tr>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">${e.time}</td>
+        <td class="tbl-name" style="font-size:13px;">${e.type}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mist-600);">${e.ip}</td>
+        <td style="font-size:13px;color:var(--mist-500);">${e.desc}</td>
+        <td><span class="pill ${sc}">${sl}</span></td>
+        <td style="text-align:right;"><button class="filter-btn" style="padding:4px 10px;font-size:11px;color:var(--red-500);border-color:rgba(239,68,68,0.3);">Bloquear</button></td>
+      </tr>`;}).join('')}</tbody>
+  </table></div>
+</div>`,
+
+audit:()=>`
+<div class="page-header">
+  <div class="page-title"><h2>Audit Log</h2><p>Histórico completo de ações no sistema</p></div>
+</div>
+<div class="filter-bar">
+  ${['Todos','Admin','Sistema','Usuário'].map((l,i)=>`<button class="filter-btn${i===0?' active':''}">${l}</button>`).join('')}
+  <div class="search-wrap" style="margin-left:auto;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="search-sm" placeholder="Filtrar log..."></div>
+</div>
+<div class="card">
+  <div class="timeline">${auditLog.map(a=>{
+    const col=a.type==='admin'?'var(--blue-400)':a.type==='system'?'var(--purple-400)':'var(--green-500)';
+    return`<div class="tl-item">
+      <div class="tl-dot" style="background:${col};"></div>
+      <div class="tl-content">
+        <div class="tl-main"><strong>${a.actor}</strong> — ${a.action}</div>
+        <div class="tl-meta"><span>${a.time}</span><span>IP: ${a.ip}</span><span style="color:${col};font-size:10px;text-transform:uppercase;letter-spacing:0.1em;">${a.type}</span></div>
+      </div>
+    </div>`;}).join('')}
+  </div>
+</div>`,
+
+events:()=>`
+<div class="page-header">
+  <div class="page-title"><h2>Análise de Eventos</h2><p>Frequência dos últimos 7 dias</p></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+  <div class="card">
+    <div class="card-title">Top Eventos por Volume</div>
+    ${[...eventFreq].sort((a,b)=>b.count-a.count).map(e=>{
+      const pct=Math.round(e.count/45213*100);
+      return`<div class="bar-row">
+        <span class="bar-label" style="font-family:'JetBrains Mono',monospace;font-size:11px;">${e.name}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${e.color};"></div></div>
+        <span class="bar-val">${(e.count/1000).toFixed(1)}k</span>
+      </div>`;}).join('')}
+  </div>
+  <div class="card">
+    <div class="card-title">Distribuição (% do total)</div>
+    <div id="events-svg" style="height:220px;"></div>
+  </div>
+</div>`,
+
+engagement:()=>`
+<div class="page-header">
+  <div class="page-title"><h2>Engajamento</h2><p>Métricas de retenção e uso ativo</p></div>
+</div>
+<div class="kpi-grid">
+  <div class="kpi blue"><div class="kpi-label">DAU / MAU</div><div class="kpi-val">25.2%</div><div class="kpi-delta up">↑ bom benchmark</div></div>
+  <div class="kpi purple"><div class="kpi-label">Sessão Média</div><div class="kpi-val">8m34s</div><div class="kpi-delta up">↑ +44s vs semana ant.</div></div>
+  <div class="kpi gold"><div class="kpi-label">Quests / Usuário</div><div class="kpi-val">3.5</div><div class="kpi-delta up">↑ dia</div></div>
+  <div class="kpi green"><div class="kpi-label">Retenção D7</div><div class="kpi-val">48%</div><div class="kpi-delta up">↑ +3pp vs mês ant.</div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+  <div class="card">
+    <div class="card-title">Retenção por Cohort</div>
+    ${[['D1','72','var(--blue-400)'],['D7','48','var(--purple-400)'],['D30','31','var(--gold-500)'],['D60','18','var(--cyan-400)']].map(([d,v,c])=>`
+      <div class="bar-row">
+        <span class="bar-label">${d} Retenção</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${c};"></div></div>
+        <span class="bar-val">${v}%</span>
+      </div>`).join('')}
+  </div>
+  <div class="card">
+    <div class="card-title">Uso por Funcionalidade</div>
+    ${[['Quest Diária','91','var(--blue-400)'],['Perfil / Rank','74','var(--purple-400)'],['Raids','42','var(--gold-500)'],['Inventário','38','var(--cyan-400)'],['Loja','22','var(--orange-500)']].map(([n,v,c])=>`
+      <div class="bar-row">
+        <span class="bar-label">${n}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${c};"></div></div>
+        <span class="bar-val">${v}%</span>
+      </div>`).join('')}
+  </div>
+</div>`,
+
+reports:()=>`
+<div class="page-header">
+  <div class="page-title"><h2>Relatórios</h2><p>Exportar dados para análise estratégica</p></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+  ${[
+    ['Usuários Completo','Todos os dados de usuários, ranks, XP e planos','22/06/26','CSV / JSON','var(--blue-500)'],
+    ['Tickets — Junho','Resumo de tickets por categoria, prioridade e tempo de resolução','22/06/26','PDF / CSV','var(--purple-500)'],
+    ['Receita — Junho','MRR, novas assinaturas, churn e receita por plano','22/06/26','PDF / XLSX','var(--gold-500)'],
+    ['Log de Eventos','Todos os eventos do app por tipo, usuário e timestamp','23/06/26','CSV','var(--cyan-400)'],
+    ['Segurança — 30d','IPs bloqueados, tentativas de brute force e incidentes','23/06/26','PDF','var(--red-500)'],
+    ['Engajamento','DAU/MAU, retenção por cohort e uso de funcionalidades','23/06/26','PDF / CSV','var(--green-500)'],
+  ].map(([title,desc,date,fmt,col])=>`
+    <div class="card" style="position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${col};"></div>
+      <div style="font-family:'Chakra Petch',sans-serif;font-size:14px;font-weight:700;color:var(--mist-100);margin-bottom:8px;">${title}</div>
+      <div style="font-size:13px;color:var(--mist-600);line-height:1.6;margin-bottom:16px;min-height:52px;">${desc}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:11px;color:var(--mist-700);font-family:'JetBrains Mono',monospace;">Gerado: ${date}</span>
+        <button class="filter-btn" style="background:${col}22;color:${col};border-color:${col}44;font-size:11px;padding:5px 12px;">⬇ ${fmt}</button>
+      </div>
+    </div>`).join('')}
+</div>`
+};
+
+// ─── FEED & POST-RENDER ──────────────────────────────────────────────────────
+const feedItems = [
+  {icon:'⚔️',bg:'rgba(45,111,245,0.15)',text:'<strong>Lucas Mendes</strong> completou Quest Diária — <strong>+120 XP</strong>',time:'há 2 min'},
+  {icon:'⭐',bg:'rgba(245,197,24,0.15)',text:'<strong>Carla Santos</strong> subiu para Rank <strong>S</strong>',time:'há 5 min'},
+  {icon:'🌐',bg:'rgba(139,63,216,0.15)',text:'Raid "Desafio Nacional" iniciada — <strong>1.247 hunters</strong>',time:'há 12 min'},
+  {icon:'🛡️',bg:'rgba(239,68,68,0.12)',text:'IP <strong>189.63.44.128</strong> bloqueado automaticamente',time:'há 18 min'},
+  {icon:'💰',bg:'rgba(34,197,94,0.12)',text:'<strong>Ana Ferreira</strong> assinou Premium',time:'há 31 min'},
+  {icon:'🐛',bg:'rgba(255,149,0,0.12)',text:'Bug <strong>BG-046</strong> em correção — XP sync',time:'há 45 min'},
+];
+
+function renderPostDashboard(){
+  // Feed
+  const feed = document.getElementById('feed');
+  if(feed) feed.innerHTML = feedItems.map(f=>`<div class="feed-item">
+    <div class="feed-icon" style="background:${f.bg}">${f.icon}</div>
+    <div class="feed-body"><div class="feed-text">${f.text}</div><div class="feed-time">${f.time}</div></div>
+  </div>`).join('');
+
+  // Top events
+  const te = document.getElementById('top-events');
+  if(te) te.innerHTML = eventFreq.slice(0,4).map(e=>`<div style="background:var(--ink-800);border:1px solid var(--border-subtle);border-radius:10px;padding:14px;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:${e.color};letter-spacing:0.06em;margin-bottom:6px;">${e.name}</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--mist-100);">${(e.count/1000).toFixed(1)}k</div>
+  </div>`).join('');
+
+  // DAU line chart
+  const area = document.getElementById('dau-chart');
+  if(area){
+    const W=area.offsetWidth||600,H=140;
+    const {d,area:a,pts}=linePath(dauData,W,H,16);
+    area.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="dauGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#2D6FF5" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="#2D6FF5" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      ${Array.from({length:5},(_,i)=>{const y=H-16-i*(H-32)/4;return`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;}).join('')}
+      <path d="${a}" fill="url(#dauGrad)"/>
+      <path d="${d}" stroke="#4D8BFF" stroke-width="2" fill="none"/>
+      ${pts.map((p,i)=>i===pts.length-1?`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#4D8BFF" stroke="var(--ink-850)" stroke-width="2"/>`:'').join('')}
+    </svg>`;
+  }
+}
+
+function renderPostEvents(){
+  const el=document.getElementById('events-svg');
+  if(!el)return;
+  const total=eventFreq.reduce((s,e)=>s+e.count,0);
+  const W=el.offsetWidth||320,H=220,cx=W/2,cy=H/2,r=80,ri=50;
+  let angle=0;
+  const paths=eventFreq.map(e=>{
+    const slice=(e.count/total)*Math.PI*2;
+    const x1=cx+r*Math.sin(angle),y1=cy-r*Math.cos(angle);
+    const x2=cx+r*Math.sin(angle+slice),y2=cy-r*Math.cos(angle+slice);
+    const xi1=cx+ri*Math.sin(angle),yi1=cy-ri*Math.cos(angle);
+    const xi2=cx+ri*Math.sin(angle+slice),yi2=cy-ri*Math.cos(angle+slice);
+    const large=slice>Math.PI?1:0;
+    const d=`M${xi1},${yi1} L${x1},${y1} A${r},${r},0,${large},1,${x2},${y2} L${xi2},${yi2} A${ri},${ri},0,${large},0,${xi1},${yi1}Z`;
+    angle+=slice;
+    return`<path d="${d}" fill="${e.color}" opacity="0.85"/>`;
+  });
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}">
+    ${paths.join('')}
+    <text x="${cx}" y="${cy+4}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="12" fill="#AEB4D0">${(total/1000).toFixed(0)}k</text>
+  </svg><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">${eventFreq.map(e=>`<span style="font-size:11px;display:flex;align-items:center;gap:4px;color:var(--mist-500);"><span style="width:8px;height:8px;border-radius:2px;background:${e.color};flex-shrink:0;display:inline-block;"></span>${e.name}</span>`).join('')}</div>`;
+}
+
+// ─── NAV ─────────────────────────────────────────────────────────────────────
+const titles={dashboard:'Dashboard',users:'Usuários',tickets:'Tickets',bugs:'Bug Tracker',security:'Segurança',audit:'Audit Log',events:'Eventos',engagement:'Engajamento',reports:'Relatórios'};
+
+function nav(el,section){
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('topbar-title').textContent=titles[section]||section;
+  document.getElementById('content').innerHTML=pages[section]?pages[section]():'';
+  if(section==='dashboard') setTimeout(renderPostDashboard,50);
+  if(section==='events') setTimeout(renderPostEvents,50);
+}
+
+// Initial render
+nav(document.querySelector('.nav-item'),'dashboard');
+</script>
+</body>
+</html>

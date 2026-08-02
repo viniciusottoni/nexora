@@ -1,0 +1,327 @@
+using System.Text;
+using Nexora.Api.Cloud.Infrastructure;
+using Nexora.Api.Cloud.Infrastructure.Auth;
+using Nexora.Api.Cloud.Infrastructure.Idempotency;
+using Nexora.Api.Cloud.Infrastructure.Observability;
+using Nexora.Application.Abstractions.Behaviors;
+using Nexora.Application.Abstractions.Events;
+using Nexora.Application.Abstractions.Idempotency;
+using Nexora.Application.Abstractions.Messaging;
+using Nexora.Application.Abstractions.Notifications;
+using Nexora.Application.Abstractions.Persistence;
+using Nexora.Application.Abstractions.Platform;
+using Nexora.Application.Abstractions.Security;
+using Nexora.Application.Abstractions.Storage;
+using Nexora.Application.Auth.Shared;
+using Nexora.Application.Installations.Abstractions;
+using Nexora.Infrastructure.Auth;
+using Nexora.Infrastructure.Devices;
+using Nexora.Infrastructure.Idempotency;
+using Nexora.Infrastructure.Installations;
+using Nexora.Infrastructure.Notifications;
+using Nexora.Infrastructure.Persistence;
+using Nexora.Infrastructure.Persistence.Interceptors;
+using Nexora.Infrastructure.Platform;
+using Nexora.Infrastructure.Storage;
+using Nexora.Shared.Security;
+using FluentValidation;
+using MediatR;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Sentry.AspNetCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// ---------------------------------------------------------------------------
+// Sentry (só Api.Cloud referencia o pacote) — inofensivo sem DSN configurado:
+// o SDK simplesmente não envia eventos (não trava o boot em dev/CI).
+// ---------------------------------------------------------------------------
+var sentryDsn = builder.Configuration["Sentry:Dsn"];
+if (!string.IsNullOrWhiteSpace(sentryDsn))
+{
+    builder.WebHost.UseSentry(options => options.Dsn = sentryDsn);
+}
+
+// ---------------------------------------------------------------------------
+// Persistência (ADR-038): AppDbContext + TenantConnectionInterceptor (RLS via
+// SET LOCAL app.tenant_id). Scoped de propósito — ver nota equivalente em
+// Nexora.Api.Edge/Program.cs.
+// ---------------------------------------------------------------------------
+builder.Services.AddDbContext<AppDbContext>((sp, options) =>
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+           .UseSnakeCaseNamingConvention();
+    options.AddInterceptors(sp.GetRequiredService<TenantConnectionInterceptor>());
+});
+builder.Services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+builder.Services.AddScoped<TenantConnectionInterceptor>();
+
+// ---------------------------------------------------------------------------
+// CQRS/MediatR (ADR-037) — mesmo pipeline do Api.Edge.
+// ---------------------------------------------------------------------------
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(ICommand).Assembly);
+    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+    cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+    cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
+});
+builder.Services.AddValidatorsFromAssembly(typeof(ICommand).Assembly);
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddControllers();
+// ADR-021: preenche code/recoverable/requiresAuthorization/traceId nos ProblemDetails que o
+// PRÓPRIO framework monta (401/403/404/500 sem passar por um Result nosso) — ver docstring de
+// ResultExtensions.EnrichFrameworkProblemDetails.
+builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = ResultExtensions.EnrichFrameworkProblemDetails);
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// Idempotência de escrita (ADR-020) — porta em Application, implementação sobre AppDbContext em
+// Infrastructure; o middleware que efetivamente intercepta a requisição só pode viver aqui (Api),
+// precisa de HttpContext/RequestDelegate (ASP.NET Core, proibido em Infrastructure — ADR-039).
+builder.Services.AddScoped<IIdempotencyStore, IdempotencyStore>();
+
+// ---------------------------------------------------------------------------
+// Options (IOptions<T>).
+// ---------------------------------------------------------------------------
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.Configure<AuthSecretsOptions>(builder.Configuration.GetSection(AuthSecretsOptions.SectionName));
+builder.Services.Configure<EmailOutboxOptions>(builder.Configuration.GetSection(EmailOutboxOptions.SectionName));
+builder.Services.Configure<S3BrandingStorageOptions>(builder.Configuration.GetSection(S3BrandingStorageOptions.SectionName));
+builder.Services.Configure<FileSystemBackupStorageOptions>(builder.Configuration.GetSection(FileSystemBackupStorageOptions.SectionName));
+builder.Services.Configure<CloudPublicUrlSettings>(builder.Configuration.GetSection(CloudPublicUrlSettings.SectionName));
+builder.Services.Configure<PinLookupMasterKeyOptions>(builder.Configuration.GetSection(PinLookupMasterKeyOptions.SectionName));
+builder.Services.Configure<AppVersionOptions>(builder.Configuration.GetSection(AppVersionOptions.SectionName));
+
+// ---------------------------------------------------------------------------
+// Segurança / Auth — consumidores expostos pelo Api.Cloud (login por senha +
+// MFA, refresh de sessão, convite de dono, provisionamento de tenant).
+// ---------------------------------------------------------------------------
+builder.Services.AddSingleton<ICredentialHasher, Argon2CredentialHasher>();
+builder.Services.AddSingleton<IOtpVerifier, TotpOtpVerifier>();
+builder.Services.AddSingleton<IMfaSecretCipher, AesGcmMfaSecretCipher>();
+builder.Services.AddSingleton<ITokenIssuer, JwtTokenIssuer>();
+builder.Services.AddScoped<ICurrentTenantContext, CloudCurrentTenantContext>();
+
+// IAuthorizationTokenValidator (US-004, gap "autorização pontual é só emitida, nunca validada") —
+// valida o header X-Authorization-Token contra o que AuthorizeSensitiveActionCommandHandler emitiu;
+// nenhum endpoint de negócio consome isto ainda (ver RequiresAuthorizationTokenAttribute), mas o
+// mecanismo precisa estar pronto no DI para o próximo módulo que precisar de elevação pontual.
+// IAuthSessionActivityGuard (US-004, gap "encerramento de sessão inativa configurável") — chamado
+// por SessionActivityMiddleware a cada requisição autenticada.
+builder.Services.AddScoped<IAuthorizationTokenValidator, AuthorizationTokenValidator>();
+builder.Services.AddScoped<IAuthSessionActivityGuard, AuthSessionActivityGuard>();
+
+// ISecretDigester: ver nota espelhada em Nexora.Api.Edge/Program.cs. No
+// Api.Cloud, todo consumidor (RefreshToken, LoginWithPassword, ProvisionTenant,
+// AcceptOwnerInvitation) digere segredo emitido pela própria nuvem (refresh
+// token / token de instalação / token de convite) com o MESMO pepper
+// Auth:Secrets:SecretPepper — confirmado lendo os quatro handlers. Por isso
+// HmacSecretDigester (não DeviceSecretDigester, que é exclusiva do Api.Edge)
+// é a única implementação registrada aqui.
+builder.Services.AddSingleton<ISecretDigester, HmacSecretDigester>();
+
+builder.Services.AddSingleton<IEventOriginProvider, CloudEventOriginProvider>();
+builder.Services.AddSingleton<IAppVersionProvider, AppVersionProvider>();
+
+// ---------------------------------------------------------------------------
+// Notificações / Storage — só usados por handlers do Api.Cloud (outbox de
+// e-mail, backup recebido do edge, upload pré-assinado de mídia de marca).
+// ---------------------------------------------------------------------------
+builder.Services.AddScoped<IEmailSender, EmailOutboxSender>();
+builder.Services.AddSingleton<IBackupStorage, FileSystemBackupStorage>();
+builder.Services.AddSingleton<IBrandingStorage, S3BrandingStorage>();
+
+// EmailOutboxDeliveryWorker (US-002, gap "convite do gestor só enfileira e-mail, nunca envia de
+// fato") — entrega efetiva de email_outbox. Sem "EmailOutbox:Smtp:Host" configurado (dev/CI),
+// LoggingEmailDispatcher assume no lugar de um provedor SMTP real; o worker/mecanismo de entrega
+// roda de ponta a ponta nos dois casos (só a "última milha" muda). Só Api.Cloud — convite de
+// gestor é fluxo exclusivo de nuvem (ver EdgeInstallationOptions/EmailOutboxOptions, nunca
+// configurados em Api.Edge).
+var smtpHost = builder.Configuration[$"{EmailOutboxOptions.SectionName}:Smtp:Host"];
+if (!string.IsNullOrWhiteSpace(smtpHost))
+{
+    builder.Services.AddSingleton<IEmailDispatcher, SmtpEmailDispatcher>();
+}
+else
+{
+    builder.Services.AddSingleton<IEmailDispatcher, LoggingEmailDispatcher>();
+}
+
+builder.Services.AddHostedService<EmailOutboxDeliveryWorker>();
+
+// ---------------------------------------------------------------------------
+// Installations (cloud, plural) — registro/consumo de token de instalação,
+// verificação de assinatura Ed25519 do edge, derivação de pepper de PIN por
+// tenant e URL pública da nuvem para a resposta de registro.
+// ---------------------------------------------------------------------------
+builder.Services.AddSingleton<IInstallationTokenDigester, InstallationTokenDigester>();
+builder.Services.AddSingleton<IInstallationSignatureVerifier, InstallationSignatureVerifier>();
+builder.Services.AddSingleton<IPinLookupPepperProvider, PinLookupPepperProvider>();
+builder.Services.AddSingleton<ICloudEndpointOptions, CloudEndpointOptions>();
+
+// ---------------------------------------------------------------------------
+// Autenticação — dois esquemas: JWT Bearer (default, usuários) e "Installation"
+// (assinatura Ed25519 do edge, ver InstallationAuthenticationHandler) usado
+// explicitamente via [Authorize(AuthenticationSchemes = "Installation")] nas
+// rotas de sync pull/health de Nexora.Api.Cloud.Controllers.InstallationsController.
+// ---------------------------------------------------------------------------
+var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtOptions.Audience,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+                string.IsNullOrEmpty(jwtOptions.Secret) ? new string('0', 32) : jwtOptions.Secret)),
+            ClockSkew = TimeSpan.FromSeconds(30),
+        };
+    })
+    .AddScheme<AuthenticationSchemeOptions, InstallationAuthenticationHandler>("Installation", options => { });
+builder.Services.AddAuthorization(options =>
+{
+    // Política de administração de plataforma (US-001, gap "TenantsController vaza dado
+    // cross-tenant" — antes só exigia [Authorize] genérico, então qualquer usuário autenticado de
+    // QUALQUER tenant conseguia listar/ler todos os estabelecimentos do parque).
+    //
+    // Claim dedicada "plt" (paralela a "tid"/"sid"/"did"/"ses" já lidas por
+    // CloudCurrentTenantContext) em vez de reaproveitar "perms"/"tenant:manage" do catálogo de
+    // Nexora.Domain.Platform.PermissionCatalog: aqueles códigos são RBAC de tenant — um dono de
+    // estabelecimento (role OWNER) legitimamente tem "tenant:manage" para administrar A PRÓPRIA
+    // loja, não para listar as dos outros. Reusar o mesmo código aqui reabriria exatamente o
+    // vazamento cross-tenant que esta policy existe para fechar.
+    //
+    // PENDÊNCIA: nenhum emissor de token atual (JwtTokenIssuer/LoginWithPassword/LoginWithPin)
+    // ainda sabe emitir "plt" — não existe hoje conceito de "operador da Replay" na base de
+    // usuários (só app_user por tenant). Isso é deliberado: com a policy fechada, esta rota fica
+    // inacessível a todo mundo até uma US futura modelar autenticação de equipe de plataforma —
+    // estado seguro (nega por padrão), diferente do estado anterior (qualquer autenticado passava).
+    options.AddPolicy("PlatformAdmin", policy => policy.RequireClaim("plt", "admin"));
+
+    // Política de gestão de dispositivo (US-005, gap "DevicesController só tinha [Authorize]
+    // genérico" — sem isto, qualquer usuário autenticado do tenant, inclusive um garçom, podia
+    // renomear ou revogar qualquer terminal). Usa a claim "perms" já emitida por JwtTokenIssuer
+    // (mesmo formato lido por CloudCurrentTenantContext.Permissions) — "device:manage",
+    // "device:*" ou "*" no catálogo (Nexora.Domain.Platform.PermissionCatalog) satisfazem.
+    // Listagem (GET) continua fora desta policy — qualquer autenticado do tenant pode consultar;
+    // só escrita exige a permissão.
+    options.AddPolicy("DeviceManage", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "device:manage")));
+
+    // Política de escrita de identidade visual (US-003, gap "BrandingController só tinha
+    // [Authorize] genérico" — sem isto, qualquer usuário autenticado do tenant, inclusive quem só
+    // deveria consultar cardápio/relatório, podia alterar cor/logo/texto público do
+    // estabelecimento). Mesmo padrão da policy "DeviceManage" acima — "config:write", "config:*"
+    // ou "*" do catálogo (Nexora.Domain.Platform.PermissionCatalog) satisfazem. Leitura pública
+    // (GET /public/branding, GET /tenant/branding.webmanifest) continua fora desta policy, como já
+    // era (RN-016: identidade visual é dado público do estabelecimento) — só PATCH
+    // /tenant/branding e POST /tenant/branding/logo exigem a permissão.
+    options.AddPolicy("ConfigWrite", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "config:write")));
+
+    // Políticas de catálogo de permissões e CRUD de papéis (US-004, gap "RBAC não verifica
+    // permissão em nenhum endpoint de negócio" — RolesController só tinha [Authorize] genérico,
+    // então qualquer usuário autenticado do tenant, inclusive um garçom, conseguia listar e
+    // reescrever os papéis/permissões de qualquer um, inclusive o próprio OWNER). Mesmo padrão de
+    // "DeviceManage"/"ConfigWrite" acima, usando o recurso "user" do catálogo
+    // (Nexora.Domain.Platform.PermissionCatalog — "Equipe e acessos", já é o mesmo código que o
+    // controller citava em TODO antes desta correção: "a versão TS exige user:read (listar) e
+    // user:write (criar/editar)"). "user:read"/"user:write", "user:*" ou "*" satisfazem.
+    options.AddPolicy("RoleRead", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "user:read")));
+
+    options.AddPolicy("RoleWrite", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "user:write")));
+});
+
+// ---------------------------------------------------------------------------
+// Observabilidade (ADR-022).
+// ---------------------------------------------------------------------------
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService("Nexora.Api.Cloud"))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter());
+
+var app = builder.Build();
+
+// Geração de snapshot do OpenAPI para o CI (US-007, gap "snapshot de OpenAPI removido do CI" —
+// o job antigo dependia de apps/api-cloud em Node, extinto). Não abre porta HTTP nem depende de
+// Postgres/Redis reais: só materializa o Swagger/OpenAPI já registrado por AddSwaggerGen() acima a
+// partir dos metadados de controller (Microsoft.AspNetCore.Mvc.ApiExplorer) e escreve em disco.
+// Uso: `dotnet run --project backend/src/Nexora.Api.Cloud -- --generate-openapi-snapshot
+// <arquivo-de-saida>` — ver infra/cloud/openapi/v1.snapshot.json, infra/scripts/
+// openapi-compatibility.ts e o job "Contrato OpenAPI" de .github/workflows/pull-request.yml.
+var openApiSnapshotArgIndex = Array.IndexOf(args, "--generate-openapi-snapshot");
+if (openApiSnapshotArgIndex >= 0)
+{
+    var openApiSnapshotPath = openApiSnapshotArgIndex + 1 < args.Length
+        ? args[openApiSnapshotArgIndex + 1]
+        : "openapi.snapshot.json";
+
+    var swaggerProvider = app.Services.GetRequiredService<Swashbuckle.AspNetCore.Swagger.ISwaggerProvider>();
+    var openApiDocument = swaggerProvider.GetSwagger("v1");
+
+    var openApiSnapshotDirectory = Path.GetDirectoryName(Path.GetFullPath(openApiSnapshotPath));
+    if (!string.IsNullOrEmpty(openApiSnapshotDirectory))
+    {
+        Directory.CreateDirectory(openApiSnapshotDirectory);
+    }
+
+    await using var openApiSnapshotStream = File.Create(openApiSnapshotPath);
+    await using var openApiSnapshotWriter = new StreamWriter(openApiSnapshotStream);
+    openApiDocument.SerializeAsV3(new Microsoft.OpenApi.Writers.OpenApiJsonWriter(openApiSnapshotWriter));
+    await openApiSnapshotWriter.FlushAsync();
+
+    return;
+}
+
+app.UseExceptionHandler(); // ProblemDetails (ADR-021) para exceção não mapeada -> INTERNAL_ERROR sem stack trace.
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// UseRouting() explícito (em vez de confiar na inserção implícita do WebApplication) para que a
+// ordem abaixo seja inequívoca: autenticação/autorização e os middlewares seguintes precisam do
+// endpoint já resolvido (IdempotencyMiddleware lê [IdempotencyExempt] via HttpContext.GetEndpoint()).
+app.UseRouting();
+app.UseAuthentication();
+// US-004: sessão sem atividade recente (TenantConfig.Operation.sessionInactivityMinutes) nega
+// ANTES de qualquer policy de permissão avaliar — depois de UseAuthentication() (precisa da claim
+// "ses" já resolvida por CloudCurrentTenantContext), antes de UseAuthorization().
+app.UseMiddleware<SessionActivityMiddleware>();
+app.UseAuthorization();
+// ADR-022: tenant.id/store.id/device.id/user.id como tags do Activity corrente, antes de qualquer
+// log/span downstream do handler.
+app.UseMiddleware<ActivityEnrichmentMiddleware>();
+// ADR-020: Idempotency-Key obrigatório em POST/PUT/PATCH/DELETE (exceto [IdempotencyExempt]) —
+// precisa rodar depois da autenticação (para conhecer o tenant) e depois do routing (para ler o
+// metadado de isenção do endpoint), mas antes do controller processar a requisição de verdade.
+app.UseMiddleware<IdempotencyMiddleware>();
+app.MapControllers();
+
+app.Run();

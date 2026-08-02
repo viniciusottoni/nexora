@@ -1,0 +1,91 @@
+<!-- @dsCard group="Components" viewport="700x560" name="Core — Buttons, Inputs & Surfaces" subtitle="Button, Badge, Chip, Input, Switch, Avatar, Card" -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="../../styles.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { margin: 0; background: var(--grad-void); padding: 24px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .stack { display: flex; flex-direction: column; gap: 14px; }
+  .lbl { font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-tertiary); margin: 0 0 10px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { Button, Badge, Chip, Input, Switch, Avatar, Card } = window.AwakenDesignSystem_956798;
+
+function Demo() {
+  const [sel, setSel] = React.useState('massa');
+  const [on, setOn] = React.useState(true);
+  return (
+    <div>
+      <p className="lbl">Buttons</p>
+      <div className="row">
+        <Button variant="primary" glow>Iniciar Quest</Button>
+        <Button variant="gold">S-Rank</Button>
+        <Button variant="secondary">Editar</Button>
+        <Button variant="ghost">Pular</Button>
+        <Button variant="danger">Falhar</Button>
+        <Button variant="primary" disabled>Bloqueado</Button>
+      </div>
+      <div className="row">
+        <Button size="sm" variant="secondary">Pequeno</Button>
+        <Button size="md">Médio</Button>
+        <Button size="lg" variant="primary" glow>Grande</Button>
+      </div>
+
+      <div className="grid2" style={{marginTop: 8}}>
+        <div>
+          <p className="lbl">Badges</p>
+          <div className="row">
+            <Badge tone="gold" variant="solid">Premium</Badge>
+            <Badge tone="cyan">Novo</Badge>
+            <Badge tone="green" variant="outline">+250 XP</Badge>
+            <Badge tone="red">Streak 12🔥</Badge>
+            <Badge tone="purple">Master</Badge>
+          </div>
+          <p className="lbl">Chips</p>
+          <div className="row">
+            <Chip selected={sel==='massa'} onClick={()=>setSel('massa')}>Ganhar massa</Chip>
+            <Chip selected={sel==='perda'} onClick={()=>setSel('perda')}>Perder peso</Chip>
+            <Chip selected={sel==='cond'} onClick={()=>setSel('cond')}>Condicionamento</Chip>
+          </div>
+          <p className="lbl">Switch</p>
+          <Switch checked={on} onChange={setOn} label="Lembretes de streak" />
+        </div>
+        <div>
+          <p className="lbl">Inputs</p>
+          <div className="stack">
+            <Input label="E-mail" placeholder="voce@email.com" defaultValue="" />
+            <Input label="Senha" type="password" error="Senha muito curta" defaultValue="123" />
+          </div>
+          <p className="lbl" style={{marginTop: 18}}>Avatars</p>
+          <div className="row">
+            <Avatar name="Kael Voss" rank="S" size={52} />
+            <Avatar name="Ana Reis" rank="B" size={52} />
+            <Avatar name="Theo M" size={52} online />
+          </div>
+        </div>
+      </div>
+
+      <p className="lbl" style={{marginTop: 4}}>Cards</p>
+      <div className="row" style={{alignItems:'stretch'}}>
+        <Card style={{flex:1}}><strong style={{color:'var(--text-primary)'}}>Default</strong><div style={{color:'var(--text-tertiary)',fontSize:13,marginTop:4}}>Superfície padrão</div></Card>
+        <Card variant="energy" style={{flex:1}}><strong style={{color:'var(--text-primary)'}}>Energy</strong><div style={{color:'var(--text-tertiary)',fontSize:13,marginTop:4}}>Brilho de marca</div></Card>
+        <Card variant="glow" rank="S" style={{flex:1}}><strong style={{color:'var(--text-primary)'}}>Glow · Rank S</strong><div style={{color:'var(--text-tertiary)',fontSize:13,marginTop:4}}>Borda por rank</div></Card>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- CQRS / validação (ADR-037) -->
+    <PackageVersion Include="MediatR" Version="12.4.1" />
+    <PackageVersion Include="FluentValidation" Version="11.11.0" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+
+    <!-- Persistência (ADR-038: EF Core + Npgsql, mantendo PostgreSQL + RLS) -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.1" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.1" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.1" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageVersion Include="EFCore.NamingConventions" Version="9.0.0" />
+
+    <!-- Autenticação / autorização -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.3.0" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
+
+    <!-- Cache / realtime (Redis mantido; Socket.IO -> SignalR nativo do ASP.NET Core) -->
+    <PackageVersion Include="StackExchange.Redis" Version="2.8.24" />
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="9.0.0" />
+
+    <!-- OpenAPI / Swagger -->
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+
+    <!-- Observabilidade -->
+    <PackageVersion Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.10.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.10.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.10.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.10.0" />
+    <PackageVersion Include="Sentry.AspNetCore" Version="5.1.1" />
+
+    <!-- Segurança / hashing (Argon2 para PIN e senha, equivalente ao argon2 usado no NestJS) -->
+    <PackageVersion Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
+
+    <!--
+      Assinatura Ed25519 do protocolo de autenticação da instalação edge<->nuvem (ADR-031,
+      módulo Installation/Installations). O BCL do .NET (verificado até .NET 10) não expõe
+      Ed25519 nativo (só os algoritmos pós-quânticos ML-KEM/ML-DSA/SLH-DSA) — usa-se
+      BouncyCastle (gerenciado, sem dependência nativa de libsodium, mais previsível para o
+      mini-PC do edge) em vez de NSec.Cryptography.
+    -->
+    <PackageVersion Include="BouncyCastle.Cryptography" Version="2.5.1" />
+
+    <!-- BackgroundService/IHostedService (SyncOutboxWorker, ADR-037) fora de um SDK Web -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <!-- Container de DI concreto (não só .Abstractions) — só para montar o pipeline MediatR real
+         dentro de Nexora.IntegrationTests (US-001), sem depender de Nexora.Api.Edge/Api.Cloud. -->
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.0" />
+
+    <!-- Testes -->
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageVersion Include="FluentAssertions" Version="6.12.2" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.1.0" />
+    <PackageVersion Include="NetArchTest.Rules" Version="1.3.2" />
+    <PackageVersion Include="Respawn" Version="6.2.1" />
+    <PackageVersion Include="NSubstitute" Version="5.3.0" />
+  </ItemGroup>
+
+</Project>

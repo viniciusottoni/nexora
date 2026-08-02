@@ -1,0 +1,19 @@
+:root{
+  --sp-0:0px; --sp-1:2px; --sp-2:4px; --sp-3:6px; --sp-4:8px; --sp-5:12px; --sp-6:16px;
+  --sp-7:20px; --sp-8:24px; --sp-9:32px; --sp-10:40px; --sp-11:48px; --sp-12:64px; --sp-13:80px;
+
+  /* Densidades: a mesma base serve três contextos de uso distintos */
+  --density-touch-min:48px;   /* mesa / garçom / KDS — RF-KDS-04, alvo de dedo */
+  --density-touch-lg:64px;    /* botão primário de operação em ambiente de pressão */
+  --density-desk-row:40px;    /* linha de tabela no caixa / admin */
+  --density-desk-control:36px;/* input e botão em desktop de gestão */
+
+  --gutter-page:var(--sp-8);
+  --gutter-page-mobile:var(--sp-6);
+  --gap-card:var(--sp-6);
+  --gap-stack:var(--sp-5);
+  --sidebar-w:248px;
+  --sidebar-w-collapsed:64px;
+  --topbar-h:56px;
+  --content-max:1280px;
+}

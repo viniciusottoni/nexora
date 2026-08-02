@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Awaken — Tela do Jogador</title>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;background:#0A0B12;font-family:'Sora',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+    #root{width:100vw;max-width:390px;height:100vh;display:flex;flex-direction:column;background:#0A0B12;overflow:hidden;position:relative;color:#F2F5FF}
+    button{font-family:inherit;-webkit-tap-highlight-color:transparent;cursor:pointer}
+    button:active{opacity:.82}
+    input[type=range]{width:100%;accent-color:#2D6FF5;cursor:pointer}
+    ::-webkit-scrollbar{width:3px;height:3px}
+    ::-webkit-scrollbar-thumb{background:#252A40;border-radius:99px}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useCallback } = React;
+
+// ── DATA ──────────────────────────────────────────────────────────
+const PLAYER = {
+  name: 'Vinícius Ottoni', initials: 'VO',
+  level: 37, rank: 'B', className: 'STRIKER',
+  xp: 648, xpMax: 900, xpToNext: 252,
+  streakDays: 12, notifications: 3,
+  gold: 2840, gems: 42,
+  stats: { strength:72, agility:58, endurance:65, vitality:80, focus:45, wisdom:50 },
+  onboarding: {
+    goal:'Ganhar massa muscular', fitnessLevel:'Intermediário',
+    trainingDays:['Seg','Qua','Sex','Sáb'],
+    age:28, weight:'82 kg', height:'178 cm',
+  },
+};
+
+const QUESTS = [
+  { id:'daily', type:'daily', title:'Quest Diária', completedCount:2, totalCount:4, xpReward:120,
+    exercises:[
+      {id:1, name:'Flexão de Braço',  detail:'3 séries × 20 reps', status:'done',   attr:'strength'},
+      {id:2, name:'Agachamento',      detail:'4 séries × 15 reps', status:'done',   attr:'agility'},
+      {id:3, name:'Prancha',          detail:'3 séries × 60s',     status:'active', attr:'endurance', activeSets:2, totalSets:3},
+      {id:4, name:'Corrida',          detail:'5 km',               status:'todo',   attr:'vitality'},
+    ],
+  },
+  { id:'raid', type:'raid', title:'Raid Nacional', completedCount:8, totalCount:20, xpReward:500, participants:1247,
+    exercises:[
+      {id:1, name:'Burpees', detail:'Meta coletiva: 10.000', current:6800, total:10000, unit:'reps', attr:'strength'},
+      {id:2, name:'Corrida', detail:'Meta coletiva: 5.000',  current:3200, total:5000,  unit:'km',   attr:'agility'},
+      {id:3, name:'Prancha', detail:'Meta coletiva: 500',    current:280,  total:500,   unit:'min',  attr:'endurance'},
+    ],
+  },
+];
+
+const INVENTORY = [
+  {id:1,  name:'Espada de Ferro',       rarity:'common',     type:'Arma',       icon:'⚔️',  desc:'+5 Força durante treinos de musculação.'},
+  {id:2,  name:'Orbe de Mana',          rarity:'uncommon',   type:'Acessório',  icon:'🔮',  desc:'+8 Foco e reduz fadiga mental após o treino.'},
+  {id:3,  name:'Armadura de Couro',     rarity:'common',     type:'Armadura',   icon:'🛡️',  desc:'+4 Resistência. Leve e flexível para treinos.'},
+  {id:4,  name:'Poção de Cura',         rarity:'consumable', type:'Consumível', icon:'🧪',  desc:'Recuperação 20% mais rápida.', qty:3},
+  {id:5,  name:'Fragmento de Cristal',  rarity:'rare',       type:'Material',   icon:'💎',  desc:'Usado para forjar itens épicos de dungeon.', qty:2},
+  {id:6,  name:'Gema de Vitalidade',    rarity:'rare',       type:'Gema',       icon:'💠',  desc:'Encanta equipamentos com +12 Vitalidade.'},
+  {id:7,  name:'Manto das Sombras',     rarity:'epic',       type:'Armadura',   icon:'🌑',  desc:'+15 Agilidade e +10 Foco. Item épico.'},
+  {id:8,  name:'Pergaminho de Técnica', rarity:'uncommon',   type:'Pergaminho', icon:'📜',  desc:'Desbloqueia nova técnica de treino.', qty:1},
+  {id:9,  name:'Anel do Caçador',       rarity:'legendary',  type:'Acessório',  icon:'💍',  desc:'+20 em todos os atributos.'},
+  {id:10, name:'Escudo do Guerreiro',   rarity:'uncommon',   type:'Armadura',   icon:'🛡️',  desc:'+6 Resistência e +3 Vitalidade.'},
+];
+
+const SHOP_ITEMS = [
+  {id:1, name:'Poção de XP Duplo', rarity:'uncommon', icon:'⚗️', desc:'Dobra o XP ganho por 24 horas.', priceGold:350},
+  {id:2, name:'Título: Elite',     rarity:'epic',     icon:'👑', desc:'Título cosmético exclusivo.',    priceGems:800},
+  {id:3, name:'Caixa de Raid',     rarity:'rare',     icon:'📦', desc:'Contém itens raros de dungeon.', priceGold:600},
+  {id:4, name:'+10 Slots Inv.',    rarity:'common',   icon:'🎒', desc:'Expande o inventário em 10 slots.', priceGems:500},
+];
+
+const ATTRS = {
+  strength: {label:'Força',       color:'#FF5A3C'},
+  agility:  {label:'Agilidade',   color:'#22D3A7'},
+  endurance:{label:'Resistência', color:'#4D8BFF'},
+  vitality: {label:'Vitalidade',  color:'#F5C518'},
+  focus:    {label:'Foco',        color:'#B06AFF'},
+  wisdom:   {label:'Sabedoria',   color:'#5FE8FF'},
+};
+
+const RARITIES = {
+  common:    {label:'Comum',      color:'#828AAE'},
+  uncommon:  {label:'Incomum',    color:'#22C55E'},
+  rare:      {label:'Raro',       color:'#4D8BFF'},
+  epic:      {label:'Épico',      color:'#A855F7'},
+  legendary: {label:'Lendário',   color:'#F5C518'},
+  consumable:{label:'Consumível', color:'#FF9500'},
+};
+
+const RANKS = {
+  E:{color:'#828AAE', grad:'linear-gradient(160deg,#8A92A3,#4B5160)'},
+  D:{color:'#22C55E', grad:'linear-gradient(160deg,#4CE07F,#15803D)'},
+  C:{color:'#4D8BFF', grad:'linear-gradient(160deg,#5B9BFF,#1D4ED8)'},
+  B:{color:'#A855F7', grad:'linear-gradient(160deg,#C07BFF,#7E22CE)'},
+  A:{color:'#EAB308', grad:'linear-gradient(160deg,#FACC15,#B8860B)'},
+  S:{color:'#EF4444', grad:'linear-gradient(160deg,#FF6B5B,#C81E2C)'},
+};
+
+// ── DESIGN ATOMS ───────────────────────────────────────────────────
+const CLR = {
+  bg: '#0A0B12', surface: '#111828', surface2: '#1A2035',
+  border: 'rgba(255,255,255,0.08)', text: '#F2F5FF',
+  muted: '#828AAE', faint: '#4A5070',
+};
+
+function Card({ children, style, onClick }) {
+  return (
+    <div onClick={onClick} style={{
+      background: CLR.surface,
+      border: `1px solid ${CLR.border}`,
+      borderRadius: 10,
+      boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function Badge({ children, color }) {
+  return (
+    <span style={{
+      display: 'inline-block',
+      padding: '2px 8px',
+      borderRadius: 4,
+      background: color + '22',
+      border: `1px solid ${color}55`,
+      fontFamily: "'Chakra Petch', sans-serif",
+      fontSize: 10, fontWeight: 700,
+      letterSpacing: '0.08em', textTransform: 'uppercase',
+      color,
+    }}>{children}</span>
+  );
+}
+
+function Label({ children }) {
+  return (
+    <div style={{ fontFamily:"'Chakra Petch',sans-serif", fontSize:11, fontWeight:600, letterSpacing:'0.12em', textTransform:'uppercase', color: CLR.faint, marginBottom: 12 }}>
+      {children}
+    </div>
+  );
+}
+
+function Divider() {
+  return <div style={{ borderTop: `1px solid ${CLR.border}`, margin: '0' }} />;
+}
+
+function ScrollArea({ children, style }) {
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', ...style }}>
+      {children}
+    </div>
+  );
+}
+
+function RankDiamond({ rank = 'B', size = 64 }) {
+  const r = RANKS[rank] || RANKS.E;
+  const half = size / 2;
+  return (
+    <div style={{ position:'relative', width:size, height:size, flexShrink:0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position:'absolute', inset:0 }}>
+        <rect x={size*0.1} y={size*0.1} width={size*0.8} height={size*0.8} rx={size*0.06} transform={`rotate(45 ${half} ${half})`} fill="url(#grad-r)" />
+        <rect x={size*0.18} y={size*0.18} width={size*0.64} height={size*0.64} rx={size*0.04} transform={`rotate(45 ${half} ${half})`} fill={CLR.bg} />
+        <defs>
+          <linearGradient id="grad-r" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={r.color} stopOpacity="0.9" />
+            <stop offset="100%" stopColor={r.color} stopOpacity="0.4" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center',
+        fontFamily:"'Chakra Petch',sans-serif", fontWeight:700, fontSize: size * 0.42, color: r.color,
+        textShadow: `0 0 ${size*0.2}px ${r.color}`,
+      }}>{rank}</div>
+    </div>
+  );
+}
+
+function XPBar({ value, max, level, height = 10 }) {
+  const pct = Math.min(100, Math.round((value / max) * 100));
+  return (
+    <div>
+      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
+        <span style={{ fontFamily:"'Chakra Petch',sans-serif", fontSize:11, fontWeight:700, color:'#FFD64A', letterSpacing:'0.1em', textTransform:'uppercase' }}>Nível {level}</span>
+        <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color: CLR.muted }}>{value} / {max} XP</span>
+      </div>
+      <div style={{ height, borderRadius:99, background:'#1D2133', overflow:'hidden', position:'relative' }}>
+        <div style={{ position:'absolute', top:0, left:0, height:'100%', width:`${pct}%`, borderRadius:99,
+          background:'linear-gradient(90deg,#F5A623,#FFD64A)',
+          boxShadow:'0 0 12px rgba(255,200,24,0.5)',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+function AttrBar({ attr, value, max = 100 }) {
+  const a = ATTRS[attr];
+  const pct = Math.min(100, Math.round((value / max) * 100));
+  return (
+    <div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:5 }}>
+        <span style={{ fontFamily:"'Chakra Petch',sans-serif", fontSize:11, fontWeight:600, letterSpacing:'0.07em', textTransform:'uppercase', color:'#AEB4D0' }}>{a.label}</span>
+        <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:13, fontWeight:700, color:a.color }}>{value}</span>
+      </div>
+      <div style={{ height:6, borderRadius:99, background:'#1D2133', overflow:'hidden' }}>
+        <div style={{ height:'100%', width:`${pct}%`, borderRadius:99, background:a.color, opacity:0.85 }} />
+      </div>
+    </div>
+  );
+}
+
+// ── HOME SCREEN ───────────────────────────────────────────────────
+function HomeScreen({ onQuest, onProfile }) {
+  return (
+    <ScrollArea style={{ padding: '20px 18px' }}>
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:24 }}>
+        <button onClick={onProfile} style={{
+          width:52, height:52, borderRadius:'50%', flexShrink:0,
+          background:'linear-gradient(135deg,#2D6FF5,#8B3FD8)',
+          border:'2.5px solid #A855F7',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontFamily:"'Chakra Petch',sans-serif", fontWeight:700, fontSize:17, color:'#fff',
+          boxShadow:'0 0 18px rgba(139,63,216,0.4)',
+        }}>VO</button>
+
+        <button onClick={onProfile} style={{ flex:1, textAlign:'left', background:'none', border:'none', padding:0 }}>
+          <div style={{ fontFamily:"'Chakra Petch',sans-serif", fontSize:10, letterSpacing:'0.14em', textTransform:'uppercase', color: CLR.faint, marginBottom:2 }}>BOM TREINO</div>
+          <div style={{ fontFamily:"'Chakra Petch',sans-serif", fontSize:18, fontWeight:700, color: CLR.text }}>Vinícius Ottoni</div>
+        </button>
+
+        <div style={{ display:'flex', gap:8 }}>
+          <div style={{ position:'relative' }}>
+            <button style={{ width:40, height:40, background: CLR.surface2, border:`1px solid ${CLR.border}`, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <span style={{ fontSize:16 }}>🔥</span>
+            </button>
+            <span style={{ position:'absolute', top:-5, right:-5, background:'#FF9500', color:'#fff', fontSize:9, fontFamily:"'Chakra Petch',sans-serif", fontWeight:700, borderRadius:99, minWidth:18, height:18, lineHeight:'18px', textAlign:'center', padding:'0 3px' }}>{PLAYER.streakDays}</span>
+          </div>
+          <div style={{ position:'relative' }}>
+            <button style={{ width:40, height:40, background: CLR.surface2, border:`1px solid ${CLR.border}`, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <span style={{ fontSize:16 }}>🔔</span>
+            </button>
+            <span style={{ position:'absolute', top:-5, right:-5, background:'#EF4444', color:'#fff', fontSize:9, fontFamily:"'Chakra Petch',sans-serif", fontWeight:700, borderRadius:99, minWidth:18, height:18, lineHeight:'18px', textAlign:'center', padding:'0 3px' }}>{PLAYER.notifications}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Rank Card */}
+      <Card style={{ padding:20, marginBottom:22 }}>
+        <div style={{ display:'flex', gap:16, alignItems:'flex-start', marginBottom:16 }}>
+          <RankDiamond rank={PLAYER.rank} size={72} />
+          <div style={{ flex:1 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
+              <span style={{ fontFamily:"'Chakra Petch',sans-serif", fontWeight:700, fontSize:22, color: CLR.text }}>Rank {PLAYER.rank}</span>
+              <Badge color="#A855F7">{PLAYER.className}</Badge>
+            </div>
+            <div style={{ fontFamily:"'Sora',sans-serif", fontSize:13, color: CLR.muted, lineHeight:1.5 }}>
+              {PLAYER.xpToNext} XP para o próximo nível
+            </div>
+          </div>
+        </div>
+        <XPBar value={PLAYER.xp} max={PLAYER.xpMax} level={PLAYER.level} height={11} />
+      </Card>
+
+      {/* Quests */}
+      <Label>Lista de Quests</Label>
+      <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+        {QUESTS.map(q => {
+          const pct = Math.round((q.completedCount / q.totalCount) * 100);
+          const barColor = q.type === 'raid' ? 'linear-gradient(90deg,#EF4444,#A855F7)' : 'linear-gradient(90deg,#2D6FF5,#22D3A7)';
+          return (
+            <button key={q.id} onClick={() => onQuest(q.id)} style={{
+              display:'block', width:'100%', textAlign:'left',
+              padding:'15px 18px', background: CLR.surface,
+              border:`1px solid ${CLR.border}`, borderRadius:10,
+              boxShadow:'0 4px 16px rgba(0,0,0,0.3)',
+            }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                <div>
+                  <span style={{ fontFamily:"'Chakra Petch',sans-serif", fontWeight:600, fontSize:16, color: CLR.text }}>{q.title}</span>
+                  <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, color: CLR.muted, marginLeft:8 }}>{q.completedCount}/{q.totalCount}</span>
+                </div>
+                <span style={{ color: CLR.faint, fontSize:18 }}>›</span>
+              </div>
+              <div style={{ height:5, borderRadius:99, background:'#1D2133', overflow:'hidden' }}>
+                <div style={{ height:'100%', width:`${pct}%`, borderRadius:99, background: barColor }} />
+              </div>
+              {q.type === 'raid' && (
+                <div style={{ marginTop:6, fontFamily:"'Sora',sans-serif", fontSize:11, color: CLR.faint }}>
+                  👥 {q.participants.toLocaleString('pt-BR')} participantes
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ── QUEST DETAIL ─────────────────────────────────────────────────
+function QuestDetailScreen({ quest, onBack }) {
+  const isRaid = quest.type === 'raid';
+  const pct = Math.round((quest.completedCount / quest.totalCount) * 100);
+
+  return (
+    <React.Fragment>
+      {/* Top bar */}
+      <div style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 18px', borderBottom:`1px solid ${CLR.border}`, flexShrink:0 }}>
+        <button onClick={onBack} style={{ width:36, height:36, background: CLR.surface2, border:`1px solid ${CLR.border}`, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, color: CLR.text }}>←</button>
+        <div style={{ flex:1 }}>
+          <div style={{ fontFamily:"'Chakra Petch',sans-serif", fontWeight:700, fontSize:16, color: CLR.text }}>{quest.title}</div>
+          {isRaid && <div style={{ fontFamily:"'Sora',sans-serif", fontSize:11, color: CLR.faint }}>👥 {quest.participants.toLocaleString('pt-BR')} participantes</div>}
+        </div>
+        <div style={{ textAlign:'right' }}>
+          <div style={{ fontFamily:"'Chakra Petch',sans-serif", fontSize:13, fontWeight:700, color:'#FFD64A' }}>+{quest.xpReward} XP</div>
+          <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color: CLR.faint }}>{quest.completedCount}/{quest.totalCount}</div>
+        </div>
+      </div>
+
+      {/* Progress */}
+      <div style={{ padding:'10px 18px', flexShrink:0 }}>
+        <div style={{ height:4, borderRadius:99, background:'#1D2133', overflow:'hidden' }}>
+          <div style={{ height:'100%', width:`${pct}%`, borderRadius:99, background:'linear-gradient(90deg,#2D6FF5,#8B3FD8)' }} />
+        </div>
+      </div>
+
+      <ScrollArea style={{ padding:'0 18px 18px' }}>
+        <Label>{isRaid ? 'Progresso Coletivo' : 'Exercícios'}</Label>
+        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          {quest.exercises.map(ex => isRaid
+            ? <RaidExRow key={ex.id} ex={ex} />
+            : <DailyExRow key={ex.id} ex={ex} />
+          )}
+        </div>
+      </ScrollArea>
+    </React.Fragment>
+  );
+}
+
+function DailyExRow({ ex }) {
+  const a = ATTRS[ex.attr];
+  const done   = ex.status === 'done';
+  const active = ex.status === 'active';
+  const sc = done ? '#22C55E' : active ? '#4D8BFF' : CLR.faint;
+  return (
+    <Card style={{ padding:'13px 16px', opacity: ex.status === 'todo' ? 0.5 : 1 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ width:28, height:28, borderRadius:6, flexShrink:0, background:`${sc}22`, border:`1.5px solid ${sc}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          {done   && <span style={{ color:'#22C55E', fontSize:14 }}>✓</span>}
+          {active && <div style={{ width:8, height:8, borderRadius:'50%', background:'#4D8BFF', animation:'blink 1.4s ease-in-out infinite' }} />}
+        </div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontFamily:"'Sora',sans-serif", fontWeight:600, fontSize:14, color: done ? CLR.faint : CLR.text, textDecoration: done ? 'line-through' : 'none', marginBottom:2 }}>{ex.name}</div>
+          <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color: CLR.muted }}>{ex.detail}</div>
+          {active && ex.totalSets && (
+            <div style={{ marginTop:7 }}>
+              <div style={{ display:'flex', gap:4, marginBottom:3 }}>
+                {Array.from({length: ex.totalSets}).map((_,i) => (
+                  <div key={i} style={{ flex:1, height:4, borderRadius:99, background: i < ex.activeSets ? '#4D8BFF' : '#1D2133' }} />
+                ))}
+              </div>
+              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color: CLR.faint }}>{ex.activeSets}/{ex.totalSets} séries</span>
+            </div>
+          )}
+        </div>
+        {a && <Badge color={a.color}>{a.label}</Badge>}
+      </div>
+    </Card>
+  );
+}
+
+function RaidExRow({ ex }) {
+  const a = ATTRS[ex.attr];
+  const pct = Math.round((ex.current / ex.total) * 100);
+  return (
+    <Card style={{ padding:'13px 16px' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+        <div>
+          <span style={{ fontFamily:"'Sora',sans-serif", fontWeight:600, fontSize:14, color: CLR.text }}>{ex.name}</span>
+          {a && <span style={{ marginLeft:8 }}><Badge color={a.color}>{a.label}</Badge></span>}
+        </div>
+        <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, fontWeight:700, color: a ? a.color : CLR.muted }}>{pct}%</span>
+      </div>
+      <div style={{ height:7, borderRadius:99, background:'#1D2133', overflow:'hidden', marginBottom:6 }}>
+        <div style={{ height:'100%', width:`${pct}%`, borderRadius:99, background: a ? a.color : '#4D8BFF', opacity:0.85 }} />
+      </div>
+      <div style={{ display:'flex', justifyContent:'space-between' }}>
+        <span style={{ fontFamily:"'Sora',sans-serif", fontSize:11, color: CLR.faint }}>{ex.detail}</span>
+        <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color: CLR.muted }}>{ex.current.toLocaleString('pt-BR')} / {ex.total.toLocaleString('pt-BR')} {ex.unit}</span>
+      </div>
+    </Card>
+  );
+}
+
+// ── PERFIL ───────────────────────────────────────────────────────
+function ProfileScreen() {
+  const ob = PLAYER.onboarding;
+  const fields = [
+    {label:'Meta',          value: ob.goal},
+    {label:'Nível',         value: ob.fitnessLevel},
+    {label:'Dias de Treino',value: ob.trainingDays.join(' · ')},
+    {label:'Idade',         value: `${ob.age} anos`},
+    {label:'Peso',          value: ob.weight},
+    {label:'Altura',        value: ob.height},
+  ];
+  return (
+    <ScrollArea style={{ padding:'20px 18px' }}>
+      {/* Avatar */}
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:26 }}>
+        <div style={{ width:84, height:84, borderRadius:'50%', marginBottom:14, background:'linear-gradient(135deg,#2D6FF5,#8B3FD8)', border:'3px solid #A855F7', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Chakra Petch',sans-serif", fontWeight:700, fontSize:28, color:'#fff', boxShadow:'0 0 24px rgba(139,63,216,0.45)' }}>VO</div>
+        <div style={{ fontFamily:"'Chakra Petch',sans-serif", fontWeight:700, fontSize:20, color: CLR.text, marginBottom:10 }}>{PLAYER.name}</div>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <RankDiamond rank={PLAYER.rank} size={28} />
+          <Badge color="#A855F7">Rank {PLAYER.rank}</Badge>
+          <Badge color="#A855F7">{PLAYER.className}</Badge>
+        </div>
+      </div>
+
+      {/* Attributes */}
+      <Label>Atributos</Label>
+      <Card style={{ padding:'16px 18px', marginBottom:20 }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+          {Object.entries(PLAYER.stats).map(([attr, val]) => (
+            <AttrBar key={attr} attr={attr} value={val} />
+          ))}
+        </div>
+      </Card>
+
+      {/* Onboarding */}
+      <Label>Configuração de Treino</Label>
+      <Card style={{ padding:'0 18px', marginBottom:20 }}>
+        {fields.map((f, i) => (
+          <div key={f.label}>
+            {i > 0 && <Divider />}
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 0' }}>
+              <span style={{ fontFamily:"'Chakra Petch',sans-serif", fontSize:11, fontWeight:600, letterSpacing:'0.08em', textTransform:'uppercase', color: CLR.faint }}>{f.label}</span>
+              <span style={{ fontFamily:"'Sora',sans-serif", fontSize:13, color:'#C3C9E6', textAlign:'right', maxWidth:'58%' }}>{f.value}</span>
+            </div>
+          </div>
+        ))}
+      </Card>
+
+      <button style={{ width:'100%', padding:14, background:'rgba(45,111,245,0.1)', border:'1px solid rgba(45,111,245,0.3)', borderRadius:10, fontFamily:"'Chakra Petch',sans-serif", fontWeight:600, fontSize:13, letterSpacing:'0.1em', textTransform:'uppercase', color:'#4D8BFF' }}>
+        Editar Perfil
+      </button>
+    </ScrollArea>
+  );
+}
+
+// ── INVENTÁRIO ───────────────────────────────────────────────────
+function InventoryScreen({ onItem }) {
+  const [filter, setFilter] = useState('all');
+  const chips = ['all', 'common', 'uncommon', 'rare', 'epic', 'legendary', 'consumable'];
+  const filtered = filter === 'all' ? INVENTORY : INVENTORY.filter(i => i.rarity === filter);
+
+  return (
+    <React.Fragment>
+      {/* Filter bar */}
+      <div style={{ padding:'16px 18px 0', flexShrink:0 }}>
+        <Label>Inventário <span style={{ color: CLR.muted, fontFamily:"'JetBrains Mono',monospace", fontSize:11 }}>({INVENTORY.length} itens)</span></Label>
+        <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:12, scrollbarWidth:'none' }}>
+          {chips.map(f => {
+            const rc = RARITIES[f];
+            const active = filter === f;
+            const c = rc ? rc.color : '#AEB4D0';
+            return (
+              <button key={f} onClick={() => setFilter(f)} style={{
+                flexShrink:0, padding:'4px 12px',
+                background: active ? `${c}28` : 'transparent',
+                border: `1px solid ${active ? c : 'rgba(255,255,255,0.12)'}`,
+                borderRadius:99, color: active ? c : CLR.faint,
+                fontFamily:"'Chakra Petch',sans-serif", fontSize:10, fontWeight:700,
+                letterSpacing:'0.08em', textTransform:'uppercase',
+              }}>{f === 'all' ? 'Todos' : rc.label}</button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Grid */}
+      <ScrollArea style={{ padding:'0 18px 18px' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+          {filtered.map(item => {
+            const rc = RARITIES[item.rarity] || {color: CLR.border, label:'?'};
+            return (
+              <button key={item.id} onClick={() => onItem(item)} style={{
+                background: CLR.surface, border:`1px solid ${rc.color}44`,
+                borderRadius:8, padding:'12px 8px',
+                display:'flex', flexDirection:'column', alignItems:'center', gap:6,
+                position:'relative', width:'100%',
+              }}>
+                <span style={{ fontSize:26, lineHeight:1 }}>{item.icon}</span>
+                <span style={{ fontFamily:"'Sora',sans-serif", fontSize:10, fontWeight:600, color:'#C3C9E6', textAlign:'center', lineHeight:1.3 }}>{item.name}</span>
+                <span style={{ fontFamily:"'Chakra Petch',sans-serif", fontSize:9, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color: rc.color }}>{rc.label}</span>
+                {item.qty != null && <span style={{ position:'absolute', top:5, right:7, fontFamily:"'JetBrains Mono',monospace", fontSize:10, color: CLR.faint }}>×{item.qty}</span>}
+              </button>
+            );
+          })}
+        </div>
+      </ScrollArea>
+    </React.Fragment>
+  );
+}
+
+function ItemModal({ item, onClose }) {
+  const rc = RARITIES[item.rarity] || {color:'#828AAE', label:'?'};
+  return (
+    <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(5,6,12,0.85)', backdropFilter:'blur(6px)', display:'flex', alignItems:'flex-end', zIndex:200 }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width:'100%', background:'#141828',
+        border:`1px solid ${CLR.border}`, borderBottom:'none',
+        borderRadius:'16px 16px 0 0', padding:'20px 20px 48px',
+        boxShadow:'0 -12px 40px rgba(0,0,0,0.6)',
+        animation:'slideUp 240ms cubic-bezier(0.16,1,0.3,1)',
+      }}>
+        <div style={{ width:36, height:3, borderRadius:99, background:'rgba(255,255,255,0.15)', margin:'0 auto 20px' }} />
+        <div style={{ display:'flex', gap:16, alignItems:'flex-start', marginBottom:16 }}>
+          <div style={{ width:64, height:64, background: CLR.surface2, border:`1.5px solid ${rc.color}55`, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, flexShrink:0, boxShadow:`0 0 20px ${rc.color}33` }}>{item.icon}</div>
+          <div>
+            <div style={{ fontFamily:"'Chakra Petch',sans-serif", fontWeight:700, fontSize:18, color: CLR.text, marginBottom:8 }}>{item.name}</div>
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+              <Badge color={rc.color}>{rc.label}</Badge>
+              <Badge color={CLR.muted}>{item.type}</Badge>
+            </div>
+          </div>
+        </div>
+        <p style={{ fontFamily:"'Sora',sans-serif", fontSize:14, color:'#AEB4D0', lineHeight:1.65, marginBottom:20 }}>{item.desc}</p>
+        {item.qty != null && <p style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, color: CLR.faint, marginBottom:16 }}>Quantidade: ×{item.qty}</p>}
+        <button style={{ width:'100%', padding:14, background:`${rc.color}18`, border:`1px solid ${rc.color}55`, borderRadius:10, fontFamily:"'Chakra Petch',sans-serif", fontWeight:700, fontSize:13, letterSpacing:'0.1em', textTransform:'uppercase', color: rc.color }}>
+          {item.rarity === 'consumable' ? 'Usar Item' : 'Equipar'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── LOJA ─────────────────────────────────────────────────────────
+function ShopScreen() {
+  return (
+    <ScrollArea style={{ padding:'20px 18px' }}>
+      {/* Balance */}
+      <div style={{ display:'flex', gap:10, marginBottom:22 }}>
+        {[{icon:'🪙', label:'OURO', value: PLAYER.gold.toLocaleString('pt-BR'), color:'#FFD64A'}, {icon:'💎', label:'GEMAS', value: PLAYER.gems, color:'#5FE8FF'}].map(b => (
+          <Card key={b.label} style={{ flex:1, padding:'12px 14px', display:'flex', alignItems:'center', gap:10 }}>
+            <span style={{ fontSize:22 }}>{b.icon}</span>
+            <div>
+              <div style={{ fontFamily:"'Chakra Petch',sans-serif", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', color: CLR.faint }}>{b.label}</div>
+              <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:18, fontWeight:700, color: b.color }}>{b.value}</div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <Label>Em Destaque</Label>
+      <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+        {SHOP_ITEMS.map(item => {
+          const rc = RARITIES[item.rarity] || {};
+          const price = item.priceGold != null
+            ? {icon:'🪙', value: item.priceGold.toLocaleString('pt-BR'), color:'#FFD64A'}
+            : {icon:'💎', value: item.priceGems, color:'#5FE8FF'};
+          return (
+            <Card key={item.id} style={{ padding:'14px 16px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                <div style={{ width:48, height:48, background: CLR.surface2, border:`1px solid ${(rc.color||'#333')}33`, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>{item.icon}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontFamily:"'Sora',sans-serif", fontWeight:600, fontSize:14, color: CLR.text, marginBottom:3 }}>{item.name}</div>
+                  <div style={{ fontFamily:"'Sora',sans-serif", fontSize:12, color: CLR.faint }}>{item.desc}</div>
+                </div>
+                <button style={{ flexShrink:0, padding:'8px 12px', background:`${price.color}18`, border:`1px solid ${price.color}55`, borderRadius:8, display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
+                  <span style={{ fontSize:14 }}>{price.icon}</span>
+                  <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, fontWeight:700, color: price.color }}>{price.value}</span>
+                </button>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ── CONFIGURAÇÕES ─────────────────────────────────────────────────
+function SettingsScreen() {
+  const [musicVol, setMusicVol] = useState(75);
+  const [fxVol, setFxVol]       = useState(100);
+  const [lang, setLang]         = useState('pt');
+  const langs   = [{id:'pt',label:'Português'},{id:'en',label:'English'},{id:'es',label:'Español'}];
+  const support = [{icon:'💬',label:'Fale Conosco'},{icon:'❓',label:'FAQ'},{icon:'ℹ️',label:'Sobre o Awaken'},{icon:'⭐',label:'Avaliar o App'}];
+
+  return (
+    <ScrollArea style={{ padding:'20px 18px' }}>
+      <Label>Som</Label>
+      <Card style={{ padding:'4px 18px', marginBottom:20 }}>
+        {[{label:'Música', val:musicVol, set:setMusicVol},{label:'Efeitos Sonoros', val:fxVol, set:setFxVol}].map((s,i,arr) => (
+          <div key={s.label}>
+            {i > 0 && <Divider />}
+            <div style={{ padding:'12px 0' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
+                <span style={{ fontFamily:"'Chakra Petch',sans-serif", fontSize:12, fontWeight:600, letterSpacing:'0.08em', textTransform:'uppercase', color:'#AEB4D0' }}>{s.label}</span>
+                <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, color: s.val === 0 ? '#EF4444' : CLR.muted }}>{s.val}%</span>
+              </div>
+              <input type="range" min="0" max="100" value={s.val} onChange={e => s.set(Number(e.target.value))} />
+            </div>
+          </div>
+        ))}
+      </Card>
+
+      <Label>Idioma</Label>
+      <Card style={{ padding:6, marginBottom:20 }}>
+        <div style={{ display:'flex', gap:4 }}>
+          {langs.map(l => (
+            <button key={l.id} onClick={() => setLang(l.id)} style={{
+              flex:1, padding:'10px 6px',
+              background: lang === l.id ? 'rgba(77,139,255,0.18)' : 'transparent',
+              border: `1px solid ${lang === l.id ? 'rgba(77,139,255,0.5)' : 'transparent'}`,
+              borderRadius:6,
+              fontFamily:"'Chakra Petch',sans-serif", fontSize:11, fontWeight:600,
+              color: lang === l.id ? '#4D8BFF' : CLR.faint,
+            }}>{l.label}</button>
+          ))}
+        </div>
+      </Card>
+
+      <Label>Suporte</Label>
+      <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+        {support.map(item => (
+          <Card key={item.label} style={{ padding:'13px 16px', cursor:'pointer' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                <span style={{ fontSize:18 }}>{item.icon}</span>
+                <span style={{ fontFamily:"'Sora',sans-serif", fontSize:14, color:'#AEB4D0' }}>{item.label}</span>
+              </div>
+              <span style={{ color: CLR.faint, fontSize:18 }}>›</span>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ── BOTTOM NAV ───────────────────────────────────────────────────
+const TABS = [
+  { id:'home',      label:'HOME'  },
+  { id:'profile',   label:'PERFIL'},
+  { id:'inventory', label:'INV.'  },
+  { id:'shop',      label:'LOJA'  },
+  { id:'settings',  label:'CONFIG'},
+];
+
+const TAB_ICONS = {
+  home:      (active) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active?'#4D8BFF':'#4A5070'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+  ),
+  profile:   (active) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active?'#4D8BFF':'#4A5070'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+    </svg>
+  ),
+  inventory: (active) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active?'#4D8BFF':'#4A5070'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+    </svg>
+  ),
+  shop:      (active) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active?'#4D8BFF':'#4A5070'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+    </svg>
+  ),
+  settings:  (active) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active?'#4D8BFF':'#4A5070'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+    </svg>
+  ),
+};
+
+function BottomNav({ tab, onTab }) {
+  return (
+    <div style={{ display:'flex', borderTop:`1px solid ${CLR.border}`, background:'#080A12', flexShrink:0 }}>
+      {TABS.map(t => {
+        const active = t.id === tab;
+        return (
+          <button key={t.id} onClick={() => onTab(t.id)} style={{
+            flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+            gap:3, padding:'9px 4px', minHeight:56,
+            background:'transparent', border:'none',
+            color: active ? '#4D8BFF' : '#4A5070',
+            position:'relative',
+          }}>
+            {active && <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:28, height:2, background:'#4D8BFF', borderRadius:'0 0 3px 3px' }} />}
+            {TAB_ICONS[t.id](active)}
+            <span style={{ fontFamily:"'Chakra Petch',sans-serif", fontSize:8, fontWeight:700, letterSpacing:'0.07em', textTransform:'uppercase' }}>{t.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── APP ──────────────────────────────────────────────────────────
+function App() {
+  const [tab, setTab]         = useState('home');
+  const [questId, setQuestId] = useState(null);
+  const [item, setItem]       = useState(null);
+
+  const goTab = useCallback(t => { setTab(t); setQuestId(null); }, []);
+  const quest = questId ? QUESTS.find(q => q.id === questId) : null;
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', width:'100%', height:'100%' }}>
+      {/* Content area */}
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', minHeight:0 }}>
+        {quest ? (
+          <QuestDetailScreen quest={quest} onBack={() => setQuestId(null)} />
+        ) : (
+          <React.Fragment>
+            {tab === 'home'      && <HomeScreen      onQuest={setQuestId} onProfile={() => goTab('profile')} />}
+            {tab === 'profile'   && <ProfileScreen   />}
+            {tab === 'inventory' && <InventoryScreen onItem={setItem} />}
+            {tab === 'shop'      && <ShopScreen      />}
+            {tab === 'settings'  && <SettingsScreen  />}
+          </React.Fragment>
+        )}
+      </div>
+
+      {/* Bottom nav */}
+      {!quest && <BottomNav tab={tab} onTab={goTab} />}
+
+      {/* Item modal overlay */}
+      {item && <ItemModal item={item} onClose={() => setItem(null)} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

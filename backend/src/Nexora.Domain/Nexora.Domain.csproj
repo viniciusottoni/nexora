@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ADR-036 / ADR-039: Nexora.Domain não tem NENHUMA ProjectReference nem PackageReference
+    além da BCL. É essa ausência que garante, em tempo de compilação, que a regra de negócio é
+    idêntica no edge e na nuvem. Não adicione pacotes aqui — se você precisa de MediatR, EF Core
+    ou FluentValidation, a classe pertence a outro projeto.
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>Nexora.Domain</AssemblyName>
+  </PropertyGroup>
+
+</Project>

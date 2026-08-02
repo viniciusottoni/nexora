@@ -1,0 +1,101 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--brand-surface, var(--color-surface));
+  color: var(--color-text);
+}
+.pos-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: linear-gradient(
+    115deg,
+    var(--brand-surface) 0 58%,
+    color-mix(in srgb, var(--brand-secondary) 18%, var(--brand-surface)) 58%
+  );
+}
+.pos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.1rem clamp(1rem, 4vw, 3rem);
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-surface-raised) 92%, transparent);
+}
+.pos-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.pos-identity img {
+  width: 2.4rem;
+  height: 2.4rem;
+  object-fit: contain;
+}
+.pos-identity h1 {
+  margin: 0;
+  font: 700 1.1rem/1.2 var(--brand-font-display);
+}
+.pos-state {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--color-text-muted);
+  font: 700 0.8rem/1 var(--brand-font-body);
+}
+.pos-state span {
+  width: 0.58rem;
+  height: 0.58rem;
+  border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--color-success) 16%, transparent);
+}
+.pos-panel {
+  align-self: center;
+  width: min(34rem, calc(100% - 2rem));
+  margin: 2rem clamp(1rem, 8vw, 8rem);
+  padding: clamp(2rem, 5vw, 4rem);
+  box-shadow: 0 2rem 5rem color-mix(in srgb, var(--brand-primary) 12%, transparent);
+}
+.pos-eyebrow {
+  color: var(--brand-primary);
+  font: 700 0.7rem/1 var(--brand-font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.pos-panel h2 {
+  margin: 1rem 0 0.7rem;
+  font: 700 clamp(2.2rem, 5vw, 4.2rem)/0.95 var(--brand-font-display);
+  letter-spacing: -0.04em;
+}
+.pos-panel > p:not(.pos-eyebrow) {
+  color: var(--color-text-muted);
+}
+.pos-panel .db-button {
+  width: 100%;
+  min-height: 3.5rem;
+  margin-top: 1.5rem;
+  font-size: 1rem;
+}
+.pos-authenticated > .db-operator-bar {
+  position: fixed;
+  z-index: 10;
+  top: 0.65rem;
+  right: 1rem;
+  width: min(24rem, calc(100% - 2rem));
+}
+.pos-device-missing,
+.pos-loading {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  padding: 2rem;
+  text-align: center;
+  background: var(--brand-surface);
+  color: var(--color-text);
+}
+.pos-device-missing h1 {
+  font: 700 2.5rem/1 var(--font-display);
+}

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Nexora.Contracts</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nexora.Domain\Nexora.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

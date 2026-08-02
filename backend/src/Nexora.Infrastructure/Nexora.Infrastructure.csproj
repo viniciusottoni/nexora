@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Nexora.Infrastructure</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nexora.Domain\Nexora.Domain.csproj" />
+    <ProjectReference Include="..\Nexora.Application\Nexora.Application.csproj" />
+    <ProjectReference Include="..\Nexora.Contracts\Nexora.Contracts.csproj" />
+    <ProjectReference Include="..\Nexora.Shared\Nexora.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="EFCore.NamingConventions" />
+    <!--
+      Design-time apenas (dotnet ef migrations add/database update) — não viola ADR-039: a
+      restrição de "Application sem Npgsql/.Design/.Relational" é só para Nexora.Application;
+      Infrastructure já referencia Npgsql/.Relational diretamente acima.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="StackExchange.Redis" />
+    <!--
+      Microsoft.AspNetCore.Authentication.JwtBearer removido (ADR-039: Infrastructure não pode
+      referenciar ASP.NET Core, exceto abstrações de Options) — nenhum tipo em Infrastructure usa
+      esse pacote; JwtTokenIssuer emite/valida token com Microsoft.IdentityModel.Tokens +
+      System.IdentityModel.Tokens.Jwt (abaixo), que não são ASP.NET Core. A validação de bearer
+      token em requisição HTTP (esse sim, uso legítimo do pacote) fica em Api.Edge/Api.Cloud, que
+      podem referenciar tudo. Verificado por Nexora.ArchitectureTests.InfrastructureLayerTests.
+    -->
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="Konscious.Security.Cryptography.Argon2" />
+    <PackageReference Include="BouncyCastle.Cryptography" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Serilog.AspNetCore" />
+  </ItemGroup>
+
+</Project>

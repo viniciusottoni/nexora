@@ -1,0 +1,31 @@
+# --- Frontend (pnpm/turbo) ---
+node_modules/
+dist/
+coverage/
+.turbo/
+playwright-report/
+test-results/
+
+# --- Backend (.NET / Nexora.slnx) ---
+bin/
+obj/
+[Tt]est[Rr]esult*/
+*.trx
+*.user
+*.suo
+.vs/
+.idea/
+*.DotSettings.user
+
+# --- Ambiente / segredos ---
+.env
+.env.*
+!.env.example
+
+# --- Infra local (edge server) ---
+infra/edge/.install-state
+infra/edge/data/
+infra/edge/backups/
+
+# --- Logs ---
+*.log

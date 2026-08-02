@@ -1,0 +1,6 @@
+/* Nexora webfonts. --brand-font (Inter) é declarado no doc 02, §5.2; Montserrat
+   ExtraBold é a fonte de display/marca (aproximação do wordmark do logo). */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap");
+
+/* Iconografia: Material Symbols Rounded — ver readme.md › ICONOGRAPHY do Design System. */
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0&display=block");

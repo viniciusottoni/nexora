@@ -1,0 +1,8 @@
+/* Camada de tenant (white-label). ADR-010/ADR-013: nenhum tenant real tem cor embutida aqui —
+   a identidade visual de cada estabelecimento é aplicada em runtime, no `:root`, por
+   `applyBrandingToDocument` (../branding/runtime-branding.ts), a partir da resposta de
+   `GET /v1/public/branding`. Este arquivo existe só como ponto de entrada estável no import de
+   ../styles.css para o dia em que houver overrides de tema realmente genéricos (ex.: um tema de
+   alto contraste opcional) — nunca um seletor por tenant/cliente específico. Fixture de teste
+   com um tenant de exemplo (se necessário para snapshot visual) fica isolado em
+   packages/ui/src/branding/__fixtures__, nunca neste bundle de produção. */

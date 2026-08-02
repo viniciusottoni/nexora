@@ -1,0 +1,94 @@
+/* IconButton — porte fiel de Design System/components/core/IconButton.jsx */
+.db-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--border-1) solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-control);
+  position: relative;
+}
+.db-icon-button:hover { background: var(--surface-sunken); color: var(--text-primary); }
+.db-icon-button:active { transform: translateY(1px); }
+.db-icon-button[disabled] { opacity: 0.4; cursor: not-allowed; }
+.db-icon-button--sm { width: 32px; height: 32px; }
+.db-icon-button--md { width: 40px; height: 40px; }
+.db-icon-button--lg { width: 48px; height: 48px; }
+.db-icon-button--solid { background: var(--brand-primary); color: var(--brand-on-primary); }
+.db-icon-button--solid:hover { background: var(--brand-primary-hover, var(--action-primary-hover)); color: var(--brand-on-primary); }
+.db-icon-button--outline { border-color: var(--border-default); background: var(--surface-card); }
+.db-icon-button__dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--nx-danger-500);
+  color: #fff;
+  font: var(--type-overline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Badge — porte fiel de Design System/components/core/Badge.jsx */
+.db-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  border: var(--border-1) solid transparent;
+}
+.db-badge--sm { height: 20px; padding: 0 var(--sp-3); font-size: var(--fs-11); }
+.db-badge--md { height: 26px; padding: 0 var(--sp-4); font-size: var(--fs-12); }
+.db-badge--lg { height: 32px; padding: 0 var(--sp-5); font-size: var(--fs-14); }
+.db-badge--neutral { background: var(--surface-sunken); color: var(--text-secondary); border-color: var(--border-subtle); }
+.db-badge--brand { background: var(--surface-brand-subtle); color: var(--nx-navy-700); }
+.db-badge--info { background: var(--nx-blue-100); color: var(--nx-blue-600); }
+.db-badge--success { background: var(--nx-success-100); color: var(--nx-success-600); }
+.db-badge--warning { background: var(--nx-warning-100); color: var(--nx-warning-600); }
+.db-badge--danger { background: var(--nx-danger-100); color: var(--nx-danger-600); }
+.db-badge--accent { background: var(--nx-teal-100); color: var(--nx-teal-600); }
+.db-badge--solid { background: var(--nx-navy-800); color: #fff; }
+.db-badge--square { border-radius: var(--radius-sm); }
+
+/* BrandMark — porte fiel de Design System/components/core/BrandMark.jsx */
+.db-brand-mark { display: inline-flex; align-items: center; gap: var(--sp-4); min-width: 0; }
+.db-brand-mark__img { display: block; height: 100%; width: auto; }
+.db-brand-mark__word {
+  font-family: var(--font-display);
+  font-weight: var(--fw-black);
+  letter-spacing: var(--ls-tight);
+  color: var(--text-brand);
+  line-height: 1;
+}
+.db-brand-mark__sub {
+  font: var(--type-overline);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+.db-brand-mark--inverse .db-brand-mark__word { color: #fff; }
+.db-brand-mark--inverse .db-brand-mark__sub { color: rgba(255, 255, 255, 0.7); }
+.db-brand-mark__tenant {
+  width: var(--db-brand-mark-size);
+  height: var(--db-brand-mark-size);
+  border-radius: var(--radius-md);
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: var(--fw-black);
+  flex: 0 0 auto;
+}

@@ -1,0 +1,49 @@
+.db-branding-preview {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--preview-radius);
+  background: var(--preview-surface);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+.db-branding-preview header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--preview-primary) 20%, transparent);
+}
+.db-branding-preview header img,
+.db-branding-preview header span {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
+.db-branding-preview header span {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--preview-primary);
+  color: var(--preview-on-primary);
+  font-weight: 700;
+}
+.db-branding-preview > div {
+  padding: 2rem;
+}
+.db-branding-preview small {
+  color: var(--color-text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.db-branding-preview p {
+  font: 700 1.8rem/1.1 var(--font-display);
+}
+.db-branding-preview button {
+  border: 0;
+  border-radius: calc(var(--preview-radius) * 0.7);
+  background: var(--preview-primary);
+  color: var(--preview-on-primary);
+  padding: 0.8rem 1rem;
+  font: 700 0.9rem/1 var(--font-body);
+}

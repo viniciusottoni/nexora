@@ -1,0 +1,225 @@
+.provision-shell {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 4.5rem 0 6rem;
+}
+.provision-heading {
+  max-width: 700px;
+  margin-bottom: 2rem;
+}
+.provision-eyebrow {
+  color: var(--color-primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.provision-heading h1 {
+  margin: 0.45rem 0 0.6rem;
+  font: 700 clamp(2.2rem, 5vw, 4.3rem)/0.98 var(--font-display);
+  letter-spacing: -0.035em;
+}
+.provision-heading p,
+.form-section__heading p,
+.form-footer p {
+  color: var(--color-text-muted);
+}
+.provision-form-card {
+  overflow: hidden;
+}
+.form-section {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.65fr) minmax(0, 1.8fr);
+  gap: 2.2rem;
+  padding: 2rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.form-section__heading {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.form-section__heading > span,
+.install-card__number {
+  color: var(--color-secondary);
+  font: 700 0.8rem/1 var(--font-mono);
+}
+.form-section__heading h2,
+.install-card h2,
+.checklist-card h2 {
+  margin: 0 0 0.2rem;
+  font: 700 1.35rem/1.1 var(--font-display);
+}
+.form-section__heading p {
+  margin: 0;
+  font-size: 0.82rem;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2rem;
+}
+.native-field {
+  display: grid;
+  align-content: start;
+  gap: 0.4rem;
+  font-size: 0.83rem;
+  font-weight: 700;
+}
+.native-field select {
+  min-height: 2.75rem;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: calc(var(--radius-base) * 0.65);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  padding: 0.65rem 0.8rem;
+  font: inherit;
+}
+.native-field select:focus {
+  border-color: var(--color-primary);
+  outline: 3px solid color-mix(in srgb, var(--color-primary) 16%, transparent);
+}
+.native-field small {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+.form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.4rem 2rem;
+  background: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface-raised));
+}
+.form-footer p {
+  max-width: 570px;
+  margin: 0;
+  font-size: 0.8rem;
+}
+.form-error {
+  margin: 0 2rem 1.5rem;
+  border-left: 3px solid var(--color-danger);
+  padding: 0.8rem 1rem;
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+}
+.provision-result-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 1.4rem;
+  align-items: start;
+}
+.install-card,
+.checklist-card {
+  padding: 1.7rem;
+}
+.install-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.2rem;
+}
+.secure-note {
+  color: var(--color-warning);
+  font-size: 0.83rem;
+  font-weight: 600;
+}
+.install-command {
+  display: block;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1rem;
+  background: var(--color-surface);
+  font: 500 0.78rem/1.6 var(--font-mono);
+}
+.install-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+.copy-status {
+  min-height: 1.3rem;
+  margin-bottom: 0;
+  color: var(--color-success);
+  font-size: 0.78rem;
+}
+.checklist-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.checklist-card__header strong {
+  font: 700 1.4rem/1 var(--font-mono);
+  color: var(--color-primary);
+}
+.deployment-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.deployment-list li {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.deployment-list li > span {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  font: 600 0.67rem var(--font-mono);
+}
+.deployment-list li[data-status='COMPLETED'] > span {
+  border-color: var(--color-success);
+  color: white;
+  background: var(--color-success);
+}
+.deployment-list strong,
+.deployment-list small {
+  display: block;
+}
+.deployment-list strong {
+  font-size: 0.82rem;
+}
+.deployment-list small {
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+}
+@media (max-width: 760px) {
+  .provision-shell {
+    padding-top: 2.5rem;
+  }
+  .form-section,
+  .provision-result-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .form-footer button {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
+}

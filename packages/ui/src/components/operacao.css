@@ -1,0 +1,318 @@
+/*
+ * Operação — porte fiel de components/operacao/*.jsx (Design System/):
+ * TableCard, OrderTicket, MenuItemCard, OrderLine.
+ * Mesmas variáveis de tokens/*.css; classes nx* renomeadas para db* (BEM).
+ */
+
+/* TableCard — porte fiel de components/operacao/TableCard.jsx */
+.db-table-card {
+  background: var(--surface-card);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--brand-radius);
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  cursor: pointer;
+  transition: var(--transition-control), box-shadow var(--dur-fast) var(--ease-standard);
+  text-align: left;
+  min-height: 132px;
+  box-shadow: var(--shadow-subtle);
+}
+.db-table-card:hover {
+  box-shadow: var(--shadow-raised);
+  border-color: var(--border-default);
+}
+.db-table-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+.db-table-card__name {
+  font: var(--fw-bold) var(--fs-20)/1 var(--font-display);
+  color: var(--text-primary);
+}
+.db-table-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+.db-table-card__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.db-table-card__total {
+  margin-top: auto;
+  font: var(--fw-bold) var(--fs-18)/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+.db-table-card--attention {
+  border-color: var(--nx-danger-500);
+  box-shadow: 0 0 0 1px var(--nx-danger-500);
+}
+.db-table-card--free {
+  background: var(--surface-page);
+  border-style: dashed;
+  box-shadow: none;
+}
+.db-table-card--free .db-table-card__name {
+  color: var(--text-muted);
+}
+
+/* OrderTicket — porte fiel de components/operacao/OrderTicket.jsx */
+.db-order-ticket {
+  background: var(--surface-card);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--brand-radius);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+.db-order-ticket__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-5);
+  border-bottom: var(--border-1) solid var(--border-subtle);
+}
+.db-order-ticket__id {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+.db-order-ticket__code {
+  font: var(--fw-black) var(--fs-28)/1 var(--font-mono);
+  color: var(--text-primary);
+}
+.db-order-ticket__where {
+  font: var(--fw-semibold) var(--fs-14)/1 var(--font-sans);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.db-order-ticket__items {
+  list-style: none;
+  margin: 0;
+  padding: var(--sp-4) 0;
+  flex: 1 1 auto;
+}
+.db-order-ticket__item {
+  display: flex;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-5);
+  align-items: flex-start;
+}
+.db-order-ticket__qty {
+  font: var(--fw-black) var(--fs-24)/1.1 var(--font-mono);
+  color: var(--nx-navy-700);
+  flex: 0 0 auto;
+  min-width: 32px;
+}
+[data-surface='kds'] .db-order-ticket__qty {
+  color: var(--nx-cyan-400);
+}
+.db-order-ticket__name {
+  font: var(--type-kds-item);
+  color: var(--text-primary);
+}
+.db-order-ticket__modifiers {
+  font: var(--fw-medium) var(--fs-14)/1.35 var(--font-sans);
+  color: var(--nx-warning-500);
+  margin-top: 2px;
+}
+.db-order-ticket__item--done .db-order-ticket__name {
+  text-decoration: line-through;
+  opacity: 0.45;
+}
+.db-order-ticket__item--done .db-order-ticket__qty {
+  opacity: 0.45;
+}
+.db-order-ticket__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  border-top: var(--border-1) solid var(--border-subtle);
+  background: var(--surface-sunken);
+}
+.db-order-ticket__channel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+.db-order-ticket__fire {
+  margin-left: auto;
+  font: var(--type-caption);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.db-order-ticket--late {
+  border-color: var(--nx-time-late);
+  box-shadow: 0 0 0 2px var(--nx-time-late) inset;
+}
+
+/* MenuItemCard — porte fiel de components/operacao/MenuItemCard.jsx */
+.db-menu-item-card {
+  display: flex;
+  gap: var(--sp-5);
+  padding: var(--sp-5);
+  background: var(--surface-card);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--brand-radius);
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition-control), box-shadow var(--dur-fast) var(--ease-standard);
+  width: 100%;
+  align-items: flex-start;
+}
+.db-menu-item-card:hover {
+  box-shadow: var(--shadow-raised);
+  border-color: var(--border-default);
+}
+.db-menu-item-card__photo {
+  width: 88px;
+  height: 88px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-disabled);
+  overflow: hidden;
+}
+.db-menu-item-card__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.db-menu-item-card__photo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--sp-2);
+}
+.db-menu-item-card__photo-text {
+  font: var(--fw-medium) 8px/1.15 var(--font-sans);
+  text-align: center;
+  color: var(--text-disabled);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.db-menu-item-card__body {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.db-menu-item-card__name {
+  font: var(--fw-semibold) var(--fs-16)/1.25 var(--font-sans);
+  color: var(--text-primary);
+}
+.db-menu-item-card__description {
+  font: var(--type-caption);
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-wrap: pretty;
+}
+.db-menu-item-card__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  margin-top: var(--sp-2);
+}
+.db-menu-item-card__price {
+  font: var(--fw-bold) var(--fs-16)/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+.db-menu-item-card__tag {
+  font: var(--type-caption);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.db-menu-item-card__tag--danger {
+  color: var(--text-danger);
+}
+.db-menu-item-card--unavailable {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.db-menu-item-card--unavailable .db-menu-item-card__price {
+  text-decoration: line-through;
+}
+
+/* OrderLine — porte fiel de components/operacao/OrderLine.jsx */
+.db-order-line {
+  display: flex;
+  gap: var(--sp-5);
+  align-items: flex-start;
+  padding: var(--sp-5) 0;
+  border-bottom: var(--border-1) solid var(--border-subtle);
+}
+.db-order-line:last-child {
+  border-bottom: 0;
+}
+.db-order-line__qty {
+  font: var(--fw-semibold) var(--fs-14)/1.4 var(--font-mono);
+  color: var(--text-secondary);
+  min-width: 26px;
+  flex: 0 0 auto;
+}
+.db-order-line__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.db-order-line__name {
+  font: var(--fw-medium) var(--fs-14)/1.35 var(--font-sans);
+  color: var(--text-primary);
+}
+.db-order-line__meta {
+  font: var(--type-caption);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.db-order-line__status {
+  margin-top: var(--sp-3);
+  display: flex;
+  gap: var(--sp-4);
+  align-items: center;
+}
+.db-order-line__price {
+  font: var(--fw-semibold) var(--fs-14)/1.4 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  flex: 0 0 auto;
+  text-align: right;
+}
+.db-order-line__actions {
+  flex: 0 0 auto;
+}
+.db-order-line--cancelled .db-order-line__name,
+.db-order-line--cancelled .db-order-line__price {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}

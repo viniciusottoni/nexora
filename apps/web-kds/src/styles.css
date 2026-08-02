@@ -1,0 +1,114 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--brand-primary, var(--color-primary));
+  color: var(--brand-on-primary, var(--color-on-primary));
+}
+.kds-shell {
+  min-height: 100vh;
+  padding: clamp(1rem, 2vw, 2rem);
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--brand-font);
+}
+.kds-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1.25rem;
+  border-bottom: var(--border-1) solid var(--border-subtle);
+}
+.kds-header > div {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-weight: 700;
+}
+.kds-header img {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+}
+.kds-header time {
+  font: 700 1.15rem/1 var(--font-mono);
+}
+.kds-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  min-height: 45vh;
+  text-align: left;
+}
+.kds-pulse {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 0.35rem solid var(--brand-secondary);
+  border-radius: 50%;
+  box-shadow: 0 0 0 0.8rem color-mix(in srgb, var(--brand-secondary) 16%, transparent);
+}
+.kds-status p {
+  margin: 0;
+  color: var(--text-secondary);
+  font: var(--type-overline);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+}
+.kds-status h1 {
+  margin: 0.35rem 0;
+  font: 800 clamp(2.8rem, 7vw, 6.5rem)/0.9 var(--font-display);
+  letter-spacing: -0.05em;
+  color: var(--text-primary);
+}
+.kds-status div > span {
+  color: var(--text-muted);
+}
+.kds-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.kds-columns .kds-column {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  background: var(--surface-raised);
+  box-shadow: none;
+}
+.kds-columns h2 {
+  margin: 0;
+  font: var(--type-h3);
+  color: var(--text-secondary);
+}
+.kds-columns strong {
+  font: var(--type-kds-item) var(--font-mono);
+  color: var(--text-primary);
+}
+@media (max-width: 42rem) {
+  .kds-columns {
+    grid-template-columns: 1fr;
+  }
+}
+.kds-authenticated > .db-operator-bar {
+  position: fixed;
+  z-index: 10;
+  top: 0.65rem;
+  right: 1rem;
+  width: min(24rem, calc(100% - 2rem));
+}
+.kds-device-missing,
+.kds-loading {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  padding: 2rem;
+  text-align: center;
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+}
+.kds-device-missing h1 {
+  font: 700 2.5rem/1 var(--font-display);
+}

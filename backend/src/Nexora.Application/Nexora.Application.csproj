@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Nexora.Application</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nexora.Domain\Nexora.Domain.csproj" />
+    <ProjectReference Include="..\Nexora.Contracts\Nexora.Contracts.csproj" />
+    <ProjectReference Include="..\Nexora.Shared\Nexora.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <!--
+      ADR-039 permite este único pacote de EF Core em Application: DbSet<T>/DbContext/IQueryable
+      não têm dependência de provider (Npgsql/SqlServer). Design e Relational continuam
+      proibidos aqui e só existem em Infrastructure. Nexora.EntityFrameworkCore.Abstractions
+      (mais restrito) NÃO contém DbSet<T> — só metadados de baixo nível (IProperty, etc.), por
+      isso não serve para IApplicationDbContext.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+</Project>

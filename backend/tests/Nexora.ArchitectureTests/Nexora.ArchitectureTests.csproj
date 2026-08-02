@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Nexora.ArchitectureTests</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Nexora.Domain\Nexora.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Nexora.Application\Nexora.Application.csproj" />
+    <ProjectReference Include="..\..\src\Nexora.Infrastructure\Nexora.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Nexora.Api.Edge\Nexora.Api.Edge.csproj" />
+    <ProjectReference Include="..\..\src\Nexora.Api.Cloud\Nexora.Api.Cloud.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="NetArchTest.Rules" />
+  </ItemGroup>
+
+</Project>

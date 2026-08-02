@@ -1,0 +1,267 @@
+/*
+ * Select, Checkbox, Switch, QuantityStepper e NumericKeypad — portados de
+ * `Design System/components/forms/*.jsx`. Mesmos seletores e variáveis do
+ * Design System, apenas com o prefixo `nx` trocado por `db` (convenção deste
+ * pacote). Variáveis (--brand-primary, --surface-card, --sp-*, --density-*,
+ * --radius-*, --font-mono etc.) já existem em `packages/ui/src/tokens/*.css`.
+ */
+
+/* ---- Select ---- */
+.db-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--surface-card);
+  border: var(--border-1) solid var(--border-default);
+  border-radius: var(--radius-md);
+  transition: var(--transition-control);
+}
+.db-select:focus-within {
+  border-color: var(--border-brand);
+  box-shadow: var(--focus-ring);
+}
+.db-select--md {
+  height: var(--density-desk-control);
+}
+.db-select--lg {
+  height: var(--density-touch-min);
+}
+.db-select__control {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font: var(--type-body);
+  color: var(--text-primary);
+  padding: 0 var(--sp-9) 0 var(--sp-5);
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+.db-select__chevron {
+  position: absolute;
+  right: var(--sp-4);
+  pointer-events: none;
+  color: var(--text-muted);
+}
+
+/* ---- Checkbox ---- */
+.db-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  cursor: pointer;
+  font: var(--type-body);
+  color: var(--text-primary);
+  min-height: var(--density-touch-min);
+  user-select: none;
+}
+.db-checkbox--compact {
+  min-height: auto;
+}
+.db-checkbox input {
+  appearance: none;
+  margin: 0;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  border: var(--border-2) solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  cursor: pointer;
+  transition: var(--transition-control);
+  position: relative;
+}
+.db-checkbox input:checked {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+.db-checkbox input:checked::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 11px;
+  border: solid var(--brand-on-primary);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.db-checkbox input:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+.db-checkbox--radio input {
+  border-radius: var(--radius-pill);
+}
+.db-checkbox--radio input:checked::after {
+  left: 5px;
+  top: 5px;
+  width: 8px;
+  height: 8px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--brand-on-primary);
+  transform: none;
+}
+.db-checkbox__price {
+  margin-left: auto;
+  font: var(--type-numeric);
+  color: var(--text-secondary);
+}
+
+/* ---- Switch ---- */
+.db-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-5);
+  cursor: pointer;
+  font: var(--type-body);
+  color: var(--text-primary);
+  user-select: none;
+}
+.db-switch input {
+  appearance: none;
+  margin: 0;
+  width: 44px;
+  height: 26px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  background: var(--nx-gray-300);
+  position: relative;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.db-switch input::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--shadow-subtle);
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.db-switch input:checked {
+  background: var(--nx-success-500);
+}
+.db-switch input:checked::after {
+  transform: translateX(18px);
+}
+.db-switch input:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+.db-switch__description {
+  font: var(--type-caption);
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+/* ---- QuantityStepper ---- */
+.db-quantity-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: var(--border-1) solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--surface-card);
+  overflow: hidden;
+}
+.db-quantity-stepper button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--brand-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+.db-quantity-stepper button:hover {
+  background: var(--surface-sunken);
+}
+.db-quantity-stepper button[disabled] {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+.db-quantity-stepper__value {
+  min-width: 36px;
+  text-align: center;
+  font: var(--fw-semibold) var(--fs-16)/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+.db-quantity-stepper--sm button {
+  width: 32px;
+  height: 32px;
+}
+.db-quantity-stepper--sm .db-quantity-stepper__value {
+  min-width: 26px;
+  font-size: var(--fs-14);
+}
+
+/* ---- NumericKeypad ---- */
+.db-numeric-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-4);
+  width: 100%;
+}
+.db-numeric-keypad button {
+  height: var(--density-touch-lg);
+  border: var(--border-1) solid var(--border-default);
+  border-radius: var(--brand-radius);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font: var(--fw-semibold) var(--fs-24)/1 var(--font-mono);
+  cursor: pointer;
+  transition: var(--transition-control);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.db-numeric-keypad button:hover {
+  background: var(--surface-sunken);
+}
+.db-numeric-keypad button:active {
+  transform: translateY(1px);
+  background: var(--surface-brand-subtle);
+}
+.db-numeric-keypad button.db-numeric-keypad__confirm {
+  background: var(--nx-success-500);
+  border-color: var(--nx-success-500);
+  color: #fff;
+}
+.db-numeric-keypad button.db-numeric-keypad__confirm:hover {
+  background: var(--nx-success-600);
+}
+.db-numeric-keypad--dark button {
+  background: var(--surface-raised);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+.db-numeric-keypad__dots {
+  display: flex;
+  gap: var(--sp-4);
+  justify-content: center;
+  margin-bottom: var(--sp-7);
+}
+.db-numeric-keypad__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--nx-gray-300);
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.db-numeric-keypad__dot--on {
+  background: var(--brand-primary);
+}
+.db-numeric-keypad__dots--dark .db-numeric-keypad__dot {
+  background: rgba(255, 255, 255, 0.24);
+}
+.db-numeric-keypad__dots--dark .db-numeric-keypad__dot--on {
+  background: var(--nx-green-400);
+}

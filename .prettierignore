@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+packages/db/generated
+pnpm-lock.yaml
+.env.example
+test-results
+playwright-report

@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Nexora.Domain/Nexora.Domain.csproj" />
+    <Project Path="src/Nexora.Application/Nexora.Application.csproj" />
+    <Project Path="src/Nexora.Contracts/Nexora.Contracts.csproj" />
+    <Project Path="src/Nexora.Shared/Nexora.Shared.csproj" />
+    <Project Path="src/Nexora.Infrastructure/Nexora.Infrastructure.csproj" />
+    <Project Path="src/Nexora.Api.Edge/Nexora.Api.Edge.csproj" />
+    <Project Path="src/Nexora.Api.Cloud/Nexora.Api.Cloud.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Nexora.UnitTests/Nexora.UnitTests.csproj" />
+    <Project Path="tests/Nexora.IntegrationTests/Nexora.IntegrationTests.csproj" />
+    <Project Path="tests/Nexora.ApiTests/Nexora.ApiTests.csproj" />
+    <Project Path="tests/Nexora.ArchitectureTests/Nexora.ArchitectureTests.csproj" />
+  </Folder>
+</Solution>
