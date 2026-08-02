@@ -249,6 +249,56 @@ public static class ResultExtensions
         ApiErrorCodes.RoleCodeAlreadyExists => (StatusCodes.Status409Conflict, true, false),
         ApiErrorCodes.RoleOwnerMustKeepFullAccess => (StatusCodes.Status422UnprocessableEntity, true, false),
 
+        // Stations (praças de produção) — US-017.
+        ApiErrorCodes.StationNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.StationCodeAlreadyExists => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.StationHasLinkedProducts => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.StationStoreContextMissing => (StatusCodes.Status403Forbidden, false, false),
+
+        // Catálogo (categorias e produtos) — US-010.
+        ApiErrorCodes.CategoryNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ProductNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ProductCategoryNotFound => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.ProductStationNotFound => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.CatalogReorderSetMismatch => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.ProductMediaStorageUnavailable => (StatusCodes.Status503ServiceUnavailable, true, false),
+        ApiErrorCodes.ProductMediaNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.PublicMenuTenantNotFound => (StatusCodes.Status404NotFound, false, false),
+
+        // Variações e preço (US-011).
+        ApiErrorCodes.VariantNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.PriceChannelInvalid => (StatusCodes.Status400BadRequest, true, false),
+
+        // Grupos de modificadores (US-012).
+        ApiErrorCodes.ModifierGroupNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ModifierNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ModifierGroupProductNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ModifierIngredientNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ProductModifierGroupAlreadyLinked => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.ProductModifierGroupNotLinked => (StatusCodes.Status404NotFound, false, false),
+
+        // Preço por canal e reajuste em massa (US-014).
+        ApiErrorCodes.PriceTableVariantNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.PriceTableCategoryNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.PriceTableChannelInvalid => (StatusCodes.Status400BadRequest, true, false),
+        ApiErrorCodes.PriceTableChannelDuplicated => (StatusCodes.Status400BadRequest, true, false),
+        ApiErrorCodes.PriceBulkAdjustNegativeResult => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Precificação de fração — meio a meio (US-013).
+        ApiErrorCodes.FractionVariantNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.FractionNotAllowed => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.FractionMaxExceeded => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.FractionMinimumNotMet => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.FractionSizeMismatch => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.FractionGroupMismatch => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.FractionWeightSumInvalid => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.FractionPriceNotFound => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Tempo de preparo e praça (US-016).
+        ApiErrorCodes.PrepTimeVariantNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.PrepTimeProductNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.PrepTimeStationNotFound => (StatusCodes.Status404NotFound, false, false),
+
         // Tenants.
         ApiErrorCodes.TenantNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.TenantSlugAlreadyTaken => (StatusCodes.Status422UnprocessableEntity, true, false),

@@ -560,11 +560,21 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.HasIndex("VariantId")
                         .HasDatabaseName("ix_price_variant_id");
 
+                    b.HasIndex("TenantId", "VariantId", "Channel")
+                        .IsUnique()
+                        .HasDatabaseName("uq_price_current_tenant_variant_channel")
+                        .HasFilter("valid_to IS NULL");
+
                     b.HasIndex("TenantId", "VariantId", "Channel", "ValidFrom")
                         .IsDescending(false, false, false, true)
                         .HasDatabaseName("idx_price_tenant_variant_channel_valid_from");
 
-                    b.ToTable("price", (string)null);
+                    b.ToTable("price", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_price_amount_non_negative", "amount >= 0");
+
+                            t.HasCheckConstraint("ck_price_valid_period", "valid_to IS NULL OR valid_to > valid_from");
+                        });
                 });
 
             modelBuilder.Entity("Nexora.Domain.Catalog.Product", b =>
@@ -583,6 +593,12 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("allows_fractions");
+
+                    b.Property<bool>("AutoRestoreNextDay")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("auto_restore");
 
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uuid")
@@ -682,6 +698,9 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.HasIndex("CategoryId")
                         .HasDatabaseName("ix_product_category_id");
 
+                    b.HasIndex("StationId")
+                        .HasDatabaseName("ix_product_station_id");
+
                     b.HasIndex("TenantId", "CategoryId", "SortOrder")
                         .HasDatabaseName("idx_product_tenant_category_sort");
 
@@ -726,6 +745,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
+
+                    b.Property<short?>("CriticalMinutes")
+                        .HasColumnType("smallint")
+                        .HasColumnName("critical_minutes");
 
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamptz")
@@ -779,6 +802,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("updated_at");
+
+                    b.Property<short?>("WarnMinutes")
+                        .HasColumnType("smallint")
+                        .HasColumnName("warn_minutes");
 
                     b.HasKey("Id")
                         .HasName("pk_product_variant");
@@ -4395,6 +4422,11 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(32)")
                         .HasColumnName("code");
 
+                    b.Property<string>("Color")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("color");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
@@ -4408,6 +4440,12 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
+
+                    b.Property<bool>("IsBottleneck")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_bottleneck");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -4448,7 +4486,12 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("uq_station_code");
 
-                    b.HasIndex("TenantId", "StoreId")
+                    b.HasIndex(new[] { "TenantId", "StoreId" }, "IX_Station_CurrentBottleneck")
+                        .IsUnique()
+                        .HasDatabaseName("uq_station_current_bottleneck_tenant_store")
+                        .HasFilter("deleted_at IS NULL AND is_bottleneck = TRUE");
+
+                    b.HasIndex(new[] { "TenantId", "StoreId" }, "IX_Station_TenantStore")
                         .HasDatabaseName("idx_station_tenant_store");
 
                     b.ToTable("station", (string)null);
@@ -4971,6 +5014,12 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_product_category_category_id");
+
+                    b.HasOne("Nexora.Domain.Platform.Station", null)
+                        .WithMany()
+                        .HasForeignKey("StationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_product_stations_station_id");
 
                     b.Navigation("Category");
                 });

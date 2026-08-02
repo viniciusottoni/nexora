@@ -47,6 +47,9 @@ public sealed class Price
         if (ValidTo is not null)
             throw new DomainException("Este preço já está encerrado.");
 
+        if (validTo <= ValidFrom)
+            throw new DomainException("O fim da vigência deve ser posterior ao início.");
+
         ValidTo = validTo;
     }
 }

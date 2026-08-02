@@ -1,14 +1,18 @@
 using System.Text;
+using Nexora.Api.Edge.Hubs;
 using Nexora.Api.Edge.Infrastructure;
 using Nexora.Api.Edge.Infrastructure.Auth;
 using Nexora.Api.Edge.Infrastructure.Idempotency;
 using Nexora.Api.Edge.Infrastructure.Observability;
+using Nexora.Api.Edge.Realtime;
+using Nexora.Api.Edge.Workers;
 using Nexora.Application.Abstractions.Behaviors;
 using Nexora.Application.Abstractions.Events;
 using Nexora.Application.Abstractions.Idempotency;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Platform;
+using Nexora.Application.Abstractions.Realtime;
 using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Auth.Shared;
 using Nexora.Application.Devices.Abstractions;
@@ -151,6 +155,14 @@ builder.Services.AddHttpClient<ISyncHealthPoller, SyncHealthPoller>();
 builder.Services.AddHostedService<SyncOutboxWorker>();
 
 // ---------------------------------------------------------------------------
+// SignalR (US-015) — propagação em tempo real de product.unavailable/product.available na LAN da
+// loja (mesa, garçom, KDS). Réplica idêntica de Nexora.Api.Cloud/Program.cs.
+// ---------------------------------------------------------------------------
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IAvailabilityBroadcaster, SignalRAvailabilityBroadcaster>();
+builder.Services.AddHostedService<AvailabilityAutoRestoreWorker>();
+
+// ---------------------------------------------------------------------------
 // Autenticação — JWT Bearer (ADR-037/doc. 05). Mesmo formato de claims/segredo
 // simétrico usado por JwtTokenIssuer (ver ClockSkew alinhado: 30s).
 // ---------------------------------------------------------------------------
@@ -171,6 +183,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 string.IsNullOrEmpty(jwtOptions.Secret) ? new string('0', 32) : jwtOptions.Secret)),
             ClockSkew = TimeSpan.FromSeconds(30),
         };
+        // US-015: o navegador nativo (WebSocket/EventSource) não consegue anexar o header
+        // Authorization na conexão do hub SignalR — o cliente (web-kds) manda o JWT como
+        // querystring ?access_token=..., só para o path do hub (rotas REST continuam exigindo o
+        // header Authorization de verdade). Mesma configuração espelhada em Nexora.Api.Cloud/Program.cs.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            },
+        };
     });
 builder.Services.AddAuthorization(options =>
 {
@@ -185,6 +215,31 @@ builder.Services.AddAuthorization(options =>
         PermissionAuthorization.HasPermission(
             context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
             "device:manage")));
+
+    // Políticas de leitura/escrita de disponibilidade de produto (US-015) — mesmo recurso "catalog"
+    // do catálogo de permissões que US-010/US-011 usam para CRUD de categorias/produtos/variantes
+    // na nuvem. Registradas aqui (edge) pela primeira vez porque, antes desta história, o Api.Edge
+    // não expunha nenhum endpoint de catálogo (cardápio é "editado na nuvem, só lido no local" —
+    // esta é a exceção bidirecional da US-015). Nome igual ao do gêmeo em Nexora.Api.Cloud/Program.cs.
+    options.AddPolicy("ProductRead", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "catalog:read")));
+
+    options.AddPolicy("ProductWrite", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "catalog:write")));
+
+    options.AddPolicy("ProductAvailability", policy => policy.RequireAssertion(context =>
+    {
+        var permissions = context.User
+            .FindAll(PermissionAuthorization.PermissionClaimType)
+            .Select(c => c.Value)
+            .ToArray();
+        return PermissionAuthorization.HasPermission(permissions, "catalog:set_unavailable")
+               || PermissionAuthorization.HasPermission(permissions, "catalog:write");
+    }));
 });
 
 // ---------------------------------------------------------------------------
@@ -199,6 +254,13 @@ builder.Services.AddOpenTelemetry()
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
         .AddOtlpExporter());
+
+// ValidateOnBuild (ligado por padrão só em Development) validaria eagerly TODO handler MediatR
+// registrado a partir do assembly compartilhado Nexora.Application — inclusive os que pertencem
+// só ao Api.Cloud (IEmailSender, IOtpVerifier, IBackupStorage etc.) e que este processo nunca
+// despacha. Desligar aqui reproduz o comportamento que este host já tem em produção (onde
+// ValidateOnBuild é false por padrão), sem esconder nenhum problema novo.
+builder.Host.UseDefaultServiceProvider(options => options.ValidateOnBuild = false);
 
 var app = builder.Build();
 
@@ -245,5 +307,9 @@ app.UseMiddleware<ActivityEnrichmentMiddleware>();
 // metadado de isenção do endpoint), mas antes do controller processar a requisição de verdade.
 app.UseMiddleware<IdempotencyMiddleware>();
 app.MapControllers();
+
+// US-015: hub fino, só broadcast servidor->cliente. Réplica idêntica em
+// Nexora.Api.Cloud/Program.cs no mesmo path relativo.
+app.MapHub<CatalogAvailabilityHub>("/hubs/catalog-availability");
 
 app.Run();

@@ -73,6 +73,11 @@ public sealed class ProvisionTenantIntegrationTests
         (await readDb.Roles.CountAsync(r => r.TenantId == tenantId)).Should().Be(7);
         (await readDb.Stations.CountAsync(s => s.TenantId == tenantId)).Should().Be(5);
 
+        // US-017 §4, cenário "Praças padrão do modelo pizzaria": Forno é a única praça semeada
+        // como gargalo — o forno determina o ritmo real da produção da pizzaria (RF-CAT-09).
+        var stations = await readDb.Stations.Where(s => s.TenantId == tenantId).ToListAsync();
+        stations.Where(s => s.IsBottleneck).Should().ContainSingle().Which.Type.Should().Be(StationType.Oven);
+
         // Gap corrigido nesta tarefa: expense_category/financial_account (Docs/Domain/12 §5/§6/§8).
         (await readDb.ExpenseCategories.CountAsync(e => e.TenantId == tenantId)).Should().Be(15);
         (await readDb.FinancialAccounts.CountAsync(f => f.TenantId == tenantId)).Should().Be(4);

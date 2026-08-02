@@ -162,7 +162,7 @@ public static class ProvisioningTemplates
             new("Montagem", StationType.Assembly, null, null, 1),
             new("Forno", StationType.Oven, 5, 420, 2),
             new("Fritura", StationType.Fry, 2, 300, 3),
-            new("Bar", StationType.Bar, null, 60, 4),
+            new("Bebidas", StationType.Bar, null, 60, 4),
             new("Sobremesa", StationType.Dessert, null, 180, 5)
         };
 

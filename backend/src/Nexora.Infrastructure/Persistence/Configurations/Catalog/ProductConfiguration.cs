@@ -1,4 +1,5 @@
 using Nexora.Domain.Catalog;
+using Nexora.Domain.Platform;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -39,6 +40,7 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.IsAvailable).HasColumnName("is_available").HasDefaultValue(true);
         builder.Property(p => p.UnavailableReason).HasColumnName("unavailable_reason");
         builder.Property(p => p.UnavailableSince).HasColumnName("unavailable_since").HasColumnType("timestamptz");
+        builder.Property(p => p.AutoRestoreNextDay).HasColumnName("auto_restore").HasDefaultValue(true);
         builder.Property(p => p.AllowsFractions).HasColumnName("allows_fractions").HasDefaultValue(false);
         builder.Property(p => p.MaxFractions).HasColumnName("max_fractions").HasColumnType("smallint").HasDefaultValue((short)1);
         builder.Property(p => p.FractionGroup).HasColumnName("fraction_group");
@@ -52,6 +54,10 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         // relação Category -> Products configurada uma única vez em CategoryConfiguration (lado "um")
         builder.HasMany(p => p.Variants).WithOne(v => v.Product).HasForeignKey(v => v.ProductId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<Station>()
+            .WithMany()
+            .HasForeignKey(p => p.StationId)
+            .OnDelete(DeleteBehavior.Restrict);
         // relação Product <-> ProductModifierGroup (join N:N) configurada em ProductModifierGroupConfiguration
 
         builder.HasIndex(p => new { p.TenantId, p.CategoryId, p.SortOrder }).HasDatabaseName("idx_product_tenant_category_sort");

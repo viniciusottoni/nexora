@@ -8,7 +8,10 @@ export interface BrandingManagementPageProps {
   readonly tenantName: string;
   readonly branding: Branding;
   readonly onSave: (patch: UpdateBrandingRequest) => Promise<Branding>;
-  readonly onUploadLogo: (kind: 'LOGO_LIGHT' | 'LOGO_DARK', file: File) => Promise<LogoUploadResult>;
+  readonly onUploadLogo: (
+    kind: 'LOGO_LIGHT' | 'LOGO_DARK',
+    file: File,
+  ) => Promise<LogoUploadResult>;
 }
 
 type Draft = Branding;
@@ -58,7 +61,10 @@ export function BrandingManagementPage({
     setDraft((current) => ({ ...current, radius: value }));
   }
 
-  async function handleLogoChange(kind: 'LOGO_LIGHT' | 'LOGO_DARK', event: ChangeEvent<HTMLInputElement>) {
+  async function handleLogoChange(
+    kind: 'LOGO_LIGHT' | 'LOGO_DARK',
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
@@ -100,9 +106,13 @@ export function BrandingManagementPage({
         texts: { ...draft.texts },
       });
       setDraft(saved);
-      setNotice('Identidade visual salva. A mudança chega a todas as telas em até 60 segundos, sem novo build.');
+      setNotice(
+        'Identidade visual salva. A mudança chega a todas as telas em até 60 segundos, sem novo build.',
+      );
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Não foi possível salvar a identidade visual.');
+      setError(
+        reason instanceof Error ? reason.message : 'Não foi possível salvar a identidade visual.',
+      );
     } finally {
       setBusy(false);
     }
@@ -115,8 +125,8 @@ export function BrandingManagementPage({
           <p className="branding-eyebrow">IDENTIDADE VISUAL</p>
           <h1 id="branding-title">Marca do estabelecimento</h1>
           <p className="branding-lead">
-            Cores, logo e textos aplicados em runtime em todas as telas — cardápio, caixa e
-            cozinha. Nenhum build novo é gerado ao salvar.
+            Cores, logo e textos aplicados em runtime em todas as telas — cardápio, caixa e cozinha.
+            Nenhum build novo é gerado ao salvar.
           </p>
         </div>
         <Button type="button" busy={busy} disabled={!dirty} onClick={() => void save()}>
@@ -304,7 +314,11 @@ function ColorField({
             onChange={(event) => onChange(event.target.value.toUpperCase())}
           />
         ) : null}
-        <Input id={id} value={value} onChange={(event) => onChange(event.target.value.toUpperCase())} />
+        <Input
+          id={id}
+          value={value}
+          onChange={(event) => onChange(event.target.value.toUpperCase())}
+        />
       </div>
     </Field>
   );
@@ -323,7 +337,10 @@ function LogoField({
   previewSurface: string;
   currentUrl?: string | undefined;
   uploading: boolean;
-  onChange: (kind: 'LOGO_LIGHT' | 'LOGO_DARK', event: ChangeEvent<HTMLInputElement>) => void;
+  onChange: (
+    kind: 'LOGO_LIGHT' | 'LOGO_DARK',
+    event: ChangeEvent<HTMLInputElement>,
+  ) => Promise<void>;
 }>) {
   const id = useId();
   return (
@@ -336,7 +353,7 @@ function LogoField({
         type="file"
         accept="image/svg+xml,image/png,image/jpeg,image/webp"
         disabled={uploading}
-        onChange={(event) => onChange(kind, event)}
+        onChange={(event) => void onChange(kind, event)}
       />
       {uploading ? <span className="branding-logo-uploading">Enviando…</span> : null}
     </Field>

@@ -14,4 +14,4 @@ public sealed record PairDeviceCommand(
     string Code,
     string Label,
     string Kind,
-    string Fingerprint) : ICommand<PairDeviceResponse>;
+    string Fingerprint) : ICommand<PairDeviceResponse>, IPersistsStateOnFailureCommand;

@@ -1,0 +1,39 @@
+name: donabetinha-dev
+
+# Postgres + Redis para desenvolvimento local (fora do escopo do compose de produção em
+# infra/edge/docker-compose.yml, que exige imagens pré-buildadas via EDGE_API_IMAGE). Credenciais
+# aqui casam com backend/src/Nexora.Api.Edge/appsettings.Development.json e
+# backend/src/Nexora.Api.Cloud/appsettings.Development.json.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: donabetinha
+      POSTGRES_PASSWORD: donabetinha_dev_only
+      POSTGRES_DB: donabetinha_edge_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - donabetinha-postgres-data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U donabetinha -d donabetinha_edge_dev']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  donabetinha-postgres-data:

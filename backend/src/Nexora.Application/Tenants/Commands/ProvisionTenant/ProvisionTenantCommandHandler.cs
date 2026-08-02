@@ -117,6 +117,15 @@ internal sealed class ProvisionTenantCommandHandler
                 type: stationTemplate.Type,
                 sortOrder: stationTemplate.SortOrder);
             station.UpdateCapacity(stationTemplate.CapacitySlots, stationTemplate.AvgCookSeconds);
+
+            // US-017 §4 (cenário "Praças padrão do modelo pizzaria"): o forno é o gargalo por
+            // definição de negócio (RF-CAT-09) — cada template decide sua própria praça-gargalo
+            // aqui, nunca por condicional de tenant (ADR-013).
+            if (stationTemplate.Type == StationType.Oven)
+            {
+                station.MarkAsBottleneck();
+            }
+
             _db.Stations.Add(station);
         }
 

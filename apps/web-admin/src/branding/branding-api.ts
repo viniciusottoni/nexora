@@ -12,7 +12,11 @@ export interface UpdateBrandingResult extends BrandingResponse {
   readonly contrast: {
     readonly valid: boolean;
     readonly minimumRatio: 4.5;
-    readonly issues: ReadonlyArray<{ readonly pair: string; readonly ratio: number; readonly suggested: string }>;
+    readonly issues: ReadonlyArray<{
+      readonly pair: string;
+      readonly ratio: number;
+      readonly suggested: string;
+    }>;
   };
 }
 
@@ -60,7 +64,7 @@ export class BrandingApi {
       body: JSON.stringify(patch),
     });
     await requireSuccess(response);
-    return updateBrandingResponseSchema.parse(await response.json()) as UpdateBrandingResult;
+    return updateBrandingResponseSchema.parse(await response.json());
   }
 
   /** Pede a URL pré-assinada, sobe o arquivo e devolve a URL pública já pronta para salvar em `logo.light`/`logo.dark`. */

@@ -35,6 +35,9 @@ public sealed class ModifierGroup
         if (minSelect < 0)
             throw new DomainException("A quantidade mínima de seleção não pode ser negativa.");
 
+        if (isRequired && minSelect < 1)
+            throw new DomainException("Um grupo obrigatório precisa exigir ao menos uma seleção.");
+
         if (maxSelect < minSelect)
             throw new DomainException("A quantidade máxima de seleção não pode ser menor que a mínima.");
 
@@ -58,6 +61,9 @@ public sealed class ModifierGroup
     {
         if (minSelect < 0)
             throw new DomainException("A quantidade mínima de seleção não pode ser negativa.");
+
+        if (IsRequired && minSelect < 1)
+            throw new DomainException("Um grupo obrigatório precisa exigir ao menos uma seleção.");
 
         if (maxSelect < minSelect)
             throw new DomainException("A quantidade máxima de seleção não pode ser menor que a mínima.");
