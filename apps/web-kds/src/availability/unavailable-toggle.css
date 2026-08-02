@@ -1,0 +1,44 @@
+.kds-availability-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md, 12px);
+  background: var(--surface-sunken, #f4f4f5);
+}
+
+.kds-availability-toggle__name {
+  flex: 1;
+  font-weight: 600;
+}
+
+.kds-availability-toggle__error {
+  color: var(--nx-danger-600, #dc2626);
+  font-size: 0.875rem;
+}
+
+.kds-availability-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4, 1rem);
+  background: rgb(0 0 0 / 55%);
+}
+
+.kds-availability-dialog__card {
+  width: min(32rem, 100%);
+}
+
+.kds-availability-dialog__card h2,
+.kds-availability-dialog__card p {
+  margin-top: 0;
+}
+
+.kds-availability-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3, 0.75rem);
+  margin-top: var(--space-4, 1rem);
+}

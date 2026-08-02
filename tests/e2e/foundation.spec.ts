@@ -58,7 +58,7 @@ test('gestora autentica e acessa papéis no admin', async ({ page }) => {
   await login(page);
   await page.getByRole('button', { name: 'Papéis e permissões' }).click();
   await expect(page.getByRole('heading', { name: 'Papéis e permissões' })).toBeVisible();
-  await expect(page.getByText('Proprietário')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Proprietário' })).toBeVisible();
 });
 
 test('admin de plataforma autentica e abre provisionamento', async ({ page }) => {

@@ -19,6 +19,8 @@ internal sealed class ProductVariantConfiguration : IEntityTypeConfiguration<Pro
         builder.Property(v => v.Sku).HasColumnName("sku").HasMaxLength(40);
         builder.Property(v => v.SizeCode).HasColumnName("size_code").HasMaxLength(16);
         builder.Property(v => v.PrepMinutes).HasColumnName("prep_minutes").HasColumnType("smallint").HasDefaultValue((short)10);
+        builder.Property(v => v.WarnMinutes).HasColumnName("warn_minutes").HasColumnType("smallint");
+        builder.Property(v => v.CriticalMinutes).HasColumnName("critical_minutes").HasColumnType("smallint");
         builder.Property(v => v.IsDefault).HasColumnName("is_default").HasDefaultValue(false);
         builder.Property(v => v.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         builder.Property(v => v.FiscalRates).HasColumnName("fiscal_rates").HasColumnType("jsonb");

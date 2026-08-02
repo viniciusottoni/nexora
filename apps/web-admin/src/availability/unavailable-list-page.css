@@ -1,0 +1,30 @@
+.unavailable-list__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.unavailable-list__items {
+  display: grid;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.unavailable-list__card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.unavailable-list__since {
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.8125rem;
+}
+
+.unavailable-list-error {
+  color: var(--nx-danger-600, #dc2626);
+}

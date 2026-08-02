@@ -13,6 +13,8 @@ import {
   type OperationalSession,
 } from '@nexora/ui';
 import './styles.css';
+import { AvailabilityApi } from './availability/availability-api.js';
+import { UnavailablePanel } from './availability/unavailable-panel.js';
 
 export interface KdsHomeProps {
   readonly tenantName: string;
@@ -68,6 +70,10 @@ function BrandedKds() {
     () => (device ? new OperationalAuthClient({ baseUrl: '', ...device }) : undefined),
     [device],
   );
+  const availabilityApi = useMemo(
+    () => (session ? new AvailabilityApi('', fetch, session.accessToken) : undefined),
+    [session],
+  );
   const submit = async (pin: string) => {
     if (!client) return;
     setBusy(true);
@@ -119,6 +125,11 @@ function BrandedKds() {
         }}
       />
       <KdsHome tenantName={tenant.name} {...(logo ? { logo } : {})} />
+      {availabilityApi ? (
+        <section className="kds-operational-tools" aria-label="Disponibilidade do cardápio">
+          <UnavailablePanel api={availabilityApi} accessToken={session.accessToken} />
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -126,7 +137,10 @@ export function App() {
   return (
     // US-003, gap "resolução de tenant por host não funciona para web-pos/web-kds" — ver
     // comentário equivalente em apps/web-pos/src/app.tsx.
-    <RuntimeBrandingProvider fallback={createNeutralBrandingResponse()} endpoint="/v1/local/branding">
+    <RuntimeBrandingProvider
+      fallback={createNeutralBrandingResponse()}
+      endpoint="/v1/local/branding"
+    >
       <BrandedKds />
     </RuntimeBrandingProvider>
   );

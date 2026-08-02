@@ -99,6 +99,10 @@ body {
   right: 1rem;
   width: min(24rem, calc(100% - 2rem));
 }
+.kds-operational-tools {
+  width: min(90rem, calc(100% - 2rem));
+  margin: 0 auto 2rem;
+}
 .kds-device-missing,
 .kds-loading {
   min-height: 100vh;

@@ -1,10 +1,12 @@
 using Nexora.Application.Abstractions.Behaviors;
+using Nexora.Application.Abstractions.Events;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Notifications;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Installations.Abstractions;
 using Nexora.Infrastructure.Auth;
+using Nexora.Infrastructure.Devices;
 using Nexora.Infrastructure.Installations;
 using Nexora.Infrastructure.Notifications;
 using FluentValidation;
@@ -35,6 +37,7 @@ internal static class MediatRTestContainerFactory
         services.AddLogging();
         services.AddSingleton(db);
         services.AddSingleton(tenantContext);
+        services.AddSingleton<IEventOriginProvider, EdgeEventOriginProvider>();
 
         var authSecrets = Options.Create(new AuthSecretsOptions
         {

@@ -8,7 +8,11 @@ internal sealed class PriceConfiguration : IEntityTypeConfiguration<Price>
 {
     public void Configure(EntityTypeBuilder<Price> builder)
     {
-        builder.ToTable("price");
+        builder.ToTable("price", table =>
+        {
+            table.HasCheckConstraint("ck_price_amount_non_negative", "amount >= 0");
+            table.HasCheckConstraint("ck_price_valid_period", "valid_to IS NULL OR valid_to > valid_from");
+        });
 
         builder.HasKey(p => p.Id);
         builder.Property(p => p.Id).HasColumnName("id").ValueGeneratedNever();
@@ -30,5 +34,10 @@ internal sealed class PriceConfiguration : IEntityTypeConfiguration<Price>
         builder.HasIndex(p => new { p.TenantId, p.VariantId, p.Channel, p.ValidFrom })
             .HasDatabaseName("idx_price_tenant_variant_channel_valid_from")
             .IsDescending(false, false, false, true);
+
+        builder.HasIndex(p => new { p.TenantId, p.VariantId, p.Channel })
+            .HasDatabaseName("uq_price_current_tenant_variant_channel")
+            .IsUnique()
+            .HasFilter("valid_to IS NULL");
     }
 }

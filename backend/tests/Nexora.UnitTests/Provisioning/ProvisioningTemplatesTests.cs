@@ -49,7 +49,7 @@ public sealed class ProvisioningTemplatesTests
 
         template.Stations.Should().HaveCount(5);
         template.Stations.Select(s => s.Name).Should().BeEquivalentTo(
-            "Montagem", "Forno", "Fritura", "Bar", "Sobremesa");
+            "Montagem", "Forno", "Fritura", "Bebidas", "Sobremesa");
     }
 
     /// <summary>Docs/Domain/12 §5 — passo 7 (RF-PLT-05). 15 categorias, com is_cmv correto nas duas primeiras.</summary>

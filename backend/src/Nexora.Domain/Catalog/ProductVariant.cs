@@ -16,6 +16,8 @@ public sealed class ProductVariant
     public string? Sku { get; private set; }
     public string? SizeCode { get; private set; }
     public short PrepMinutes { get; private set; } = 10;
+    public short? WarnMinutes { get; private set; }
+    public short? CriticalMinutes { get; private set; }
     public bool IsDefault { get; private set; }
     public bool IsActive { get; private set; } = true;
 
@@ -65,6 +67,45 @@ public sealed class ProductVariant
     public void UpdateFiscalRates(string? fiscalRatesJson)
     {
         FiscalRates = fiscalRatesJson;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// Atualiza os campos de cadastro da variante (US-011) — nome, SKU e <see cref="SizeCode"/>.
+    /// Deliberadamente não toca <see cref="PrepMinutes"/>/<see cref="WarnMinutes"/>/
+    /// <see cref="CriticalMinutes"/> (escopo de <see cref="UpdatePrepTimeThresholds"/>, US-016) nem
+    /// <see cref="IsActive"/>/<see cref="IsDefault"/> (ações dedicadas e auditáveis à parte).
+    /// </summary>
+    public void UpdateDetails(string name, string? sku, string? sizeCode)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new DomainException("O nome da variante é obrigatório.");
+
+        Name = name;
+        Sku = sku;
+        SizeCode = sizeCode;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>Limiares de alerta do KDS (US-016) — quando nulos, o tenant usa o padrão global configurado.</summary>
+    public void UpdatePrepTimeThresholds(short prepMinutes, short? warnMinutes, short? criticalMinutes)
+    {
+        if (prepMinutes < 0)
+            throw new DomainException("O tempo de preparo não pode ser negativo.");
+
+        if (warnMinutes is not null && warnMinutes < prepMinutes)
+            throw new DomainException("O limiar de atenção não pode ser menor que o tempo de preparo.");
+
+        if (criticalMinutes is not null)
+        {
+            var criticalFloor = warnMinutes ?? prepMinutes;
+            if (criticalMinutes < criticalFloor)
+                throw new DomainException("O limiar crítico não pode ser menor que o limiar de atenção.");
+        }
+
+        PrepMinutes = prepMinutes;
+        WarnMinutes = warnMinutes;
+        CriticalMinutes = criticalMinutes;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
