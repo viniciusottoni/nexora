@@ -1,3 +1,0 @@
-# AWAKEN
-
-App fitness gamificado.

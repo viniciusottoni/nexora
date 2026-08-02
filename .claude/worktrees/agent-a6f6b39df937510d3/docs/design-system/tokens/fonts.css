@@ -1,9 +1,0 @@
-/* Awaken — Webfonts
- * Display : Chakra Petch  — angular, cut-corner sci-fi face. Closest open match to the
- *                           custom AWAKEN wordmark (sharp shonen/sci-fi terminals).
- * Body/UI : Sora          — clean geometric sans, excellent legibility in dark mode.
- * Mono    : JetBrains Mono — tabular figures for stats, XP, ranks, timers.
- * NOTE: the AWAKEN logo wordmark itself is a bespoke typeface — these are substitutes
- * for product UI. Swap in the licensed display face if/when available.
- */
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');

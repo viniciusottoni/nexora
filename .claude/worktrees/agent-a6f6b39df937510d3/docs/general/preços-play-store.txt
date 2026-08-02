@@ -1,9 +1,0 @@
-País			Mensal em moeda local	Mensal em reais	Anual em moeda local	Anual em reais
-Brasil			R$ 14,90		R$ 14,90	R$ 99,90		R$ 99,90
-México			MXN 69,90		R$ 20,59	MXN 459,90		R$ 135,50
-Estados Unidos		US$ 4,90		R$ 25,21	US$ 30,90		R$ 158,96
-Chile			CLP 3.990		R$ 22,65	CLP 25.990		R$ 147,52
-Colômbia		COP 12.900		R$ 19,29	COP 84.990		R$ 127,09
-Argentina		ARS 3.390		R$ 11,93	ARS 22.900		R$ 80,60
-Peru			PEN 10,90		R$ 16,56	PEN 69,90		R$ 106,23
-Canadá			CAD 6,90		R$ 25,03	CAD 42,90		R$ 155,60
