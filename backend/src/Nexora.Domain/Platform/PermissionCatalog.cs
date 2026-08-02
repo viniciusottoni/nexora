@@ -14,7 +14,7 @@ public static class PermissionCatalog
     public static readonly IReadOnlyList<string> AllCodes = new[]
     {
         "*",
-        "table:*", "table:open", "table:read", "table:transfer", "table:close_request", "table:close",
+        "table:*", "table:open", "table:read", "table:transfer", "table:close_request", "table:close", "table:manage",
         "order:*", "order:create", "order:read", "order:add_item", "order:cancel_queued",
         "order:cancel_started", "order:override_price", "order:close_with_pending",
         "kds:*", "kds:read", "kds:advance", "kds:refire",

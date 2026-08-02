@@ -7,6 +7,8 @@ import {
   useColorScheme,
   useRuntimeBranding,
 } from '@nexora/ui';
+import { extractQrTokenFromLocation } from './table-access/qr-token.js';
+import { TableAccessPage } from './table-access/table-access-page.js';
 import './styles.css';
 
 export interface MenuHomeProps {
@@ -55,9 +57,19 @@ function BrandedMenu() {
 }
 
 export function App() {
+  // US-021 §4: presença de qrToken na URL (leitura da câmera) decide o fluxo — com token, é a
+  // mesa/cardápio (TableAccessPage); sem token (acesso direto ao domínio, sem ler QR nenhum), cai
+  // no cardápio de vitrine estático que já existia (MenuHome).
+  const qrToken = typeof window === 'undefined' ? null : extractQrTokenFromLocation(window.location);
   return (
-    <RuntimeBrandingProvider fallback={createNeutralBrandingResponse()}>
-      <BrandedMenu />
+    // US-021 §9: servido pelo Nginx do edge na LAN da loja — mesmo "gap US-003" já corrigido em
+    // web-pos/web-kds (endpoint padrão `/v1/public/branding?host=` não funciona sem domínio
+    // público). `/v1/local/branding` (Api.Edge, tenant fixo da instalação) é o caminho correto
+    // aqui, e é justamente o que faz a marca exibida ser a do ESTABELECIMENTO, nunca a da Replay
+    // (ADR-010) — `data-tenant`/`--brand-*` são injetados em runtime por RuntimeBrandingProvider,
+    // nunca hardcoded por tenant (ADR-013).
+    <RuntimeBrandingProvider fallback={createNeutralBrandingResponse()} endpoint="/v1/local/branding">
+      {qrToken ? <TableAccessPage qrToken={qrToken} /> : <BrandedMenu />}
     </RuntimeBrandingProvider>
   );
 }

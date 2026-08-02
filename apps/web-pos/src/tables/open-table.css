@@ -1,0 +1,37 @@
+.pos-open-table-list {
+  padding: 1rem;
+}
+
+.pos-open-table-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.pos-open-table-confirm {
+  max-width: 24rem;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.pos-open-table-confirm .db-quantity-stepper {
+  margin: 1.5rem auto;
+}
+
+.pos-open-table-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.pos-open-table-error {
+  color: var(--nx-danger-600);
+}
+
+.pos-loading {
+  padding: 2rem;
+  text-align: center;
+}

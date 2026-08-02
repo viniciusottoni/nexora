@@ -14,34 +14,14 @@ import {
   TopBar,
   type OperationalSession,
 } from '@nexora/ui';
-import type {
-  CategoryDto,
-  DeviceDto,
-  ModifierGroup,
-  PermissionCatalogItem,
-  ProductDto,
-  RoleDto,
-  StationDto,
-} from '@nexora/contracts';
-import { UnavailableListPage } from './availability/unavailable-list-page.js';
+import type { AreaDto, DeviceDto, PermissionCatalogItem, RoleDto, TableDto } from '@nexora/contracts';
 import { BrandingContainer } from './branding/branding-container.js';
-import { CatalogPage } from './catalog/catalog-page.js';
-import { CategoriesApi } from './catalog/categories-api.js';
-import { PricesApi } from './catalog/prices-api.js';
-import { ProductsApi } from './catalog/products-api.js';
-import { VariantsApi } from './catalog/variants-api.js';
 import { DeviceManagementPage } from './devices/device-management-page.js';
 import { DevicesApi } from './devices/devices-api.js';
-import { ModifierGroupManagementPage } from './modifiers/modifier-group-management-page.js';
-import { ModifierGroupsApi } from './modifiers/modifier-groups-api.js';
-import { PrepTimeSection } from './prep-time/prep-time-section.js';
-import { PrepTimeApi } from './prep-time/prep-time-api.js';
-import { PricingSection } from './pricing/pricing-section.js';
-import { PricingApi } from './pricing/pricing-api.js';
 import { RoleManagementPage } from './roles/role-management-page.js';
 import { RolesApi } from './roles/roles-api.js';
-import { StationManagementPage } from './stations/station-management-page.js';
-import { StationsApi } from './stations/stations-api.js';
+import { TableManagementPage } from './tables/table-management-page.js';
+import { AreasApi, TablesApi } from './tables/tables-api.js';
 import './app.css';
 
 interface DeviceIdentity {
@@ -51,14 +31,20 @@ interface DeviceIdentity {
 
 const cloudDevicesApi = new DevicesApi();
 const cloudRolesApi = new RolesApi();
-const cloudStationsApi = new StationsApi();
-const cloudCategoriesApi = new CategoriesApi();
-const cloudProductsApi = new ProductsApi();
-const cloudVariantsApi = new VariantsApi();
-const cloudPricesApi = new PricesApi();
-const cloudModifierGroupsApi = new ModifierGroupsApi();
-const cloudPricingApi = new PricingApi();
-const cloudPrepTimeApi = new PrepTimeApi();
+const cloudAreasApi = new AreasApi();
+const cloudTablesApi = new TablesApi();
+
+/** Dispara o download do PDF de QR Codes (US-020, cenário "Exportação para impressão"). */
+function downloadPdfBlob(blob: Blob, areaId?: string): void {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = areaId ? `qr-codes-mesas-${areaId}.pdf` : 'qr-codes-mesas.pdf';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
 
 export function isLocalEdgeAdminPath(pathname: string): boolean {
   return /^\/admin(?:\/|$)/.test(pathname);
@@ -71,14 +57,12 @@ export function App() {
 
 function CloudAdmin() {
   const [authenticated, setAuthenticated] = useState(() => hasCloudSession());
-  const [section, setSection] = useState<AdminSection>('devices');
+  const [section, setSection] = useState<CloudAdminSection>('devices');
   const [devices, setDevices] = useState<readonly DeviceDto[]>([]);
   const [roles, setRoles] = useState<readonly RoleDto[]>([]);
   const [permissionCatalog, setPermissionCatalog] = useState<readonly PermissionCatalogItem[]>([]);
-  const [stations, setStations] = useState<readonly StationDto[]>([]);
-  const [categories, setCategories] = useState<readonly CategoryDto[]>([]);
-  const [products, setProducts] = useState<readonly ProductDto[]>([]);
-  const [modifierGroups, setModifierGroups] = useState<readonly ModifierGroup[]>([]);
+  const [areas, setAreas] = useState<readonly AreaDto[]>([]);
+  const [tables, setTables] = useState<readonly TableDto[]>([]);
   const [error, setError] = useState<string>();
 
   useEffect(() => {
@@ -102,34 +86,18 @@ function CloudAdmin() {
       .catch((reason: unknown) => {
         if (active) setError(toMessage(reason));
       });
-    cloudStationsApi
+    cloudAreasApi
       .list()
       .then((result) => {
-        if (active) setStations(result.items);
+        if (active) setAreas(result.items);
       })
       .catch((reason: unknown) => {
         if (active) setError(toMessage(reason));
       });
-    cloudCategoriesApi
+    cloudTablesApi
       .list()
       .then((result) => {
-        if (active) setCategories(result.items);
-      })
-      .catch((reason: unknown) => {
-        if (active) setError(toMessage(reason));
-      });
-    cloudProductsApi
-      .list()
-      .then((result) => {
-        if (active) setProducts(result.items);
-      })
-      .catch((reason: unknown) => {
-        if (active) setError(toMessage(reason));
-      });
-    cloudModifierGroupsApi
-      .list()
-      .then((result) => {
-        if (active) setModifierGroups(result.items);
+        if (active) setTables(result.items);
       })
       .catch((reason: unknown) => {
         if (active) setError(toMessage(reason));
@@ -149,20 +117,12 @@ function CloudAdmin() {
     setPermissionCatalog(result.permissionCatalog);
   }
 
-  async function refreshStations() {
-    setStations((await cloudStationsApi.list()).items);
+  async function refreshAreas() {
+    setAreas((await cloudAreasApi.list()).items);
   }
 
-  async function refreshCategories() {
-    setCategories((await cloudCategoriesApi.list()).items);
-  }
-
-  async function refreshProducts() {
-    setProducts((await cloudProductsApi.list()).items);
-  }
-
-  async function refreshModifierGroups() {
-    setModifierGroups((await cloudModifierGroupsApi.list()).items);
+  async function refreshTables() {
+    setTables((await cloudTablesApi.list()).items);
   }
 
   if (!authenticated) return <CloudLoginScreen onAuthenticated={() => setAuthenticated(true)} />;
@@ -204,154 +164,58 @@ function CloudAdmin() {
           }}
         />
       ) : null}
+      {section === 'tables' ? (
+        <TableManagementPage
+          areas={areas}
+          tables={tables}
+          onCreateArea={async (name) => {
+            await cloudAreasApi.create({ name, position: areas.length });
+            await refreshAreas();
+          }}
+          onDeactivateArea={async (id) => {
+            await cloudAreasApi.deactivate(id);
+            await refreshAreas();
+          }}
+          onActivateArea={async (id) => {
+            await cloudAreasApi.activate(id);
+            await refreshAreas();
+          }}
+          onDeleteArea={async (id) => {
+            await cloudAreasApi.remove(id);
+            await refreshAreas();
+          }}
+          onCreateTable={async (input) => {
+            await cloudTablesApi.create(input);
+            await refreshTables();
+          }}
+          onCreateTablesBulk={async (input) => {
+            await cloudTablesApi.createBulk(input);
+            await refreshTables();
+            await refreshAreas();
+          }}
+          onRotateToken={async (id) => {
+            await cloudTablesApi.rotateQrToken(id);
+          }}
+          onDeactivateTable={async (id) => {
+            await cloudTablesApi.deactivate(id);
+            await refreshTables();
+          }}
+          onActivateTable={async (id) => {
+            await cloudTablesApi.activate(id);
+            await refreshTables();
+          }}
+          onDeleteTable={async (id) => {
+            await cloudTablesApi.remove(id);
+            await refreshTables();
+            await refreshAreas();
+          }}
+          onExportQrCodesPdf={async (areaId) => {
+            const blob = await cloudTablesApi.exportQrCodesPdf(areaId);
+            downloadPdfBlob(blob, areaId);
+          }}
+        />
+      ) : null}
       {section === 'branding' ? <BrandingContainer /> : null}
-      {section === 'catalog' ? (
-        <CatalogPage
-          categories={categories}
-          products={products}
-          stations={stations}
-          onCreateCategory={async (input) => {
-            const created = await cloudCategoriesApi.create(input);
-            await refreshCategories();
-            return created;
-          }}
-          onUpdateCategory={async (id, input) => {
-            const updated = await cloudCategoriesApi.update(id, input);
-            await refreshCategories();
-            return updated;
-          }}
-          onReorderCategories={async (order) => {
-            await cloudCategoriesApi.reorder({ order: [...order] });
-            await refreshCategories();
-          }}
-          onDeactivateCategory={async (id) => {
-            await cloudCategoriesApi.deactivate(id);
-            await refreshCategories();
-          }}
-          onCreateProduct={async (input) => {
-            const created = await cloudProductsApi.create(input);
-            await refreshProducts();
-            return created;
-          }}
-          onUpdateProduct={async (id, input) => {
-            const updated = await cloudProductsApi.update(id, input);
-            await refreshProducts();
-            return updated;
-          }}
-          onReorderProducts={async (categoryId, order) => {
-            await cloudProductsApi.reorder({ categoryId, order: [...order] });
-            await refreshProducts();
-          }}
-          onActivateProduct={async (id) => {
-            const updated = await cloudProductsApi.activate(id);
-            await refreshProducts();
-            return updated;
-          }}
-          onDeactivateProduct={async (id) => {
-            const updated = await cloudProductsApi.deactivate(id);
-            await refreshProducts();
-            return updated;
-          }}
-          onUploadProductImage={async (productId, blob, contentType, dimensions) => {
-            await cloudProductsApi.uploadImage(productId, blob, contentType, dimensions);
-            await refreshProducts();
-          }}
-          onLoadVariants={(productId) => cloudVariantsApi.listForProduct(productId)}
-          onCreateVariant={(productId, input) => cloudVariantsApi.create(productId, input)}
-          onUpdateVariant={(id, input) => cloudVariantsApi.update(id, input)}
-          onSetVariantPrice={(id, input) => cloudPricesApi.setVariantPrice(id, input)}
-          onActivateVariant={(id) => cloudVariantsApi.activate(id)}
-          onDeactivateVariant={(id) => cloudVariantsApi.deactivate(id)}
-          onMarkVariantDefault={(id) => cloudVariantsApi.markAsDefault(id)}
-        />
-      ) : null}
-      {section === 'stations' ? (
-        <StationManagementPage
-          stations={stations}
-          onCreate={async (input) => {
-            const created = await cloudStationsApi.create(input);
-            await refreshStations();
-            return created;
-          }}
-          onUpdate={async (id, input) => {
-            const updated = await cloudStationsApi.update(id, input);
-            await refreshStations();
-            return updated;
-          }}
-          onDelete={async (id) => {
-            await cloudStationsApi.remove(id);
-            await refreshStations();
-          }}
-        />
-      ) : null}
-      {section === 'modifiers' ? (
-        <ModifierGroupManagementPage
-          groups={modifierGroups}
-          onCreateGroup={async (input) => {
-            const created = await cloudModifierGroupsApi.createGroup(input);
-            await refreshModifierGroups();
-            return created;
-          }}
-          onUpdateGroup={async (groupId, minSelect, maxSelect) => {
-            const updated = await cloudModifierGroupsApi.updateGroup(groupId, {
-              minSelect,
-              maxSelect,
-            });
-            await refreshModifierGroups();
-            return updated;
-          }}
-          onDeleteGroup={async (groupId) => {
-            await cloudModifierGroupsApi.deleteGroup(groupId);
-            await refreshModifierGroups();
-          }}
-          onCreateModifier={async (groupId, input) => {
-            const created = await cloudModifierGroupsApi.createModifier(groupId, input);
-            await refreshModifierGroups();
-            return created;
-          }}
-          onUpdateModifierPrice={async (groupId, modifierId, priceDelta) => {
-            const updated = await cloudModifierGroupsApi.updateModifierPrice(groupId, modifierId, {
-              priceDelta,
-            });
-            await refreshModifierGroups();
-            return updated;
-          }}
-          onSetModifierAvailability={async (groupId, modifierId, isAvailable) => {
-            const updated = await cloudModifierGroupsApi.setModifierAvailability(
-              groupId,
-              modifierId,
-              { isAvailable },
-            );
-            await refreshModifierGroups();
-            return updated;
-          }}
-          onLinkToProduct={async (productId, groupId) => {
-            await cloudModifierGroupsApi.linkToProduct(productId, { groupId, sortOrder: 0 });
-            await refreshModifierGroups();
-          }}
-          onUnlinkFromProduct={async (productId, groupId) => {
-            await cloudModifierGroupsApi.unlinkFromProduct(productId, groupId);
-            await refreshModifierGroups();
-          }}
-        />
-      ) : null}
-      {section === 'pricing' ? (
-        <PricingSection
-          categories={categories}
-          products={products}
-          pricingApi={cloudPricingApi}
-          variantsApi={cloudVariantsApi}
-        />
-      ) : null}
-      {section === 'availability' ? <UnavailableListPage /> : null}
-      {section === 'prep-time' ? (
-        <PrepTimeSection
-          products={products}
-          stations={stations}
-          prepTimeApi={cloudPrepTimeApi}
-          variantsApi={cloudVariantsApi}
-        />
-      ) : null}
     </>
   );
 }
@@ -495,42 +359,28 @@ function LocalAdmin() {
   );
 }
 
+export type CloudAdminSection = 'devices' | 'roles' | 'tables' | 'branding';
+
 const ADMIN_SECTIONS = [
   { value: 'devices', label: 'Dispositivos' },
   { value: 'roles', label: 'Pap\u00e9is e permiss\u00f5es' },
+  { value: 'tables', label: 'Ambientes e mesas' },
   { value: 'branding', label: 'Identidade visual' },
-  { value: 'stations', label: 'Pra\u00e7as de produ\u00e7\u00e3o' },
-  { value: 'catalog', label: 'Card\u00e1pio' },
-  { value: 'modifiers', label: 'Grupos de modificadores' },
-  { value: 'pricing', label: 'Pre\u00e7os' },
-  { value: 'availability', label: 'Indispon\u00edveis' },
-  { value: 'prep-time', label: 'Tempo e praça' },
 ] as const;
-
-type AdminSection =
-  | 'devices'
-  | 'roles'
-  | 'branding'
-  | 'stations'
-  | 'catalog'
-  | 'modifiers'
-  | 'pricing'
-  | 'availability'
-  | 'prep-time';
 
 function AdminNavigation({
   section,
   onSectionChange,
 }: Readonly<{
-  section: AdminSection;
-  onSectionChange: (section: AdminSection) => void;
+  section: CloudAdminSection;
+  onSectionChange: (section: CloudAdminSection) => void;
 }>) {
   return (
     <nav className="admin-nav" aria-label={'Administra\u00e7\u00e3o'}>
       <SegmentedControl
         options={ADMIN_SECTIONS}
         value={section}
-        onChange={(value) => onSectionChange(value as AdminSection)}
+        onChange={(value) => onSectionChange(value as CloudAdminSection)}
       />
     </nav>
   );

@@ -1,4 +1,5 @@
-using Nexora.Api.Cloud.Infrastructure;
+extern alias ApiCloud;
+using ApiCloud::Nexora.Api.Cloud.Infrastructure;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Shared.Errors;
 using FluentAssertions;

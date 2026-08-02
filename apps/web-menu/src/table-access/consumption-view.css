@@ -1,0 +1,101 @@
+.consumption-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  padding-bottom: 96px; /* espaço para o rodapé fixo de totais (US-024 §10) */
+}
+
+.consumption-view__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.consumption-view__head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.consumption-view__feedback {
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+.consumption-view__feedback--success {
+  background: var(--nx-success-100, #e6f7ee);
+  color: var(--nx-success-600, #1c7a44);
+}
+
+.consumption-view__feedback--error {
+  background: var(--nx-danger-100, #fdeaea);
+  color: var(--nx-danger-600, #b3261e);
+}
+
+.consumption-view__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.consumption-view__repeat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: var(--nx-blue-600, #1a5fb4);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.consumption-view__repeat:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.consumption-view__totals {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--surface-elevated, #fff);
+  border-top: 1px solid var(--border-subtle, #e2e2e2);
+  padding: 12px 16px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.consumption-view__totals-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  padding: 2px 0;
+}
+
+.consumption-view__totals-row--fee span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.consumption-view__fee-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary, #666);
+  background: var(--surface-sunken, #f2f2f2);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.consumption-view__totals-row--total {
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-top: 1px solid var(--border-subtle, #e2e2e2);
+  margin-top: 4px;
+  padding-top: 6px;
+}

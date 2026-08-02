@@ -1,5 +1,6 @@
+extern alias ApiCloud;
 using System.Text.Encodings.Web;
-using Nexora.Api.Cloud.Infrastructure.Auth;
+using ApiCloud::Nexora.Api.Cloud.Infrastructure.Auth;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Installations.Commands.AuthenticateInstallationRequest;
 using FluentAssertions;

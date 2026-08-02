@@ -108,31 +108,44 @@ public static class ResultExtensions
     }
 
     /// <summary>
-    /// Extrai a convenção histórica de "retryAfterSeconds dentro de Errors" (usada por
-    /// LoginWithPin/LoginWithPassword/AuthorizeSensitiveAction, de antes deste contrato ter um
-    /// campo <c>meta</c> de verdade) para <c>Extensions["meta"]["retryAfterSeconds"]</c> — formato
+    /// Extrai convenções históricas de "chave reservada dentro de Errors" (usadas antes deste
+    /// contrato ter um campo <c>meta</c> de verdade) para <c>Extensions["meta"][...]</c>: (1)
+    /// <c>retryAfterSeconds</c> — LoginWithPin/LoginWithPassword/AuthorizeSensitiveAction, formato
     /// que o frontend já lê (packages/ui/src/auth/operational-auth-client.ts,
-    /// <c>problem.meta?.retryAfterSeconds</c>). Não exige alterar nenhum handler: a conversão
-    /// acontece só aqui, no mapeamento genérico.
+    /// <c>problem.meta?.retryAfterSeconds</c>); (2) <c>sessionId</c> — US-022, cenário "Mesa já
+    /// ocupada": 409 <see cref="ApiErrorCodes.TableAlreadyOpen"/> direciona o chamador à sessão
+    /// existente (US-022 §7: <c>meta: { sessionId }</c>). Não exige alterar a assinatura de
+    /// <see cref="Result{T}.Failure"/>: os handlers usam o dicionário de <c>errors</c> já existente
+    /// como transporte, e a conversão para <c>meta</c> acontece só aqui, no mapeamento genérico.
     /// </summary>
     private static Dictionary<string, object>? ExtractMeta(ref IReadOnlyDictionary<string, string[]>? fieldErrors)
     {
-        const string retryAfterKey = "retryAfterSeconds";
-
-        if (fieldErrors is null || !fieldErrors.TryGetValue(retryAfterKey, out var values) || values.Length == 0)
+        if (fieldErrors is null || fieldErrors.Count == 0)
         {
             return null;
         }
 
         Dictionary<string, object>? meta = null;
-        if (int.TryParse(values[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var seconds))
+
+        if (fieldErrors.TryGetValue("retryAfterSeconds", out var retryValues) && retryValues.Length > 0 &&
+            int.TryParse(retryValues[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var seconds))
         {
-            meta = new Dictionary<string, object> { [retryAfterKey] = seconds };
+            (meta ??= new Dictionary<string, object>())["retryAfterSeconds"] = seconds;
         }
 
-        fieldErrors = fieldErrors.Count == 1
-            ? null
-            : fieldErrors.Where(kv => kv.Key != retryAfterKey).ToDictionary(kv => kv.Key, kv => kv.Value);
+        if (fieldErrors.TryGetValue("sessionId", out var sessionIdValues) && sessionIdValues.Length > 0)
+        {
+            (meta ??= new Dictionary<string, object>())["sessionId"] = sessionIdValues[0];
+        }
+
+        if (meta is null)
+        {
+            return null;
+        }
+
+        var remaining = fieldErrors.Where(kv => kv.Key is not ("retryAfterSeconds" or "sessionId"))
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+        fieldErrors = remaining.Count == 0 ? null : remaining;
 
         return meta;
     }
@@ -251,6 +264,74 @@ public static class ResultExtensions
         ApiErrorCodes.TenantNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.TenantSlugAlreadyTaken => (StatusCodes.Status422UnprocessableEntity, true, false),
         ApiErrorCodes.OwnerInviteInvalidCredentials => (StatusCodes.Status401Unauthorized, false, false),
+
+        // Operação — ambientes e mesas do salão (US-020). Nenhum controller de escrita existe
+        // hoje em Nexora.Api.Edge (autoridade do dado é a nuvem, US-020 cabeçalho "Aplicações:
+        // web-admin, api-cloud") — mapeado aqui só para manter o catálogo de códigos idêntico ao
+        // gêmeo de Nexora.Api.Cloud, como a docstring desta classe pede.
+        ApiErrorCodes.AreaNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.AreaHasActiveTables => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.TableNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.TableLabelAlreadyExists => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.TableHasSessionHistory => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.TablesExportEmpty => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Sessão de mesa (US-021/US-022) — autoridade do dado é local (RF-SAL-04/RF-SAL-02):
+        // POST/PATCH/GET de sessão e a resolução pública de qr_token vivem só aqui, no edge.
+        ApiErrorCodes.TableAlreadyOpen => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.InvalidTableToken => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.TableSessionNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.TableSessionNotOpen => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Chamar garçom (US-025) e solicitar a conta (US-026) — alerta dirigido via Nexora.Domain.Metrics.Alert.
+        ApiErrorCodes.NoPendingWaiterCall => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Dividir a conta (US-027) — divisão por item, retirada de taxa e pagamento parcial.
+        ApiErrorCodes.BillItemNotAssigned => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.BillItemAssignmentInvalid => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.BillInvalidAmount => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.BillNotRequested => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Consumo da mesa em tempo real (US-024) e repetição de item (US-028) — gap de US-030,
+        // ver docstring de AddOrderItemCommandHandler.
+        ApiErrorCodes.OrderNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.OrderItemNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ProductUnavailable => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OrderItemVariantPriceNotFound => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Catálogo (US-010/US-011/US-015) — o edge só expõe disponibilidade
+        // (ProductAvailabilityController, US-015), mas MarkProductUnavailable/MarkProductAvailable
+        // podem devolver "PRODUCT_NOT_FOUND" (mesmo valor de ApiErrorCodes.ProductNotFound) — gap
+        // pré-existente fechado junto com o mesmo bloco em Nexora.Api.Cloud/Infrastructure/ResultExtensions.cs,
+        // para manter os dois catálogos de código idênticos como esta classe já pede.
+        ApiErrorCodes.CategoryNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ProductNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ProductCategoryNotFound => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.ProductStationNotFound => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.CatalogReorderSetMismatch => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.ProductMediaStorageUnavailable => (StatusCodes.Status503ServiceUnavailable, true, false),
+        ApiErrorCodes.ProductMediaNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.PublicMenuTenantNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.VariantNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.PriceChannelInvalid => (StatusCodes.Status400BadRequest, true, false),
+        ApiErrorCodes.ModifierGroupNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ModifierNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ModifierGroupProductNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ModifierIngredientNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ProductModifierGroupAlreadyLinked => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.ProductModifierGroupNotLinked => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.PriceTableVariantNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.PriceTableCategoryNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.PriceTableChannelInvalid => (StatusCodes.Status400BadRequest, true, false),
+        ApiErrorCodes.PriceTableChannelDuplicated => (StatusCodes.Status400BadRequest, true, false),
+        ApiErrorCodes.PriceBulkAdjustNegativeResult => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.PrepTimeVariantNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.PrepTimeProductNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.PrepTimeStationNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.StationNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.StationCodeAlreadyExists => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.StationHasLinkedProducts => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.StationStoreContextMissing => (StatusCodes.Status403Forbidden, false, false),
 
         // Catch-all: código não catalogado -> 500, tratado como bug de mapeamento (não vaza
         // stack trace nem mensagem interna — ADR-021).

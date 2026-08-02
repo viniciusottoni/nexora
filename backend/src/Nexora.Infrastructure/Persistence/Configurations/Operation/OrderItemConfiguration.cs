@@ -46,6 +46,8 @@ internal sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderIte
         builder.Property(i => i.AuthorizedBy).HasColumnName("authorized_by");
         builder.Property(i => i.RefireOfId).HasColumnName("refire_of_id");
         builder.Property(i => i.RefireReason).HasColumnName("refire_reason");
+        // US-028 (Repetir item com um toque) — coluna adicional ao DDL original de US-024/03-Operacao.md.
+        builder.Property(i => i.RepeatedFromItemId).HasColumnName("repeated_from_item_id");
         builder.Property(i => i.FiredBy).HasColumnName("fired_by");
         builder.Property(i => i.ReadyBy).HasColumnName("ready_by");
         builder.Property(i => i.ServedBy).HasColumnName("served_by");
@@ -58,6 +60,9 @@ internal sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderIte
 
         // auto-referência do refogo — não é uma FK obrigatória do EF (RefireOfId aponta para outro OrderItem)
         builder.HasOne<OrderItem>().WithMany().HasForeignKey(i => i.RefireOfId).OnDelete(DeleteBehavior.Restrict);
+
+        // auto-referência da repetição (US-028) — mesmo padrão do refogo acima.
+        builder.HasOne<OrderItem>().WithMany().HasForeignKey(i => i.RepeatedFromItemId).OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(i => i.Fractions).WithOne(f => f.Item).HasForeignKey(f => f.OrderItemId).OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(i => i.Modifiers).WithOne(m => m.Item).HasForeignKey(m => m.OrderItemId).OnDelete(DeleteBehavior.Cascade);

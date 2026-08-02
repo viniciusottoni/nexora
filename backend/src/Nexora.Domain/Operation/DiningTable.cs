@@ -88,4 +88,48 @@ public sealed class DiningTable
         DeletedAt = DateTimeOffset.UtcNow;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
+
+    /// <summary>
+    /// Rotaciona o <see cref="QrToken"/> — o código anterior deixa de resolver imediatamente
+    /// (US-020, cenário "Rotação de token"): não existe histórico de tokens válidos, só o atual
+    /// é aceito. Usado quando o QR Code impresso foi fotografado/comprometido.
+    /// </summary>
+    public void RotateQrToken(string newToken)
+    {
+        if (string.IsNullOrWhiteSpace(newToken))
+            throw new DomainException("O novo token de QR Code da mesa é obrigatório.");
+
+        if (newToken == QrToken)
+            throw new DomainException("O novo token precisa ser diferente do token atual.");
+
+        QrToken = newToken;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Rename(string label, short seats, Guid areaId, short sortOrder)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+            throw new DomainException("O identificador da mesa é obrigatório.");
+
+        if (seats < 1)
+            throw new DomainException("A mesa precisa ter pelo menos um assento.");
+
+        Label = label;
+        Seats = seats;
+        AreaId = areaId;
+        SortOrder = sortOrder;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Activate()
+    {
+        IsActive = true;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        IsActive = false;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
 }

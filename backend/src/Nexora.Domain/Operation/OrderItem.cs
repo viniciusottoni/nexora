@@ -41,6 +41,15 @@ public sealed class OrderItem
     public Guid? AuthorizedBy { get; private set; }
     public Guid? RefireOfId { get; private set; }
     public string? RefireReason { get; private set; }
+
+    /// <summary>
+    /// US-028 (Repetir item com um toque) — id do item original quando este item nasceu de uma
+    /// repetição de um toque, nunca de um refogo de KDS (esse é <see cref="RefireOfId"/>, conceito
+    /// distinto: refogo é a cozinha refazendo o MESMO pedido por erro/queda de qualidade;
+    /// repetição é o cliente/garçom pedindo uma SEGUNDA unidade do mesmo item, com preço vigente
+    /// no momento da repetição, não o do item original).
+    /// </summary>
+    public Guid? RepeatedFromItemId { get; private set; }
     public Guid? FiredBy { get; private set; }
     public Guid? ReadyBy { get; private set; }
     public Guid? ServedBy { get; private set; }
@@ -59,7 +68,8 @@ public sealed class OrderItem
         decimal unitPrice,
         short quantity = 1,
         Guid? stationId = null,
-        string? notes = null)
+        string? notes = null,
+        Guid? repeatedFromItemId = null)
     {
         if (quantity < 1)
             throw new DomainException("A quantidade do item precisa ser pelo menos 1.");
@@ -79,6 +89,7 @@ public sealed class OrderItem
             Quantity = quantity,
             UnitPrice = unitPrice,
             Notes = notes,
+            RepeatedFromItemId = repeatedFromItemId,
             Status = OrderItemStatus.Queued,
             PlacedAt = now,
             CreatedAt = now,

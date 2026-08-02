@@ -8,6 +8,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Nexora.Infrastructure\Nexora.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Nexora.Application\Nexora.Application.csproj" />
+    <!-- US-022 §12: exercita o IdempotencyMiddleware REAL (não um duplo) contra Postgres real e o
+         handler real de abertura de sessão, sem a infraestrutura adicional de host HTTP completo
+         que um WebApplicationFactory exigiria (mesma decisão documentada em IdempotencyStoreTests). -->
+    <ProjectReference Include="..\..\src\Nexora.Api.Edge\Nexora.Api.Edge.csproj" />
   </ItemGroup>
 
   <ItemGroup>

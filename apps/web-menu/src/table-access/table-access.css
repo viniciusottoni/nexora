@@ -1,0 +1,126 @@
+.menu-access-shell {
+  padding: 1rem;
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.menu-access-hero {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.menu-access-category {
+  margin-bottom: 1.5rem;
+}
+
+.menu-access-items {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.menu-access-error {
+  padding: 2rem 1rem;
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+/* Esqueleto de conteúdo (US-021 §10) — nunca um giro indefinido. */
+.menu-skeleton {
+  padding: 1rem;
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.menu-skeleton__hero,
+.menu-skeleton__photo,
+.menu-skeleton__line {
+  background: linear-gradient(90deg, #eee 25%, #ddd 37%, #eee 63%);
+  background-size: 400% 100%;
+  animation: menu-skeleton-shimmer 1.4s ease infinite;
+  border-radius: 8px;
+}
+
+.menu-skeleton__hero {
+  height: 3rem;
+  width: 60%;
+  margin: 0 auto 2rem;
+}
+
+.menu-skeleton__row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.menu-skeleton__photo {
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-shrink: 0;
+}
+
+.menu-skeleton__lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.menu-skeleton__line {
+  height: 0.75rem;
+}
+
+.menu-skeleton__line--title {
+  width: 50%;
+  height: 1rem;
+}
+
+.menu-skeleton__line--short {
+  width: 30%;
+}
+
+@keyframes menu-skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-skeleton__hero,
+  .menu-skeleton__photo,
+  .menu-skeleton__line {
+    animation: none;
+  }
+}
+
+/* US-024: abas "Cardápio"/"Consumo" da tela de acesso do cliente. */
+.table-access-tabs__bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+  background: var(--surface-elevated, #fff);
+}
+
+.table-access-tabs__tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  font-size: 0.95rem;
+  color: var(--text-secondary, #666);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.table-access-tabs__tab--active {
+  color: var(--nx-blue-600, #1a5fb4);
+  border-bottom-color: var(--nx-blue-600, #1a5fb4);
+  font-weight: 600;
+}

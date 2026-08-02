@@ -2941,6 +2941,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("uq_dining_table_store_label");
 
+                    b.HasIndex("TenantId", "StoreId", "Status")
+                        .HasDatabaseName("idx_table_store_status")
+                        .HasFilter("deleted_at IS NULL AND is_active");
+
                     b.ToTable("dining_table", (string)null);
                 });
 
@@ -3222,6 +3226,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("refire_reason");
 
+                    b.Property<Guid?>("RepeatedFromItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("repeated_from_item_id");
+
                     b.Property<DateTimeOffset?>("ServedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("served_at");
@@ -3272,6 +3280,9 @@ namespace Nexora.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("RefireOfId")
                         .HasDatabaseName("ix_order_item_refire_of_id");
+
+                    b.HasIndex("RepeatedFromItemId")
+                        .HasDatabaseName("ix_order_item_repeated_from_item_id");
 
                     b.HasIndex("VariantId")
                         .HasDatabaseName("ix_order_item_variant_id");
@@ -3414,6 +3425,12 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasDefaultValue((short)1)
                         .HasColumnName("guest_count");
 
+                    b.Property<bool>("GuestCountConfirmed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("guest_count_confirmed");
+
                     b.Property<DateTimeOffset>("OpenedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("opened_at");
@@ -3447,6 +3464,15 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("money_amount")
                         .HasDefaultValue(0m)
                         .HasColumnName("service_fee_amount");
+
+                    b.Property<string>("SplitMode")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("split_mode");
+
+                    b.Property<short?>("SplitPeople")
+                        .HasColumnType("smallint")
+                        .HasColumnName("split_people");
 
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
@@ -5143,6 +5169,12 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasForeignKey("RefireOfId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_order_item_order_item_refire_of_id");
+
+                    b.HasOne("Nexora.Domain.Operation.OrderItem", null)
+                        .WithMany()
+                        .HasForeignKey("RepeatedFromItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_order_item_order_item_repeated_from_item_id");
 
                     b.HasOne("Nexora.Domain.Catalog.ProductVariant", "Variant")
                         .WithMany()

@@ -1,0 +1,82 @@
+.table-map {
+  min-height: 100vh;
+  padding: 1rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  background: var(--brand-surface, var(--color-surface));
+  color: var(--color-text);
+}
+.table-map__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0 1.25rem;
+  position: sticky;
+  top: 0;
+  background: inherit;
+  z-index: 5;
+}
+.table-map__header h1 {
+  margin: 0 0 0.35rem;
+  font: 700 clamp(1.4rem, 3vw, 1.9rem)/1.1 var(--brand-font-display);
+}
+.table-map__controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.table-map__area {
+  margin-bottom: 1.75rem;
+}
+.table-map__area h2 {
+  margin: 0 0 0.65rem;
+  font: 700 1rem/1.2 var(--brand-font-body);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.table-map__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: 0.85rem;
+}
+.table-map__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.table-map__signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.table-map__empty,
+.table-map__loading {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+.table-map__error {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, var(--color-danger, #b3261e) 12%, transparent);
+  color: var(--color-danger, #b3261e);
+  font-weight: 600;
+}
+
+/* US-025 §10: aviso de "mesa te chamou" — vibração/som já dispararam, isto é o reforço visual. */
+.table-map__waiter-call-toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 30;
+  max-width: 20rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.6rem;
+  background: var(--nx-brand-600, #1a5fb4);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}

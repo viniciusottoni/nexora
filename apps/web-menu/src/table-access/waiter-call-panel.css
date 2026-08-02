@@ -1,0 +1,134 @@
+/*
+ * US-025 §10 ("botão sempre acessível, fixo, sem precisar navegar"): grupo flutuante no canto
+ * inferior direito, ACIMA do rodapé fixo de totais da aba Consumo (consumption-view.css,
+ * 96px de altura) — assim a posição é estável tanto na aba Cardápio (sem rodapé) quanto em
+ * Consumo (com rodapé), sem depender de qual aba está ativa.
+ */
+.waiter-call-bar {
+  position: fixed;
+  right: 16px;
+  bottom: 104px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.waiter-call-bar__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--nx-brand-600, #1a5fb4);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.waiter-call-bar__button--secondary {
+  background: var(--surface-elevated, #fff);
+  color: var(--nx-brand-600, #1a5fb4);
+  border: 1px solid var(--nx-brand-600, #1a5fb4);
+}
+
+.waiter-call-bar__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.waiter-call-feedback {
+  display: block;
+  position: fixed;
+  right: 16px;
+  bottom: 190px;
+  z-index: 20;
+  max-width: 240px;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.waiter-call-feedback--success {
+  background: var(--nx-success-100, #e6f7ee);
+  color: var(--nx-success-600, #1c7a44);
+}
+
+.waiter-call-feedback--info {
+  background: var(--surface-sunken, #f2f2f2);
+  color: var(--text-secondary, #666);
+}
+
+.waiter-call-feedback--error {
+  background: var(--nx-danger-100, #fdeaea);
+  color: var(--nx-danger-600, #b3261e);
+}
+
+.bill-request-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: var(--surface-elevated, #fff);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.bill-request-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bill-request-panel__head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.bill-request-panel__close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.bill-request-panel__options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bill-request-panel__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+.bill-request-panel__people {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bill-request-panel__people input[type='number'] {
+  max-width: 96px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle, #e2e2e2);
+}
+
+.bill-request-panel__preview {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #666);
+}

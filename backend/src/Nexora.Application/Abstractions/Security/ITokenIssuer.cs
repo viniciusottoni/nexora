@@ -22,6 +22,28 @@ public interface ITokenIssuer
     Task<string> IssueAuthorizationTokenAsync(IReadOnlyDictionary<string, object> claims, int ttlSeconds, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Token anônimo de escopo mínimo do cliente na mesa (US-021 §3.1/§7: "Emissão de token
+    /// anônimo de sessão, com escopo mínimo e expiração junto da sessão da mesa"). Diferente de
+    /// <see cref="IssueAccessTokenAsync"/> (sem <c>roles</c>/<c>perms</c> — este token nunca deve
+    /// satisfazer uma policy de permissão de staff) e de <see cref="IssueAuthorizationTokenAsync"/>
+    /// (semântica distinta — elevação pontual de uma ação já autenticada, não uma sessão pública
+    /// anônima). Carrega só o necessário para escopar as próprias ações do cliente na mesa (ver
+    /// cardápio, chamar garçom, pedir a conta — RN-015, "nunca leitura de outra mesa"):
+    /// <c>ses</c>=id da <c>table_session</c>, <c>tbl</c>=id da <c>dining_table</c>,
+    /// <c>tid</c>=tenant. Validado por <see cref="ValidateTableSessionTokenAsync"/>, nunca pelos
+    /// validadores de refresh/autorização.
+    /// </summary>
+    Task<string> IssueTableSessionTokenAsync(Guid sessionId, Guid tenantId, Guid tableId, int ttlSeconds, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Valida um token de sessão de mesa emitido por <see cref="IssueTableSessionTokenAsync"/> e
+    /// devolve suas claims. Lança <see cref="Microsoft.IdentityModel.Tokens.SecurityTokenException"/>
+    /// quando o token é inválido, expirado, ou não é um token deste tipo — mesma família de exceção
+    /// dos demais validadores desta interface.
+    /// </summary>
+    Task<TableSessionTokenClaims> ValidateTableSessionTokenAsync(string token, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Valida a assinatura/expiração de um refresh token e devolve suas claims — porta de
     /// <c>JwtTokenService.verify(token, 'refresh')</c> (apps/api-cloud/src/modules/auth/jwt-token.service.ts).
     /// Lança exceção quando o token é inválido, expirado, ou não é um refresh token — o handler
@@ -68,6 +90,9 @@ public sealed record AuthorizationTokenClaims(
     string ContextHash,
     Guid AuthorizedBy);
 
+/// <summary>Claims decodificadas de um token de sessão de mesa válido (US-021) — ver <see cref="ITokenIssuer.IssueTableSessionTokenAsync"/>.</summary>
+public sealed record TableSessionTokenClaims(Guid SessionId, Guid TenantId, Guid TableId);
+
 /// <summary>TTLs padrão de token — mesmos valores usados na versão TypeScript (packages/domain/src/auth/authorization.ts).</summary>
 public static class AuthTokenTtlSeconds
 {
@@ -75,4 +100,14 @@ public static class AuthTokenTtlSeconds
     public const int Refresh = 30 * 24 * 60 * 60;
     public const int PinAccess = 8 * 60 * 60;
     public const int Authorization = 120;
+
+    /// <summary>
+    /// US-021 §3.1: "expiração junto da sessão da mesa". Sem um limite de tempo de refeição
+    /// modelado (não existe hoje um campo de "duração máxima esperada" em <c>TenantConfig</c>),
+    /// 6h cobre generosamente qualquer almoço/jantar — bem mais longo que <see cref="PinAccess"/>
+    /// porque o cliente não deve precisar ler o QR de novo no meio da refeição. Renovado
+    /// naturalmente a cada nova leitura do QR (mesma sessão, novo token) enquanto a mesa continuar
+    /// aberta.
+    /// </summary>
+    public const int TableSession = 6 * 60 * 60;
 }

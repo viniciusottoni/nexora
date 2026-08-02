@@ -41,6 +41,16 @@ public sealed class Area
         };
     }
 
+    public void Rename(string name, short sortOrder)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new DomainException("O nome da área é obrigatório.");
+
+        Name = name;
+        SortOrder = sortOrder;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     public void Activate()
     {
         IsActive = true;
