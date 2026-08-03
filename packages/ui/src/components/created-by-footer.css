@@ -1,0 +1,40 @@
+/* Crédito do fornecedor — badge fixo, discreto, não participa do layout de nenhuma
+   tela (por isso `position:fixed`, não `sticky`/flow): evita reajustar cada shell de
+   app (KDS/POS ocupam 100vh com header/rodapé fixos próprios) só para abrir espaço. */
+.db-created-by {
+  position: fixed;
+  right: var(--sp-4);
+  bottom: var(--sp-3);
+  z-index: 40;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface-card) 65%, transparent);
+  font: var(--type-caption);
+  color: var(--text-muted);
+  text-decoration: none;
+  opacity: 0.6;
+  transition: var(--transition-control), opacity var(--dur-fast) var(--ease-standard);
+}
+.db-created-by:hover,
+.db-created-by:focus-visible {
+  opacity: 1;
+  color: var(--text-secondary);
+  text-decoration: underline;
+}
+.db-created-by:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Uso em fluxo, logo abaixo do cartão de login/primeiro acesso — não flutua por cima
+   de nada, então dispensa o fundo/posicionamento fixo da variante padrão. Nasce
+   invisível: só aparece (em fade) depois que o cartão termina de abrir — ver
+   `onOpened` de NexoraSplash — nunca junto com a quicada de carregamento. */
+.db-created-by--inline {
+  position: static;
+  background: none;
+  opacity: 0;
+}
+.db-created-by--inline.is-visible {
+  animation: nx-fade-in calc(var(--dur-slower) + var(--dur-slow)) var(--ease-out) both;
+}

@@ -15,7 +15,7 @@ export interface TableMenuViewProps {
  */
 export function TableMenuView({ table, menu, logo }: Readonly<TableMenuViewProps>) {
   return (
-    <main className="menu-access-shell">
+    <main className="menu-access-shell nx-stagger">
       <header className="menu-access-hero">
         <div className="menu-brand">
           <BrandMark {...(logo ? { logoSrc: logo } : {})} tenantName={menu.tenantName} size={40} />

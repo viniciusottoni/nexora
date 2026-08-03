@@ -1,3 +1,7 @@
+.unavailable-list {
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+}
+
 .unavailable-list__header {
   display: flex;
   align-items: center;
@@ -21,10 +25,18 @@
 }
 
 .unavailable-list__since {
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
   font-size: 0.8125rem;
 }
 
 .unavailable-list-error {
-  color: var(--nx-danger-600, #dc2626);
+  color: var(--nx-danger-600);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
+}
+
+.unavailable-list-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
 }

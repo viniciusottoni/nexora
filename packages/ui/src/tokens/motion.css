@@ -8,9 +8,39 @@
   --ease-out:cubic-bezier(0,0,.2,1);
   --ease-in-out:cubic-bezier(.4,0,.2,1);
   --transition-control:background-color var(--dur-fast) var(--ease-standard),border-color var(--dur-fast) var(--ease-standard),color var(--dur-fast) var(--ease-standard),box-shadow var(--dur-fast) var(--ease-standard);
+  /* Cadência de "respiração" de alertas ambiente (ponto vivo do StatusPill, cronômetro
+     atrasado) — não são feedback de interação (por isso fora da escala --dur-instant/…/slower
+     acima) mas ainda precisam ser token, nunca `ms` solto no CSS que os usa. */
+  --dur-pulse-status:1600ms;
+  --dur-pulse-urgent:1200ms;
 }
 @keyframes nx-pulse-alert{0%,100%{opacity:1}50%{opacity:.55}}
 @keyframes nx-slide-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes nx-scale-in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+@keyframes nx-toast-in{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes nx-flash-update{0%{background-color:color-mix(in srgb, var(--brand-primary) 22%, transparent)}100%{background-color:transparent}}
+@keyframes nx-shimmer{0%{background-position:-140% 0}100%{background-position:140% 0}}
+@keyframes nx-spin{to{transform:rotate(360deg)}}
+/* Carregamento da marca: a moeda quica (esmaga no contato, estica na subida) e gira
+   360° no eixo Y, vista de frente. Ver components/motion.css e brand/brand.css.
+   Tocadas com `animation-timing-function:linear` no CSS que as usa — a curva de
+   velocidade já vem do espaçamento desigual dos keyframes (16%/84% mais curtos que
+   50%: rápido perto do chão, devagar perto do topo). Uma easing por cima disso
+   comprimia toda a curva dentro do trecho de 16%, lida como um solavanco de
+   velocidade bem antes do pouso; por isso linear, não --ease-in-out. A sombra usa
+   os mesmos pontos (0/16/50/84/100) para não dessincronizar da moeda. */
+@keyframes nx-brand-bounce{0%{transform:translateY(0) scale(1.06,.94)}16%{transform:translateY(-22%) scale(.97,1.03)}50%{transform:translateY(-34%) scale(1,1)}84%{transform:translateY(-22%) scale(.97,1.03)}100%{transform:translateY(0) scale(1.06,.94)}}
+@keyframes nx-brand-bounce-shadow{0%,100%{transform:scaleX(1);opacity:.5}16%,84%{transform:scaleX(.74);opacity:.3}50%{transform:scaleX(.6);opacity:.18}}
+@keyframes nx-brand-flip{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}
+@keyframes nx-brand-exit{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.92)}}
+@keyframes nx-fade-in{from{opacity:0}to{opacity:1}}
+/* Abertura do meio para as pontas: uma linha no centro que cresce para a esquerda e para a direita */
+@keyframes nx-open-x{0%{opacity:.3;transform:scaleX(.04)}55%{opacity:1}100%{opacity:1;transform:scaleX(1)}}
+/* Brilho do logo, uma vez, da esquerda para a direita — ver brand/nexora-logo.tsx. A
+   distância é a própria largura do desenho (--nx-logo-shine-w, em px mas lida como
+   unidade de usuário do SVG): sai um logo-largura antes da esquerda, termina um
+   logo-largura depois da direita, então a faixa clara atravessa a marca inteira. */
+@keyframes nx-logo-shine{from{transform:translateX(calc(var(--nx-logo-shine-w) * -1))}to{transform:translateX(var(--nx-logo-shine-w))}}
 @media (prefers-reduced-motion:reduce){:root{
   --dur-instant:0ms;
   --dur-fast:0ms;

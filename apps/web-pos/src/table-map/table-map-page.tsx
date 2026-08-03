@@ -196,19 +196,21 @@ export function TableMapPage({ baseUrl = '', identity, onSelectTable, onOpenBill
       </header>
 
       {error ? (
-        <p className="table-map__error" role="alert">
+        <p className="table-map__error nx-anim-in" role="alert">
           {error}
         </p>
       ) : null}
 
       {actionError ? (
-        <p className="table-map__error" role="alert">
+        <p className="table-map__error nx-anim-in" role="alert">
           {actionError}
         </p>
       ) : null}
 
       {waiterCallToast ? (
-        <p className="table-map__waiter-call-toast" role="alert">
+        // US-025 §10: reforço visual do alerta sonoro/vibração — entra deslizando de cima
+        // (nx-anim-toast-in), o mesmo padrão de toast usado em qualquer alerta flutuante do app.
+        <p className="table-map__waiter-call-toast nx-anim-toast-in" role="alert">
           {waiterCallToast}
         </p>
       ) : null}
@@ -225,7 +227,10 @@ export function TableMapPage({ baseUrl = '', identity, onSelectTable, onOpenBill
         groups.map(([area, tables]) => (
           <section key={area} className="table-map__area" aria-label={area}>
             <h2>{area}</h2>
-            <div className="table-map__grid">
+            {/* nx-stagger só afeta a MONTAGEM inicial da grade (animation em nó não remontado não
+                reinicia) — atualizações via SignalR trocam classes/props num nó já existente
+                (TableMapCardTile é memo), nunca disparam o stagger de novo. */}
+            <div className="table-map__grid nx-stagger">
               {tables.map((entry) => (
                 <TableMapCardTile
                   key={entry.id}

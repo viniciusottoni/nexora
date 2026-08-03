@@ -135,7 +135,7 @@ export function ConsumptionView({ sessionToken, baseUrl = '', fetcher = fetch, p
       {consumption.items.length === 0 ? (
         <EmptyState icon="restaurant">Nenhum item lançado ainda — peça ao garçom ou pelo cardápio.</EmptyState>
       ) : (
-        <ul className="consumption-view__items">
+        <ul className="consumption-view__items nx-stagger">
           {consumption.items.map((item) => (
             <li key={item.orderItemId}>
               <OrderLine
@@ -167,18 +167,24 @@ export function ConsumptionView({ sessionToken, baseUrl = '', fetcher = fetch, p
       <footer className="consumption-view__totals">
         <div className="consumption-view__totals-row">
           <span>Subtotal</span>
-          <span>R$ {formatMoney(consumption.subtotal)}</span>
+          <span key={consumption.subtotal} className="consumption-view__totals-value nx-anim-flash">
+            R$ {formatMoney(consumption.subtotal)}
+          </span>
         </div>
         <div className="consumption-view__totals-row consumption-view__totals-row--fee">
           <span>
             {'Taxa de serviço '}
             <span className="consumption-view__fee-badge">opcional</span>
           </span>
-          <span>R$ {formatMoney(consumption.serviceFee)}</span>
+          <span key={consumption.serviceFee} className="consumption-view__totals-value nx-anim-flash">
+            R$ {formatMoney(consumption.serviceFee)}
+          </span>
         </div>
         <div className="consumption-view__totals-row consumption-view__totals-row--total">
           <span>Total</span>
-          <span>R$ {formatMoney(consumption.total)}</span>
+          <span key={consumption.total} className="consumption-view__totals-value nx-anim-flash">
+            R$ {formatMoney(consumption.total)}
+          </span>
         </div>
       </footer>
     </section>

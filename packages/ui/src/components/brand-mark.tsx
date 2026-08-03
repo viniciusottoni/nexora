@@ -1,4 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
+import { NexoraLogo } from '../brand/nexora-logo.js';
 
 export interface BrandMarkProps extends HTMLAttributes<HTMLSpanElement> {
   /** Caminho do arquivo de logo (Nexora ou do tenant). */
@@ -12,8 +13,8 @@ export interface BrandMarkProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 /**
- * Assinatura de marca. Sem `logoSrc` renderiza o wordmark em tipo — nunca redesenha o
- * símbolo do logo; aponte `logoSrc` para o arquivo em `assets/`.
+ * Assinatura de marca. Sem `logoSrc` nem `tenantName` desenha a marca Nexora
+ * (`NexoraLogo`): colorida sobre fundo claro, branca quando `inverse`.
  */
 export function BrandMark({
   logoSrc,
@@ -60,9 +61,7 @@ export function BrandMark({
   } else {
     inner = (
       <span>
-        <span className="db-brand-mark__word" style={{ fontSize: `${size * 0.7}px` }}>
-          NEXORA
-        </span>
+        <NexoraLogo variant="lockup" tone={inverse ? 'white' : 'color'} height={size} />
         {subtitle ? (
           <span className="db-brand-mark__sub" style={{ display: 'block' }}>
             {subtitle}

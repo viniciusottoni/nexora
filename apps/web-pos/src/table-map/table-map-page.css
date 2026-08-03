@@ -50,23 +50,28 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem;
+  /* Badges de sinal (US-023 §15) aparecem/desaparecem conforme SignalR atualiza a mesa — entrada
+     suave em vez de "pipocar" no cartão. */
+  animation: nx-slide-in var(--dur-fast) var(--ease-out) both;
 }
 .table-map__empty,
 .table-map__loading {
   padding: 3rem 1rem;
   text-align: center;
   color: var(--color-text-muted);
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 .table-map__error {
   padding: 0.75rem 1rem;
   margin-bottom: 1rem;
   border-radius: 0.6rem;
-  background: color-mix(in srgb, var(--color-danger, #b3261e) 12%, transparent);
-  color: var(--color-danger, #b3261e);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  color: var(--color-danger);
   font-weight: 600;
 }
 
-/* US-025 §10: aviso de "mesa te chamou" — vibração/som já dispararam, isto é o reforço visual. */
+/* US-025 §10: aviso de "mesa te chamou" — vibração/som já dispararam, isto é o reforço visual.
+   A entrada (nx-anim-toast-in, aplicada no .tsx) já cobre o "aparecer"; aqui só a base visual. */
 .table-map__waiter-call-toast {
   position: fixed;
   right: 1rem;
@@ -74,9 +79,10 @@
   z-index: 30;
   max-width: 20rem;
   padding: 0.75rem 1rem;
-  border-radius: 0.6rem;
-  background: var(--nx-brand-600, #1a5fb4);
-  color: #fff;
+  border-radius: var(--radius-lg);
+  background: var(--brand-primary);
+  color: var(--text-inverse);
   font-weight: 600;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  /* Notificação flutuante — usa o tier de sombra reservado a modal/toast/popover. */
+  box-shadow: var(--shadow-overlay);
 }

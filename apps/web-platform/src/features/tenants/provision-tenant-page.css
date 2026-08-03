@@ -6,6 +6,10 @@
 .provision-heading {
   max-width: 700px;
   margin-bottom: 2rem;
+  /* .provision-form-card/.install-card/.checklist-card já entram via .db-card (packages/ui) —
+     este cabeçalho (form OU resultado, mesma classe nos dois branches de provision-tenant-page.tsx)
+     não tem um Card por trás, então precisa da própria entrada para não "pipocar" na tela. */
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 .provision-eyebrow {
   color: var(--color-primary);
@@ -60,30 +64,34 @@
   gap: 1.2rem;
 }
 .native-field {
-  display: grid;
-  align-content: start;
-  gap: 0.4rem;
-  font-size: 0.83rem;
-  font-weight: 700;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.native-field > span {
+  color: var(--text-secondary);
+  font: var(--type-label);
 }
 .native-field select {
-  min-height: 2.75rem;
+  height: var(--density-desk-control);
   width: 100%;
+  box-sizing: border-box;
   border: 1px solid var(--color-border);
   border-radius: calc(var(--radius-base) * 0.65);
   background: var(--color-surface-raised);
   color: var(--color-text);
-  padding: 0.65rem 0.8rem;
-  font: inherit;
+  padding: 0 0.8rem;
+  font: var(--type-body);
+  transition: var(--transition-control);
 }
 .native-field select:focus {
   border-color: var(--color-primary);
   outline: 3px solid color-mix(in srgb, var(--color-primary) 16%, transparent);
 }
 .native-field small {
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-  font-weight: 400;
+  color: var(--text-muted);
+  font: var(--type-caption);
 }
 .form-footer {
   display: flex;
@@ -104,6 +112,9 @@
   padding: 0.8rem 1rem;
   color: var(--color-danger);
   background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  /* Erro de validação (slug em uso, etc.) — entra suavemente em vez de empurrar o layout de
+     forma abrupta bem acima do botão de submissão. */
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 .provision-result-grid {
   display: grid;
@@ -146,6 +157,12 @@
   color: var(--color-success);
   font-size: 0.78rem;
 }
+.copy-status:not(:empty) {
+  /* .tsx troca a `key` a cada confirmação de cópia — remonta este <p> de propósito para a
+     entrada tocar de novo a cada clique em "Copiar comando", já que o texto de confirmação é
+     sempre a mesma frase (uma troca de conteúdo sem remontar não dispararia a animação). */
+  animation: nx-slide-in var(--dur-fast) var(--ease-out) both;
+}
 .checklist-card__header {
   display: flex;
   align-items: center;
@@ -182,6 +199,7 @@
   border-radius: 50%;
   color: var(--color-text-muted);
   font: 600 0.67rem var(--font-mono);
+  transition: var(--transition-control);
 }
 .deployment-list li[data-status='COMPLETED'] > span {
   border-color: var(--color-success);

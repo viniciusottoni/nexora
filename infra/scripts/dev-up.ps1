@@ -23,6 +23,10 @@ $env:NEXORA_MIGRATIONS_CONNECTION = $connCloud
 dotnet ef database update --project backend/src/Nexora.Infrastructure
 Remove-Item Env:\NEXORA_MIGRATIONS_CONNECTION
 
+Write-Host "==> Criando massa de usuários de teste (Cloud + Edge)..." -ForegroundColor Cyan
+dotnet run --project backend/src/Nexora.DevSeeder -- --connection $connCloud --mode cloud
+dotnet run --project backend/src/Nexora.DevSeeder -- --connection $connEdge --mode edge
+
 Write-Host "==> Subindo Nexora.Api.Edge em http://localhost:5000 ..." -ForegroundColor Cyan
 Start-Process powershell -ArgumentList @(
   '-NoExit', '-Command',
@@ -52,4 +56,13 @@ Write-Host '  Postgres          -> localhost:5432 (donabetinha_edge_dev / donabe
 Write-Host '  Redis             -> localhost:6379'
 Write-Host '  Nexora.Api.Edge   -> http://localhost:5000/swagger'
 Write-Host '  Nexora.Api.Cloud  -> http://localhost:5100/swagger'
-Write-Host '  Frontend (5 apps) -> portas do Vite exibidas na janela do pnpm dev (padrão a partir de 5173)'
+Write-Host '  Gestão local      -> http://localhost:5173/admin'
+Write-Host '  Plataforma        -> http://localhost:5174'
+Write-Host '  Caixa (POS)       -> http://localhost:5175'
+Write-Host '  Cozinha (KDS)     -> http://localhost:5176'
+Write-Host '  Cardápio          -> http://localhost:5177'
+Write-Host ''
+Write-Host 'Primeiro pareamento:' -ForegroundColor Yellow
+Write-Host '  1. Abra http://localhost:5173/admin e use o código inicial exibido pelo seeder.'
+Write-Host '  2. Entre com o PIN 2101 (proprietário) ou 2102 (gerente).'
+Write-Host '  3. Clique em "Autorizar novo dispositivo" e use o novo código no Caixa/KDS.'

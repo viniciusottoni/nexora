@@ -34,6 +34,10 @@ export function ProvisionTenantPage({ api: providedApi }: ProvisionTenantPagePro
   const [result, setResult] = useState<CreateTenantResponse>();
   const [commandRevealed, setCommandRevealed] = useState(false);
   const [copyStatus, setCopyStatus] = useState('');
+  // A frase de confirmação é sempre igual — sem um contador na key, cliques seguidos em "Copiar
+  // comando" não remontariam .copy-status (mesmo texto = mesma key), e a entrada suave (ver
+  // .copy-status no CSS) só tocaria na primeira vez.
+  const [copyCount, setCopyCount] = useState(0);
   const slugCheck = useRef(0);
 
   useEffect(() => {
@@ -90,6 +94,7 @@ export function ProvisionTenantPage({ api: providedApi }: ProvisionTenantPagePro
     if (!result) return;
     await navigator.clipboard.writeText(result.installCommand);
     setCopyStatus('Comando copiado. Guarde-o em local seguro.');
+    setCopyCount((count) => count + 1);
   };
 
   if (result) {
@@ -128,7 +133,9 @@ export function ProvisionTenantPage({ api: providedApi }: ProvisionTenantPagePro
                   Copiar comando
                 </Button>
               </div>
-              <p className="copy-status" role="status" aria-live="polite">
+              {/* key força remontagem a cada confirmação — a frase de sucesso é sempre igual, então
+                  sem isso uma segunda cópia não reacionaria a entrada suave (ver .copy-status). */}
+              <p key={copyCount} className="copy-status" role="status" aria-live="polite">
                 {copyStatus}
               </p>
             </div>
@@ -144,7 +151,9 @@ export function ProvisionTenantPage({ api: providedApi }: ProvisionTenantPagePro
                 {result.checklist.filter(({ status }) => status === 'COMPLETED').length}/9
               </strong>
             </div>
-            <ol className="deployment-list">
+            {/* nx-stagger: os 9 passos do checklist entram em cascata, no mesmo espírito das
+                seções numeradas do formulário — reforça a leitura sequencial do lançamento. */}
+            <ol className="deployment-list nx-stagger">
               {result.checklist.map((item, index) => (
                 <li key={item.code} data-status={item.status}>
                   <span aria-hidden="true">
@@ -172,7 +181,10 @@ export function ProvisionTenantPage({ api: providedApi }: ProvisionTenantPagePro
       </header>
 
       <form onSubmit={(event) => void submit(event)}>
-        <Card className="provision-form-card">
+        {/* nx-stagger: cada seção numerada (01 Negócio, 02 Proprietário, 03 Loja) entra em
+            cascata na montagem do formulário, reforçando a ordem do wizard sem exigir passos
+            separados de fato. */}
+        <Card className="provision-form-card nx-stagger">
           <section className="form-section" aria-labelledby="business-heading">
             <div className="form-section__heading">
               <span>01</span>

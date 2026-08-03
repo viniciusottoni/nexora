@@ -210,7 +210,7 @@ export function TableManagementPage({
       ) : null}
 
       <div className="tables-workbench">
-        <nav className="area-list" aria-label="Ambientes cadastrados">
+        <nav className="area-list nx-stagger" aria-label="Ambientes cadastrados">
           <button
             type="button"
             className={`area-list__item ${selectedAreaId === undefined ? 'area-list__item--active' : ''}`}

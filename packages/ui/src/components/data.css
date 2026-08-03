@@ -9,6 +9,7 @@
   gap: var(--sp-3);
   min-width: 0;
   box-shadow: var(--shadow-card);
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 .db-stat--flat { box-shadow: none; }
 .db-stat--pulse { background: var(--surface-inverse); border-color: transparent; }
@@ -101,6 +102,7 @@
   vertical-align: middle;
 }
 .db-table tbody tr:last-child td { border-bottom: 0; }
+.db-table tbody td { transition: background-color var(--dur-fast) var(--ease-standard); }
 .db-table tbody tr:hover td { background: var(--surface-page); }
 .db-table--clickable tbody tr { cursor: pointer; }
 .db-table__numeric { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }

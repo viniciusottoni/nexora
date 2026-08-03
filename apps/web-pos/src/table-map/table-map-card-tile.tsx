@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { Badge, Button, TableCard } from '@nexora/ui';
 import type { TableMapEntry, TableMapStatus } from '@nexora/contracts';
 import { formatMinutesOpen, selectTopSignals, toTableCardStatus } from './table-map-signals.js';
@@ -66,8 +66,17 @@ function TableMapCardTileComponent({
   const signals = selectTopSignals(entryLike);
   const attention = billRequested || waiterCalled || itemsReadyToServe > 0;
 
+  // Assinatura dos campos "visíveis" que costumam chegar por push do TableMapHub — não inclui
+  // minutesOpen (sobe a cada minuto sem ser um evento realtime de verdade; flashear a cada tick do
+  // relógio distrairia mais do que ajudaria).
+  const signature = `${status}|${totalLabel ?? ''}|${billRequested}|${waiterCalled}|${itemsReadyToServe}|${aboveAvgDuration}`;
+  const { flashing, onAnimationEnd } = useRealtimeFlash(signature);
+
   return (
-    <div className="table-map__tile">
+    <div
+      className={`table-map__tile${flashing ? ' nx-anim-flash' : ''}`}
+      onAnimationEnd={onAnimationEnd}
+    >
       <TableCard
         name={`Mesa ${label}`}
         status={toTableCardStatus(status)}
@@ -107,6 +116,26 @@ function TableMapCardTileComponent({
       ) : null}
     </div>
   );
+}
+
+/**
+ * Destaque breve (`.nx-anim-flash`, packages/ui) quando os sinais relevantes do tile mudam via
+ * SignalR sem que o nó seja remontado (TableMapCardTile é `memo`-izado, ver docstring acima) — dá
+ * ao garçom um "clique" visual perceptível de que ALGO mudou nesta mesa, sem ser abrupto. Usa
+ * `onAnimationEnd` em vez de `setTimeout` para nunca precisar hardcodar a duração aqui: ela vive
+ * só em `--dur-slower` (tokens/motion.css). Não dispara na montagem inicial (a referência já nasce
+ * igual à assinatura corrente), só em mudanças subsequentes de props.
+ */
+function useRealtimeFlash(signature: string): { readonly flashing: boolean; readonly onAnimationEnd: () => void } {
+  const [flashing, setFlashing] = useState(false);
+  const previousSignature = useRef(signature);
+  useEffect(() => {
+    if (previousSignature.current !== signature) {
+      previousSignature.current = signature;
+      setFlashing(true);
+    }
+  }, [signature]);
+  return { flashing, onAnimationEnd: () => setFlashing(false) };
 }
 
 export const TableMapCardTile = memo(TableMapCardTileComponent);

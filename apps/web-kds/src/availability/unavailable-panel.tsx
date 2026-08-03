@@ -80,25 +80,29 @@ export function UnavailablePanel({
           Nada marcado como indisponível agora.
         </EmptyState>
       ) : null}
-      {items.map((item) => (
-        <UnavailableToggle
-          key={item.productId}
-          productId={item.productId}
-          productName={item.productName}
-          isAvailable={item.isAvailable}
-          unavailableReason={item.unavailableReason}
-          api={api}
-          {...(accessToken ? { accessToken } : {})}
-          subscribeFn={noopSubscription}
-          onChanged={(isAvailable) => {
-            if (isAvailable) {
-              setItems((current) =>
-                current.filter((currentItem) => currentItem.productId !== item.productId),
-              );
-            }
-          }}
-        />
-      ))}
+      {items.length > 0 ? (
+        <div className="kds-unavailable-panel__list nx-stagger">
+          {items.map((item) => (
+            <UnavailableToggle
+              key={item.productId}
+              productId={item.productId}
+              productName={item.productName}
+              isAvailable={item.isAvailable}
+              unavailableReason={item.unavailableReason}
+              api={api}
+              {...(accessToken ? { accessToken } : {})}
+              subscribeFn={noopSubscription}
+              onChanged={(isAvailable) => {
+                if (isAvailable) {
+                  setItems((current) =>
+                    current.filter((currentItem) => currentItem.productId !== item.productId),
+                  );
+                }
+              }}
+            />
+          ))}
+        </div>
+      ) : null}
     </Card>
   );
 }

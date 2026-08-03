@@ -17,6 +17,7 @@ body {
     color-mix(in srgb, var(--brand-secondary) 24%, transparent),
     transparent 26rem
   );
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 .menu-hero {
   max-width: 72rem;

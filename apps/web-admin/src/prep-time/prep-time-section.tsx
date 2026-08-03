@@ -84,7 +84,14 @@ export function PrepTimeSection({
         {loadError}
       </p>
     );
-  if (!rows) return <p className="prep-time-loading">Carregando variações…</p>;
+  if (!rows) {
+    return (
+      <p className="prep-time-loading" role="status">
+        <span className="nx-spinner" aria-hidden="true" />
+        Carregando variações…
+      </p>
+    );
+  }
 
   return (
     <PrepTimePage

@@ -60,6 +60,7 @@ public sealed class ProvisionTenantIntegrationTests
         result.IsSuccess.Should().BeTrue();
         var response = result.Value!;
         response.Tenant.Slug.Should().Be(slug);
+        response.Tenant.Status.Should().Be("PROVISIONED");
         response.InstallToken.Should().NotBeNullOrWhiteSpace();
         response.InstallCommand.Should().Contain(response.Tenant.Id.ToString());
         response.OwnerInviteSentTo.Should().Be(ownerEmail);

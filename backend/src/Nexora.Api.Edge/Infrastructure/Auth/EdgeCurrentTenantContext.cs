@@ -30,7 +30,7 @@ public sealed class EdgeCurrentTenantContext : ICurrentTenantContext
 
     public Guid? TenantId => _installation.TenantId;
 
-    public Guid? StoreId => ReadGuidClaim("sid");
+    public Guid? StoreId => ReadGuidClaim("sid") ?? _installation.StoreId;
 
     public Guid? UserId => ReadGuidClaim(ClaimTypes.NameIdentifier) ?? ReadGuidClaim("sub");
 

@@ -1,6 +1,7 @@
 import {
   BrandMark,
   createNeutralBrandingResponse,
+  CreatedByFooter,
   EmptyState,
   pickBrandLogo,
   RuntimeBrandingProvider,
@@ -70,6 +71,7 @@ export function App() {
     // nunca hardcoded por tenant (ADR-013).
     <RuntimeBrandingProvider fallback={createNeutralBrandingResponse()} endpoint="/v1/local/branding">
       {qrToken ? <TableAccessPage qrToken={qrToken} /> : <BrandedMenu />}
+      <CreatedByFooter />
     </RuntimeBrandingProvider>
   );
 }

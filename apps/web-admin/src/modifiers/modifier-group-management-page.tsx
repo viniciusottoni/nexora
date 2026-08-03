@@ -99,7 +99,7 @@ export function ModifierGroupManagementPage({
       ) : null}
 
       <div className="modifiers-workbench">
-        <nav className="modifier-group-list" aria-label="Grupos de modificadores cadastrados">
+        <nav className="modifier-group-list nx-stagger" aria-label="Grupos de modificadores cadastrados">
           {groups.map((group) => (
             <button
               type="button"
@@ -406,7 +406,7 @@ function GroupEditor({
         {group.modifiers.length === 0 ? (
           <p className="modifier-empty">Nenhum modificador cadastrado.</p>
         ) : null}
-        <ul>
+        <ul className="nx-stagger">
           {group.modifiers.map((modifier) => (
             <ModifierRow
               key={modifier.id}
@@ -464,7 +464,7 @@ function GroupEditor({
           Reuso: alterar a regra acima já vale para todos os produtos listados aqui, sem precisar
           editar cada um.
         </p>
-        <ul className="modifier-product-list">
+        <ul className="modifier-product-list nx-stagger">
           {group.productIds.map((id) => (
             <li key={id}>
               <code>{id}</code>
@@ -649,7 +649,7 @@ function ModifierSelectionPreview({ group }: Readonly<{ group: ModifierGroup }>)
         />
       </Field>
 
-      <div className="modifier-preview__options">
+      <div className="modifier-preview__options nx-stagger">
         {availableModifiers.map((modifier) => (
           <Checkbox
             key={modifier.id}

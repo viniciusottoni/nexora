@@ -142,7 +142,7 @@ export function OpenTablePage({
   return (
     <section className="pos-open-table-list">
       <h2>Escolha a mesa</h2>
-      <div className="pos-open-table-grid">
+      <div className="pos-open-table-grid nx-stagger">
         {freeTables.map((table) => (
           <TableCard
             key={table.id}

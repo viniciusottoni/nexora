@@ -3,6 +3,7 @@
   margin: 0 auto;
   padding: clamp(2rem, 5vw, 4.5rem) 0;
   color: var(--color-text);
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 
 .branding-header {
@@ -37,14 +38,19 @@
   padding: 0.8rem 1rem;
   border-left: 0.3rem solid var(--color-success);
   background: color-mix(in srgb, var(--color-success) 8%, transparent);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 .branding-error {
   margin: 1rem 0 0;
   padding: 0.8rem 1rem;
   border-left: 0.3rem solid var(--color-danger);
   background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 .branding-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 2rem 0;
   color: var(--color-text-muted);
 }
@@ -97,6 +103,14 @@
   background: none;
   cursor: pointer;
   flex: 0 0 auto;
+  transition: transform var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+}
+.branding-color-input input[type='color']:hover {
+  transform: translateY(-1px);
+  border-color: var(--color-primary);
+}
+.branding-color-input input[type='color']:active {
+  transform: translateY(0);
 }
 
 .branding-logo-grid {

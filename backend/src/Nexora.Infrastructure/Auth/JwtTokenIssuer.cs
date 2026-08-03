@@ -133,6 +133,14 @@ public sealed class JwtTokenIssuer : ITokenIssuer
             ["perms"] = claims.Permissions,
         };
 
+        // Administração da plataforma é separada do RBAC do tenant. O papel especial existe
+        // apenas para identidades de equipe Nexora e vira a claim dedicada exigida pela policy
+        // PlatformAdmin das rotas /v1/platform/*.
+        if (claims.Roles.Contains("PLATFORM_ADMIN", StringComparer.OrdinalIgnoreCase))
+        {
+            payload["plt"] = "admin";
+        }
+
         if (claims.DeviceId is { } deviceId)
         {
             payload["did"] = deviceId.ToString();

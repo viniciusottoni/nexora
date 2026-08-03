@@ -5,6 +5,7 @@
     <Project Path="src/Nexora.Contracts/Nexora.Contracts.csproj" />
     <Project Path="src/Nexora.Shared/Nexora.Shared.csproj" />
     <Project Path="src/Nexora.Infrastructure/Nexora.Infrastructure.csproj" />
+    <Project Path="src/Nexora.DevSeeder/Nexora.DevSeeder.csproj" />
     <Project Path="src/Nexora.Api.Edge/Nexora.Api.Edge.csproj" />
     <Project Path="src/Nexora.Api.Cloud/Nexora.Api.Cloud.csproj" />
   </Folder>

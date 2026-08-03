@@ -1,0 +1,84 @@
+/* Motion — utilitários compartilhados de entrada, carregamento e feedback em tempo real.
+   Consomem só os tokens de tokens/motion.css (--dur-*, --ease-*, @keyframes nx-*).
+   Nunca declare duração/easing "solto" fora daqui — todo novo componente reusa isto. */
+
+/* Entrada de elementos recém-montados (cards, painéis, linhas de lista, seções) */
+.nx-anim-in {
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+}
+
+/* Entrada de diálogos, modais e popovers */
+.nx-anim-scale-in {
+  animation: nx-scale-in var(--dur-base) var(--ease-out) both;
+}
+
+/* Entrada de toasts/alertas flutuantes */
+.nx-anim-toast-in {
+  animation: nx-toast-in var(--dur-base) var(--ease-out) both;
+}
+
+/* Destaque breve quando um valor chega por realtime (WebSocket/SignalR) sem remontar o nó */
+.nx-anim-flash {
+  animation: nx-flash-update var(--dur-slower) var(--ease-out);
+}
+
+/* Entrada escalonada de listas/grades — aplique na lista, não nos itens.
+   Cada filho herda nx-slide-in com um atraso incremental; itens além do 12º entram juntos. */
+.nx-stagger > * {
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+}
+.nx-stagger > *:nth-child(1) { animation-delay: calc(var(--dur-instant) * 0); }
+.nx-stagger > *:nth-child(2) { animation-delay: calc(var(--dur-instant) * 1); }
+.nx-stagger > *:nth-child(3) { animation-delay: calc(var(--dur-instant) * 2); }
+.nx-stagger > *:nth-child(4) { animation-delay: calc(var(--dur-instant) * 3); }
+.nx-stagger > *:nth-child(5) { animation-delay: calc(var(--dur-instant) * 4); }
+.nx-stagger > *:nth-child(6) { animation-delay: calc(var(--dur-instant) * 5); }
+.nx-stagger > *:nth-child(7) { animation-delay: calc(var(--dur-instant) * 6); }
+.nx-stagger > *:nth-child(8) { animation-delay: calc(var(--dur-instant) * 7); }
+.nx-stagger > *:nth-child(9) { animation-delay: calc(var(--dur-instant) * 8); }
+.nx-stagger > *:nth-child(10) { animation-delay: calc(var(--dur-instant) * 9); }
+.nx-stagger > *:nth-child(11) { animation-delay: calc(var(--dur-instant) * 10); }
+.nx-stagger > *:nth-child(n+12) { animation-delay: calc(var(--dur-instant) * 11); }
+
+/* Placeholder de carregamento (substitui "Carregando..." estático) */
+.nx-skeleton {
+  background-image: linear-gradient(
+    90deg,
+    var(--surface-sunken) 25%,
+    var(--surface-card) 50%,
+    var(--surface-sunken) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-md);
+  animation: nx-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Spinner inline — dimensiona com font-size, herda cor via currentColor */
+.nx-spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: nx-spin 0.6s linear infinite;
+  flex: 0 0 auto;
+}
+
+/* Abertura do meio para as pontas (do centro para a esquerda e para a direita). Usada
+   quando um cartão substitui a marca de carregamento — ver brand/nexora-loader.tsx. */
+.nx-anim-open-x {
+  transform-origin: center center;
+  animation: nx-open-x var(--dur-slower) var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-stagger > * {
+    animation-delay: 0ms !important;
+  }
+  .nx-skeleton {
+    animation: none;
+    background-image: none;
+    background-color: var(--surface-sunken);
+  }
+}

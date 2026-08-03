@@ -3,6 +3,7 @@
   margin: 0 auto;
   padding: clamp(2rem, 5vw, 4.5rem) 0;
   color: var(--color-text);
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 
 .modifiers-header {
@@ -36,6 +37,7 @@
   padding: 0.8rem 1rem;
   border-left: 0.3rem solid var(--color-success);
   background: color-mix(in srgb, var(--color-success) 8%, transparent);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 
 .modifiers-workbench {
@@ -63,9 +65,16 @@
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
+  box-shadow: var(--shadow-subtle);
+  transition: var(--transition-control), transform var(--dur-fast) var(--ease-standard);
 }
 .modifier-group-list__item:hover {
   border-color: var(--color-primary);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
+}
+.modifier-group-list__item:active {
+  transform: translateY(0);
 }
 .modifier-group-list__item:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--color-secondary) 65%, white);
@@ -209,7 +218,7 @@
 .modifier-preview__ticket {
   padding: 1rem;
   border-radius: calc(var(--radius-base) * 0.6);
-  background: var(--color-surface-sunken, color-mix(in srgb, var(--color-text) 4%, transparent));
+  background: var(--surface-sunken);
 }
 .modifier-preview__ticket ul {
   list-style: none;
@@ -250,6 +259,7 @@
   place-items: center;
   padding: 1rem;
   background: color-mix(in srgb, var(--color-text) 55%, transparent);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 .modifiers-dialog {
   width: min(31rem, 100%);
@@ -258,7 +268,8 @@
   border-top: 0.35rem solid var(--color-primary);
   border-radius: var(--radius-base);
   background: var(--color-surface-raised);
-  box-shadow: 0 2rem 5rem color-mix(in srgb, var(--color-text) 24%, transparent);
+  box-shadow: var(--shadow-overlay);
+  animation: nx-scale-in var(--dur-base) var(--ease-out) both;
 }
 .modifiers-dialog h2 {
   margin: 0.4rem 0;

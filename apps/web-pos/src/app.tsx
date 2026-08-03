@@ -3,6 +3,7 @@ import {
   Button,
   Card,
   createNeutralBrandingResponse,
+  CreatedByFooter,
   DevicePairingScreen,
   OperatorBar,
   OperationalAuthClient,
@@ -143,6 +144,7 @@ function BrandedPos() {
           onOpenBilling={setBillingSessionId}
         />
       )}
+      <CreatedByFooter />
     </div>
   );
 }

@@ -80,7 +80,12 @@ export function UnavailableListPage({
   }
 
   if (!items) {
-    return <output className="unavailable-list-loading">Carregando itens indisponíveis…</output>;
+    return (
+      <output className="unavailable-list-loading">
+        <span className="nx-spinner" aria-hidden="true" />
+        Carregando itens indisponíveis…
+      </output>
+    );
   }
 
   if (items.length === 0) {
@@ -97,7 +102,7 @@ export function UnavailableListPage({
         <h2>Itens indisponíveis</h2>
         <Badge tone="danger">{items.length}</Badge>
       </header>
-      <ul className="unavailable-list__items">
+      <ul className="unavailable-list__items nx-stagger">
         {items.map((item) => (
           <li key={item.productId}>
             <Card className="unavailable-list__card">

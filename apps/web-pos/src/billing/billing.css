@@ -5,6 +5,7 @@
   gap: 1rem;
   max-width: 40rem;
   margin: 0 auto;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 
 .billing-page__header {
@@ -18,21 +19,25 @@
   text-transform: uppercase;
   font-size: 0.75rem;
   letter-spacing: 0.05em;
-  color: var(--nx-neutral-500);
+  color: var(--text-muted);
   margin: 0;
 }
 
 .billing-loading {
   padding: 2rem;
   text-align: center;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 
 .billing-error,
 .billing-pending-warning {
-  color: var(--nx-danger-600);
-  background: var(--nx-danger-50, transparent);
+  color: var(--text-danger);
+  background: var(--surface-danger-subtle);
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
+  /* Avisos condicionais (item pendente, falha de ação) — entram suavemente em vez de "pipocar"
+     quando o caixa está no meio da leitura do valor da conta. */
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 
 .billing-summary dl {
@@ -43,7 +48,7 @@
 }
 
 .billing-summary dt {
-  color: var(--nx-neutral-500);
+  color: var(--text-muted);
 }
 
 .billing-summary dd {
@@ -81,8 +86,13 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--nx-neutral-200);
+  border: var(--border-1) solid var(--border-subtle);
   border-radius: 0.5rem;
+  transition: var(--transition-control);
+  /* Cada <li> tem key={part.person} — ao trocar a quantidade de pessoas (US-027), só as linhas
+     NOVAS montam (as existentes são reconciliadas no mesmo nó), então esta entrada só anima quem
+     de fato acabou de aparecer na divisão. */
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 
 .billing-split-item__person {
@@ -100,7 +110,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.85rem;
-  color: var(--nx-neutral-500);
+  color: var(--text-muted);
 }
 
 .billing-item-row {
@@ -109,8 +119,10 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--nx-neutral-200);
+  border: var(--border-1) solid var(--border-subtle);
   border-radius: 0.5rem;
+  transition: var(--transition-control);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 
 .billing-item-row__name {
@@ -127,25 +139,52 @@
 .billing-item-row__assign button {
   width: 2rem;
   height: 2rem;
-  border-radius: 999px;
-  border: 1px solid var(--nx-neutral-300);
-  background: var(--nx-surface, #fff);
+  border-radius: var(--radius-pill);
+  border: var(--border-1) solid var(--border-default);
+  background: var(--surface-card);
+  transition: var(--transition-control), box-shadow var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+}
+
+.billing-item-row__assign button:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-hover);
+}
+
+.billing-item-row__assign button:active {
+  transform: scale(0.92);
+  transition-duration: var(--dur-instant);
 }
 
 .billing-item-row__assign button[aria-pressed='true'] {
-  background: var(--nx-primary-600);
-  color: #fff;
-  border-color: var(--nx-primary-600);
+  background: var(--action-primary);
+  color: var(--text-inverse);
+  border-color: var(--action-primary);
+}
+
+.billing-item-row__assign button[aria-pressed='true']:hover {
+  background: var(--action-primary-hover);
+  border-color: var(--action-primary-hover);
 }
 
 .billing-item-list__hint {
-  color: var(--nx-warning-600, #b45309);
+  color: var(--nx-warning-600);
+}
+
+.billing-payment-feedback--success,
+.billing-payment-feedback--error {
+  /* Confirmação de pagamento (US-027) — entrada suave em vez de "pipocar" no fim do fluxo de
+     fechamento de conta, o momento em que a leitura precisa ser clara e tranquila. */
+  animation: nx-scale-in var(--dur-base) var(--ease-out) both;
 }
 
 .billing-payment-feedback--success {
-  color: var(--nx-success-600, #15803d);
+  color: var(--nx-success-600);
 }
 
 .billing-payment-feedback--error {
   color: var(--nx-danger-600);
+}
+
+.billing-summary__total dd {
+  transition: var(--transition-control);
 }

@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Button, Card, Field, Input, StatusPill } from '@nexora/ui';
 import {
   AvailabilityApi,
@@ -51,6 +51,18 @@ export function UnavailableToggle({
   const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const infoRef = useRef<HTMLDivElement>(null);
+
+  /** Destaca brevemente nome + selo quando o valor muda sem ação deste dispositivo
+   * (outro terminal marcou o mesmo produto) — sem remontar o nó, como pede
+   * `.nx-anim-flash` (packages/ui/src/components/motion.css). */
+  function flashInfo(): void {
+    const el = infoRef.current;
+    if (!el) return;
+    el.classList.remove('nx-anim-flash');
+    void el.offsetWidth; // força reflow para permitir reiniciar a animação no mesmo nó
+    el.classList.add('nx-anim-flash');
+  }
 
   useEffect(() => {
     const subscription: AvailabilitySubscription = subscribeFn(
@@ -63,6 +75,7 @@ export function UnavailableToggle({
           setIsAvailable(true);
           setReason(null);
         }
+        flashInfo();
       },
       { ...(accessToken ? { accessToken } : {}), ...(api ? { api } : {}) },
     );
@@ -117,10 +130,12 @@ export function UnavailableToggle({
 
   return (
     <div className="kds-availability-toggle" data-product-id={productId}>
-      <span className="kds-availability-toggle__name">{productName}</span>
-      {!isAvailable ? (
-        <StatusPill status="UNAVAILABLE" label={reason ? `Em falta — ${reason}` : 'Em falta'} />
-      ) : null}
+      <div className="kds-availability-toggle__info" ref={infoRef}>
+        <span className="kds-availability-toggle__name">{productName}</span>
+        {!isAvailable ? (
+          <StatusPill status="UNAVAILABLE" label={reason ? `Em falta — ${reason}` : 'Em falta'} />
+        ) : null}
+      </div>
       <Button
         type="button"
         variant={isAvailable ? 'danger' : 'accent'}
@@ -132,7 +147,7 @@ export function UnavailableToggle({
         {isAvailable ? 'Marcar indisponível' : 'Marcar disponível'}
       </Button>
       {error ? (
-        <p className="kds-availability-toggle__error" role="alert">
+        <p className="kds-availability-toggle__error nx-anim-toast-in" role="alert">
           {error}
         </p>
       ) : null}
@@ -143,7 +158,7 @@ export function UnavailableToggle({
           aria-modal="true"
           aria-labelledby={dialogTitleId}
         >
-          <Card className="kds-availability-dialog__card">
+          <Card className="kds-availability-dialog__card nx-anim-scale-in">
             <h2 id={dialogTitleId}>Marcar produto indisponível</h2>
             <p>Informe o motivo para a equipe entender o que está em falta.</p>
             <Field label="Motivo" htmlFor={reasonFieldId}>

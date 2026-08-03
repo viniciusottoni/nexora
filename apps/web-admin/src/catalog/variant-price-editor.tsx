@@ -109,7 +109,8 @@ export function VariantPriceEditor({
 
       {loading ? (
         <p className="catalog-lead" role="status">
-          Carregando variações…
+          <span className="nx-spinner" aria-hidden="true" />
+          {' '}Carregando variações…
         </p>
       ) : variants.length === 0 && !adding ? (
         <p className="catalog-lead">Nenhuma variação cadastrada ainda.</p>

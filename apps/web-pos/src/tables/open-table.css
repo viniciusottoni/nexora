@@ -1,5 +1,6 @@
 .pos-open-table-list {
   padding: 1rem;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 
 .pos-open-table-grid {
@@ -14,6 +15,10 @@
   margin: 2rem auto;
   padding: 1.5rem;
   text-align: center;
+  /* .db-card já entra com nx-slide-in (packages/ui) — aqui é só o realce extra de "diálogo": um
+     leve scale, coerente com o passo de confirmação (contagem de pessoas) que segue a escolha da
+     mesa no grid acima. */
+  animation: nx-scale-in var(--dur-base) var(--ease-out) both;
 }
 
 .pos-open-table-confirm .db-quantity-stepper {
@@ -29,9 +34,11 @@
 
 .pos-open-table-error {
   color: var(--nx-danger-600);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 
 .pos-loading {
   padding: 2rem;
   text-align: center;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }

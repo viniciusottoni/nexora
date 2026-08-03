@@ -1,8 +1,10 @@
 using System.Text;
+using Nexora.Api.Cloud.Hubs;
 using Nexora.Api.Cloud.Infrastructure;
 using Nexora.Api.Cloud.Infrastructure.Auth;
 using Nexora.Api.Cloud.Infrastructure.Idempotency;
 using Nexora.Api.Cloud.Infrastructure.Observability;
+using Nexora.Api.Cloud.Realtime;
 using Nexora.Application.Abstractions.Behaviors;
 using Nexora.Application.Abstractions.Events;
 using Nexora.Application.Abstractions.Idempotency;
@@ -10,20 +12,26 @@ using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Notifications;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Platform;
+using Nexora.Application.Abstractions.Realtime;
 using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Abstractions.Storage;
 using Nexora.Application.Auth.Shared;
+using Nexora.Application.Devices.Abstractions;
+using Nexora.Application.Installation.Abstractions;
 using Nexora.Application.Installations.Abstractions;
 using Nexora.Application.Operation.Abstractions;
+using Nexora.Contracts.Http;
 using Nexora.Infrastructure.Auth;
 using Nexora.Infrastructure.Devices;
 using Nexora.Infrastructure.Idempotency;
+using Nexora.Infrastructure.Installation;
 using Nexora.Infrastructure.Installations;
 using Nexora.Infrastructure.Notifications;
 using Nexora.Infrastructure.Operation;
 using Nexora.Infrastructure.Persistence;
 using Nexora.Infrastructure.Persistence.Interceptors;
 using Nexora.Infrastructure.Platform;
+using Nexora.Infrastructure.Realtime;
 using Nexora.Infrastructure.Storage;
 using Nexora.Shared.Security;
 using FluentValidation;
@@ -105,10 +113,48 @@ builder.Services.Configure<AppVersionOptions>(builder.Configuration.GetSection(A
 // MFA, refresh de sessão, convite de dono, provisionamento de tenant).
 // ---------------------------------------------------------------------------
 builder.Services.AddSingleton<ICredentialHasher, Argon2CredentialHasher>();
+builder.Services.AddSingleton<IPinLookupDigester, HmacPinLookupDigester>();
 builder.Services.AddSingleton<IOtpVerifier, TotpOtpVerifier>();
 builder.Services.AddSingleton<IMfaSecretCipher, AesGcmMfaSecretCipher>();
 builder.Services.AddSingleton<ITokenIssuer, JwtTokenIssuer>();
 builder.Services.AddScoped<ICurrentTenantContext, CloudCurrentTenantContext>();
+
+// SignalR (US-015) — propagação em tempo real de product.unavailable/product.available, réplica
+// idêntica de Nexora.Api.Edge/Program.cs (ver CatalogAvailabilityHub).
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IAvailabilityBroadcaster, SignalRAvailabilityBroadcaster>();
+
+// IAlertsBroadcaster/ITableMapBroadcaster/IOrderConsumptionBroadcaster (US-023/024/025/026) — mesa,
+// comanda e alerta em tempo real são autoridade do edge (CLAUDE.md, "pedido é criado no local");
+// Api.Cloud não tem controller que dispare esses handlers, mas MediatR registra todo handler do
+// assembly Application, então a porta ainda precisa resolver — no-op aqui (ver Null*Broadcaster).
+builder.Services.AddSingleton<IAlertsBroadcaster, NullAlertsBroadcaster>();
+builder.Services.AddSingleton<ITableMapBroadcaster, NullTableMapBroadcaster>();
+builder.Services.AddSingleton<IOrderConsumptionBroadcaster, NullOrderConsumptionBroadcaster>();
+
+// Devices — geração de código de pareamento e de segredo do dispositivo (réplica de
+// Nexora.Api.Edge/Program.cs). Pareamento acontece com a loja (edge), não com a nuvem, mas o
+// handler ainda precisa resolver a porta pelo mesmo motivo acima.
+builder.Services.AddSingleton<IPairingCodeGenerator, PairingCodeGenerator>();
+builder.Services.AddSingleton<IDeviceSecretGenerator, DeviceSecretGenerator>();
+
+// Installation bootstrap/health (réplica de Nexora.Api.Edge/Program.cs) — ImportBootstrapCommand e
+// GetInstallationHealthQuery/PollSyncHealthCommand não são chamados por nenhum controller do
+// Api.Cloud (a nuvem é o alvo checado, não quem faz bootstrap/poll), mas precisam resolver:
+// IBootstrapCatalogImporter/IBootstrapAuthorizationImporter e IRedisHealthChecker reaproveitam a
+// mesma implementação do edge (degradam sem lançar exceção); ISyncHealthPoller usa um no-op porque
+// a implementação real depende de infraestrutura exclusiva do edge (IInstallationRequestSigner).
+builder.Services.AddSingleton<IBootstrapCatalogImporter, NullBootstrapCatalogImporter>();
+builder.Services.AddSingleton<IBootstrapAuthorizationImporter, NullBootstrapAuthorizationImporter>();
+builder.Services.Configure<RedisHealthCheckOptions>(builder.Configuration.GetSection(RedisHealthCheckOptions.SectionName));
+builder.Services.AddSingleton<IRedisHealthChecker, RedisHealthChecker>();
+builder.Services.AddSingleton<ISyncHealthPoller, NullSyncHealthPoller>();
+
+// Mídia de produto (US-0xx) — upload de imagem do cardápio, autoridade da nuvem (CLAUDE.md,
+// "cardápio é editado na nuvem"). Único registro desta lista que é implementação real invocada de
+// verdade por um controller do Api.Cloud (ProductsController).
+builder.Services.Configure<S3ProductMediaStorageOptions>(builder.Configuration.GetSection(S3ProductMediaStorageOptions.SectionName));
+builder.Services.AddSingleton<IProductMediaStorage, S3ProductMediaStorage>();
 
 // IAuthorizationTokenValidator (US-004, gap "autorização pontual é só emitida, nunca validada") —
 // valida o header X-Authorization-Token contra o que AuthorizeSensitiveActionCommandHandler emitiu;
@@ -196,6 +242,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
                 string.IsNullOrEmpty(jwtOptions.Secret) ? new string('0', 32) : jwtOptions.Secret)),
             ClockSkew = TimeSpan.FromSeconds(30),
+        };
+        options.Events = new JwtBearerEvents
+        {
+            // US-015: o navegador não anexa o header Authorization na conexão do hub SignalR — o
+            // token vai via querystring ?access_token=..., só para o path do hub. Réplica idêntica
+            // de Nexora.Api.Edge/Program.cs.
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            },
         };
     })
     .AddScheme<AuthenticationSchemeOptions, InstallationAuthenticationHandler>("Installation", options => { });
@@ -325,6 +388,43 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+if (app.Environment.IsDevelopment())
+{
+    app.MapGet("/v1/dev/auth/otp", async (
+        IApplicationDbContext db,
+        IMfaSecretCipher mfaCipher,
+        CancellationToken cancellationToken) =>
+    {
+        const string adminEmail = "plataforma@nexora.local";
+
+        var lookup = await db.FindLoginCredentialByEmailAsync(adminEmail, cancellationToken);
+        if (lookup is null)
+        {
+            return Results.NotFound();
+        }
+
+        await db.SetTenantContextAsync(lookup.TenantId, cancellationToken);
+
+        var user = await db.Users
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Id == lookup.UserId && u.TenantId == lookup.TenantId && u.DeletedAt == null, cancellationToken);
+
+        if (user is null || user.MfaSecret is null)
+        {
+            return Results.NotFound();
+        }
+
+        var secret = mfaCipher.Decrypt(user.MfaSecret);
+        var otp = TotpCodeGenerator.Current(secret);
+        var expiresInSeconds = TotpCodeGenerator.SecondsRemaining();
+
+        return Results.Ok(new { otp, expiresInSeconds });
+    })
+    .AllowAnonymous()
+    .ExcludeFromDescription();
+}
+
 // UseRouting() explícito (em vez de confiar na inserção implícita do WebApplication) para que a
 // ordem abaixo seja inequívoca: autenticação/autorização e os middlewares seguintes precisam do
 // endpoint já resolvido (IdempotencyMiddleware lê [IdempotencyExempt] via HttpContext.GetEndpoint()).
@@ -343,5 +443,6 @@ app.UseMiddleware<ActivityEnrichmentMiddleware>();
 // metadado de isenção do endpoint), mas antes do controller processar a requisição de verdade.
 app.UseMiddleware<IdempotencyMiddleware>();
 app.MapControllers();
+app.MapHub<CatalogAvailabilityHub>("/hubs/catalog-availability").WithMetadata(new IdempotencyExemptAttribute());
 
 app.Run();

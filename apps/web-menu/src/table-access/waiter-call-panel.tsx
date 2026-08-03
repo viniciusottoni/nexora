@@ -182,7 +182,11 @@ export function WaiterCallPanel({ qrToken, sessionToken, baseUrl = '', fetcher =
                 value={people}
                 onChange={(event) => setPeople(Math.max(1, Number.parseInt(event.target.value, 10) || 1))}
               />
-              {previewLabel ? <p className="bill-request-panel__preview">{previewLabel}</p> : null}
+              {previewLabel ? (
+                <p key={previewLabel} className="bill-request-panel__preview nx-anim-flash">
+                  {previewLabel}
+                </p>
+              ) : null}
             </div>
           ) : null}
 

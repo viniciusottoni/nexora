@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Button,
   CloudLoginScreen,
+  CreatedByFooter,
   DevicePairingScreen,
   hasCloudSession,
   operationalAuthenticatedFetch,
@@ -29,10 +30,15 @@ interface DeviceIdentity {
   readonly deviceSecret: string;
 }
 
-const cloudDevicesApi = new DevicesApi();
-const cloudRolesApi = new RolesApi();
-const cloudAreasApi = new AreasApi();
-const cloudTablesApi = new TablesApi();
+const IS_LOCAL_DEV =
+  globalThis.location?.hostname === 'localhost' || globalThis.location?.hostname === '127.0.0.1';
+const CLOUD_API_BASE_URL = IS_LOCAL_DEV ? '/cloud' : '';
+const EDGE_API_BASE_URL = IS_LOCAL_DEV ? '/edge' : '';
+
+const cloudDevicesApi = new DevicesApi(CLOUD_API_BASE_URL);
+const cloudRolesApi = new RolesApi(CLOUD_API_BASE_URL);
+const cloudAreasApi = new AreasApi(CLOUD_API_BASE_URL);
+const cloudTablesApi = new TablesApi(CLOUD_API_BASE_URL);
 
 /** Dispara o download do PDF de QR Codes (US-020, cenário "Exportação para impressão"). */
 function downloadPdfBlob(blob: Blob, areaId?: string): void {
@@ -125,7 +131,13 @@ function CloudAdmin() {
     setTables((await cloudTablesApi.list()).items);
   }
 
-  if (!authenticated) return <CloudLoginScreen onAuthenticated={() => setAuthenticated(true)} />;
+  if (!authenticated)
+    return (
+      <CloudLoginScreen
+        baseUrl={CLOUD_API_BASE_URL}
+        onAuthenticated={() => setAuthenticated(true)}
+      />
+    );
 
   return (
     <>
@@ -215,7 +227,8 @@ function CloudAdmin() {
           }}
         />
       ) : null}
-      {section === 'branding' ? <BrandingContainer /> : null}
+      {section === 'branding' ? <BrandingContainer baseUrl={CLOUD_API_BASE_URL} /> : null}
+      <CreatedByFooter />
     </>
   );
 }
@@ -236,12 +249,12 @@ function LocalAdmin() {
   }, []);
 
   const authClient = useMemo(
-    () => (device ? new OperationalAuthClient({ baseUrl: '', ...device }) : undefined),
+    () => (device ? new OperationalAuthClient({ baseUrl: EDGE_API_BASE_URL, ...device }) : undefined),
     [device],
   );
   const devicesApi = useMemo(() => {
     if (!device || !session) return undefined;
-    return new DevicesApi('', (input, init) =>
+    return new DevicesApi(EDGE_API_BASE_URL, (input, init) =>
       operationalAuthenticatedFetch(input, init, {
         accessToken: session.accessToken,
         ...device,
@@ -300,6 +313,7 @@ function LocalAdmin() {
   if (device === undefined) {
     return (
       <p className="admin-loading" role="status">
+        <span className="nx-spinner" aria-hidden="true" />
         Preparando administra&ccedil;&atilde;o local&hellip;
       </p>
     );
@@ -309,6 +323,7 @@ function LocalAdmin() {
       <DevicePairingScreen
         kind="SUPPORT_TABLET"
         defaultLabel={'Gest\u00e3o local'}
+        baseUrl={EDGE_API_BASE_URL}
         onPaired={setDevice}
       />
     );
@@ -355,6 +370,7 @@ function LocalAdmin() {
           await refreshDevices();
         }}
       />
+      <CreatedByFooter />
     </>
   );
 }

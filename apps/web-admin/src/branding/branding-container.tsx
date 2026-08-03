@@ -5,6 +5,7 @@ import { BrandingManagementPage } from './branding-management-page.js';
 
 export interface BrandingContainerProps {
   readonly api?: BrandingApi;
+  readonly baseUrl?: string;
 }
 
 /**
@@ -14,14 +15,18 @@ export interface BrandingContainerProps {
  * continuar testável só com props (mesmo padrão de `RoleManagementPage`/`DeviceManagementPage`,
  * que recebem callbacks já prontos em vez de instanciar sua própria Api).
  */
-export function BrandingContainer({ api = new BrandingApi() }: Readonly<BrandingContainerProps>) {
+export function BrandingContainer({
+  api,
+  baseUrl = '',
+}: Readonly<BrandingContainerProps>) {
+  const brandingApi = api ?? new BrandingApi(baseUrl);
   const [tenantName, setTenantName] = useState<string>();
   const [branding, setBranding] = useState<Branding>();
   const [error, setError] = useState<string>();
 
   useEffect(() => {
     let active = true;
-    api
+    brandingApi
       .get()
       .then((response) => {
         if (!active) return;
@@ -34,10 +39,10 @@ export function BrandingContainer({ api = new BrandingApi() }: Readonly<Branding
     return () => {
       active = false;
     };
-  }, [api]);
+  }, [brandingApi]);
 
   async function save(patch: UpdateBrandingRequest): Promise<Branding> {
-    const result = await api.update(patch);
+    const result = await brandingApi.update(patch);
     return result.branding;
   }
 
@@ -46,7 +51,7 @@ export function BrandingContainer({ api = new BrandingApi() }: Readonly<Branding
     if (!contentType) {
       throw new Error('Formato de imagem não suportado. Use SVG, PNG, JPEG ou WEBP.');
     }
-    return api.uploadLogo(
+    return brandingApi.uploadLogo(
       { kind, contentType, bytes: file.size, sha256: await sha256Hex(file) },
       file,
     );
@@ -63,6 +68,7 @@ export function BrandingContainer({ api = new BrandingApi() }: Readonly<Branding
   if (!branding || !tenantName) {
     return (
       <p className="branding-loading" role="status">
+        <span className="nx-spinner" aria-hidden="true" />
         Carregando identidade visual…
       </p>
     );

@@ -1,5 +1,6 @@
 node_modules
 dist
+packages/ui/src/brand/nexora-logo.tsx
 coverage
 packages/db/generated
 pnpm-lock.yaml
