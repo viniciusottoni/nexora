@@ -96,6 +96,23 @@
   }
 }
 
+/* US-034 §10 — indicador discreto e permanente da fila local de pedidos (queda de LAN), visível
+   independente da aba aberta ("Cardápio"/"Meu pedido"/"Consumo"). */
+.table-access-offline-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 1rem;
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.8125rem;
+}
+
+.table-access-offline-banner__hint {
+  color: var(--text-secondary);
+}
+
 /* US-024: abas "Cardápio"/"Consumo" da tela de acesso do cliente. */
 .table-access-tabs__bar {
   position: sticky;

@@ -208,11 +208,11 @@ if (parsed.Mode == SeedMode.Edge)
             (id, tenant_id, store_id, code_hash, created_by, expires_at, consumed_at, attempts, created_at)
         VALUES
             ({SeedIds.PairingCodeId}, {SeedIds.TenantId}, {SeedIds.StoreId}, {pairingHash},
-             {SeedIds.User(1)}, now() + interval '10 minutes', NULL, 0, now())
+             {SeedIds.User(1)}, now() + interval '30 minutes', NULL, 0, now())
         ON CONFLICT (id) DO UPDATE SET
             code_hash = EXCLUDED.code_hash,
             created_by = EXCLUDED.created_by,
-            expires_at = now() + interval '10 minutes',
+            expires_at = now() + interval '30 minutes',
             consumed_at = NULL,
             attempts = 0,
             created_at = now();
@@ -228,7 +228,7 @@ Console.WriteLine($"Senha comum: {commonPassword}");
 Console.WriteLine($"OTP atual da plataforma: {Totp.Current(totpSecret)}");
 if (parsed.Mode == SeedMode.Edge)
 {
-    Console.WriteLine($"Código inicial da gestão local (10 min / uso único): {pairingCode}");
+    Console.WriteLine($"Código inicial da gestão local (30 min / uso único): {pairingCode}");
 }
 
 internal sealed record RoleSeed(string Code, string Name, IReadOnlyList<string> Permissions);

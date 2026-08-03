@@ -146,6 +146,13 @@ public sealed class JwtTokenIssuer : ITokenIssuer
             payload["did"] = deviceId.ToString();
         }
 
+        // US-031/ADR-011: claim "stn" — praça do dispositivo, usada por KdsHub para derivar a sala
+        // station:{id} da conexão (nunca solicitada pelo cliente).
+        if (claims.StationId is { } stationId)
+        {
+            payload["stn"] = stationId.ToString();
+        }
+
         if (claims.SessionId is { } sessionId)
         {
             payload["ses"] = sessionId.ToString();

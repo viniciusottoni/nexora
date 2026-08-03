@@ -1,42 +1,34 @@
-.unavailable-list {
-  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
-}
-
-.unavailable-list__header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
+/* Itens indisponíveis — cada linha é um item fora do cardápio, com o motivo e desde quando. */
 
 .unavailable-list__items {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--sp-4);
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.unavailable-list__card {
+.unavailable-list__item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--sp-6);
+  min-height: var(--density-desk-row);
+  padding: var(--sp-4) var(--sp-5);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
 }
 
 .unavailable-list__since {
-  color: var(--text-secondary);
-  font-size: 0.8125rem;
+  font: var(--fw-medium) var(--fs-12)/var(--lh-snug) var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
 }
 
-.unavailable-list-error {
-  color: var(--nx-danger-600);
-  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
-}
-
-.unavailable-list-loading {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--text-secondary);
+@media (max-width: 48rem) {
+  .unavailable-list__item {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }

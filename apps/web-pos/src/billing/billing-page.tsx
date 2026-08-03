@@ -64,6 +64,16 @@ export function BillingPage({
   const [paymentMethod, setPaymentMethod] = useState<(typeof PAYMENT_METHODS)[number]['value']>('CASH');
   const [paymentFeedback, setPaymentFeedback] = useState<{ kind: 'success' | 'error'; message: string }>();
 
+  // US-035 (Bloquear fechamento com item pendente) — só usado no modo BLOCK: o caixa autoriza o
+  // fechamento mesmo com pendência sem trocar de sessão (ADR-023, elevação pontual). O token fica
+  // válido só para ESTA sessão (bill.hasPendingItems some quando o item é cancelado/servido — o
+  // próximo `load()` já reflete isso, sem precisar de estado adicional aqui).
+  const [pinInput, setPinInput] = useState('');
+  const [authorizeReason, setAuthorizeReason] = useState('');
+  const [authorization, setAuthorization] = useState<{ token: string; reason?: string | undefined }>();
+  const [authorizeBusy, setAuthorizeBusy] = useState(false);
+  const [authorizeError, setAuthorizeError] = useState<string>();
+
   const load = useCallback(
     async (overrides: { mode?: SplitMode; people?: number; waived?: readonly number[] } = {}) => {
       setLoadError(undefined);
@@ -167,20 +177,54 @@ export function BillingPage({
     setBusy(true);
     setPaymentFeedback(undefined);
     try {
-      const response = await api.registerPartialPayment(identity, sessionId, { amount, method: paymentMethod });
+      const response = await api.registerPartialPayment(
+        identity,
+        sessionId,
+        { amount, method: paymentMethod, reason: authorization?.reason },
+        authorization?.token,
+      );
       setPaymentFeedback({
         kind: 'success',
         message: `Pagamento de ${formatMoneyBrl(response.amountPaid)} registrado. Restam ${formatMoneyBrl(response.remainingAmount)} em aberto.`,
       });
       setAmountInput('');
+      setAuthorization(undefined);
       await load();
     } catch (cause) {
       setPaymentFeedback({
         kind: 'error',
-        message: cause instanceof Error ? cause.message : 'Não foi possível registrar o pagamento.',
+        message:
+          cause instanceof BillingApiError && cause.code === 'PENDING_ITEMS'
+            ? 'Há itens que ainda não foram entregues — cancele-os ou autorize o fechamento acima.'
+            : cause instanceof Error
+              ? cause.message
+              : 'Não foi possível registrar o pagamento.',
       });
     } finally {
       setBusy(false);
+    }
+  }
+
+  /**
+   * US-035 §10 — autoriza o fechamento com item pendente (modo BLOCK) sem trocar de sessão: o
+   * gerente informa o próprio PIN no mesmo terminal. Em sucesso, o token fica guardado para a
+   * próxima chamada de `registerPayment` (o botão "Registrar pagamento" é reabilitado).
+   */
+  async function authorizeCloseWithPending() {
+    if (!pinInput) {
+      setAuthorizeError('Informe o PIN do gerente.');
+      return;
+    }
+    setAuthorizeBusy(true);
+    setAuthorizeError(undefined);
+    try {
+      const grant = await api.authorizeCloseWithPending(identity, { sessionId, pin: pinInput, reason: authorizeReason || undefined });
+      setAuthorization({ token: grant.authorizationToken, reason: authorizeReason || undefined });
+      setPinInput('');
+    } catch (cause) {
+      setAuthorizeError(cause instanceof Error ? cause.message : 'Não foi possível autorizar o fechamento.');
+    } finally {
+      setAuthorizeBusy(false);
     }
   }
 
@@ -195,6 +239,11 @@ export function BillingPage({
       </p>
     );
   }
+
+  // US-035 (Bloquear fechamento com item pendente) — `pendingItemsMode` ausente na resposta
+  // (fixture antiga/tenant sem configuração) cai no mesmo default seguro do backend (WARN).
+  const pendingItemsMode = bill.pendingItemsMode ?? 'WARN';
+  const blockedByPendingItems = bill.hasPendingItems && pendingItemsMode === 'BLOCK' && !authorization;
 
   return (
     <main className="billing-page">
@@ -212,10 +261,53 @@ export function BillingPage({
 
       <SegmentedControl options={MODE_OPTIONS} value={mode} onChange={changeMode} size="lg" block />
 
-      {bill.hasPendingItems ? (
+      {bill.hasPendingItems && pendingItemsMode === 'WARN' ? (
         <p role="alert" className="billing-pending-warning">
           Há itens ainda em produção — o caixa deve confirmar antes de concluir o recebimento (RN-017).
         </p>
+      ) : null}
+
+      {blockedByPendingItems ? (
+        <Card as="section" className="billing-pending-block" aria-label="Fechamento bloqueado por item pendente">
+          <p role="alert" className="billing-pending-warning">
+            Fechamento bloqueado — há itens que ainda não foram entregues (RN-017).
+          </p>
+          <ul className="billing-pending-items-list">
+            {bill.pendingItems.map((item) => (
+              <li key={item.id}>
+                {item.name} — <Badge tone="warning" size="sm">{item.status}</Badge>
+              </li>
+            ))}
+          </ul>
+          <p className="billing-pending-block__hint">
+            Cancele os itens pendentes na comanda ou autorize o fechamento mesmo assim.
+          </p>
+          <div className="billing-pending-authorize">
+            <label htmlFor="billing-authorize-pin">PIN do gerente</label>
+            <input
+              id="billing-authorize-pin"
+              type="password"
+              inputMode="numeric"
+              value={pinInput}
+              onChange={(event) => setPinInput(event.target.value)}
+            />
+            <label htmlFor="billing-authorize-reason">Motivo</label>
+            <input
+              id="billing-authorize-reason"
+              type="text"
+              value={authorizeReason}
+              onChange={(event) => setAuthorizeReason(event.target.value)}
+            />
+            <Button type="button" disabled={authorizeBusy} onClick={() => void authorizeCloseWithPending()}>
+              Autorizar fechamento
+            </Button>
+          </div>
+          {authorizeError ? (
+            <p role="alert" className="billing-error">
+              {authorizeError}
+            </p>
+          ) : null}
+        </Card>
       ) : null}
 
       {actionError ? (
@@ -348,9 +440,14 @@ export function BillingPage({
             value={paymentMethod}
             onChange={(value) => setPaymentMethod(value as typeof paymentMethod)}
           />
-          <Button type="button" onClick={() => void registerPayment()} disabled={busy}>
+          <Button type="button" onClick={() => void registerPayment()} disabled={busy || blockedByPendingItems}>
             Registrar pagamento
           </Button>
+          {blockedByPendingItems ? (
+            <p className="billing-pending-block__hint">
+              Cancele os itens pendentes ou autorize o fechamento acima antes de registrar o pagamento.
+            </p>
+          ) : null}
           {paymentFeedback ? (
             <p role={paymentFeedback.kind === 'error' ? 'alert' : 'status'} className={`billing-payment-feedback billing-payment-feedback--${paymentFeedback.kind}`}>
               {paymentFeedback.message}

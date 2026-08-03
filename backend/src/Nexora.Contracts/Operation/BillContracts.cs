@@ -34,6 +34,16 @@ public sealed record BillSplitPartResponse(
 /// (cliente, pré-visualização) — mesmo formato para as duas audiências (US-027 §10: "Cliente pode
 /// pré-visualizar a divisão no celular antes de o caixa começar").
 /// </summary>
+/// <remarks>
+/// US-035 (Bloquear fechamento com item pendente) acrescentou <see cref="PendingItemsMode"/>: o
+/// modo configurado pelo tenant (<c>operation.pendingItemsOnClose</c> = <c>BLOCK</c>/<c>WARN</c>/
+/// <c>IGNORE</c>, ver <c>Nexora.Application.Tables.Support.PendingItemsClosePolicy</c>) para o
+/// front decidir como tratar <see cref="PendingItems"/>/<see cref="HasPendingItems"/> — desabilitar
+/// o fechamento (<c>BLOCK</c>), só avisar (<c>WARN</c>) ou nada (<c>IGNORE</c>). Default
+/// <c>"WARN"</c> aqui (não pode referenciar a constante da Application por causa da direção da
+/// dependência entre projetos) para não quebrar nenhuma construção posicional já existente desta
+/// wave anterior (US-027).
+/// </remarks>
 public sealed record BillResponse(
     IReadOnlyList<BillItemResponse> Items,
     [property: JsonConverter(typeof(MoneyJsonConverter))] decimal Subtotal,
@@ -45,7 +55,8 @@ public sealed record BillResponse(
     bool HasPendingItems,
     [property: JsonConverter(typeof(MoneyJsonConverter))] decimal? AmountPaid,
     [property: JsonConverter(typeof(MoneyJsonConverter))] decimal? RemainingAmount,
-    IReadOnlyList<Guid> UnassignedItemIds);
+    IReadOnlyList<Guid> UnassignedItemIds,
+    string PendingItemsMode = "WARN");
 
 /// <summary>Atribuição de um conjunto de itens a uma pessoa — elemento de <see cref="AssignBillItemsRequest"/>.</summary>
 public sealed record BillItemAssignmentRequest(int Person, IReadOnlyList<Guid> ItemIds);
@@ -76,19 +87,28 @@ public sealed record WaiveServiceFeeRequest(
     IReadOnlyList<int>? AlreadyWaivedPersons,
     string? Reason);
 
-/// <summary>Porta de <c>POST /v1/sessions/{id}/bill/partial-payment</c> (US-027 §4, cenário "Divisão por valor").</summary>
+/// <summary>
+/// Porta de <c>POST /v1/sessions/{id}/bill/partial-payment</c> (US-027 §4, cenário "Divisão por
+/// valor"). <see cref="Reason"/> (US-035 §10) só é relevante ao reenviar esta mesma chamada com
+/// <c>X-Authorization-Token</c> depois de um 422 <c>PENDING_ITEMS</c> — motivo registrado no
+/// <c>AuditLog</c> (<c>action=CLOSE_WITH_PENDING</c>) junto do autorizador.
+/// </summary>
 public sealed record RegisterPartialPaymentRequest(
     [property: JsonConverter(typeof(MoneyJsonConverter))] decimal Amount,
-    string Method);
+    string Method,
+    string? Reason = null);
 
 /// <summary>
 /// <see cref="RemainingAmount"/> é o saldo que continua em aberto — a sessão permanece em
 /// <c>BILL_REQUESTED</c> (US-027 §4: "a sessão deve permanecer em BILL_REQUESTED"); fechar de fato
-/// é US-052, fora desta história.
+/// é US-052, fora desta história. <see cref="PendingItems"/> (US-035) só é preenchido no modo
+/// <c>WARN</c> com item pendente — no modo <c>BLOCK</c> a chamada não teria sucesso sem autorização
+/// (422 <c>PENDING_ITEMS</c>).
 /// </summary>
 public sealed record PartialPaymentResponse(
     Guid PaymentId,
     [property: JsonConverter(typeof(MoneyJsonConverter))] decimal AmountPaid,
     [property: JsonConverter(typeof(MoneyJsonConverter))] decimal RemainingAmount,
     [property: JsonConverter(typeof(MoneyJsonConverter))] decimal Total,
-    string SessionStatus);
+    string SessionStatus,
+    IReadOnlyList<BillPendingItemResponse>? PendingItems = null);

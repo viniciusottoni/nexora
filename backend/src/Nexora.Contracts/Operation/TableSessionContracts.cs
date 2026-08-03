@@ -73,13 +73,22 @@ public sealed record AcknowledgeWaiterCallResponse(bool Resolved, int ResponseSe
 /// (US-026 §7) — <see cref="SplitMode"/> é um de <c>"BY_PERSON"</c>/<c>"BY_ITEM"</c>/<c>"SINGLE"</c>
 /// (validado por <c>RequestBillCommandValidator</c>/<c>RequestBillByQrCommandValidator</c>, não por
 /// enum nativo — ver docstring de <c>TableSession.SplitMode</c>). <see cref="People"/> só é exigido
-/// quando <see cref="SplitMode"/> é <c>"BY_PERSON"</c>.
+/// quando <see cref="SplitMode"/> é <c>"BY_PERSON"</c>. <see cref="Reason"/> (US-035 §10) só é
+/// relevante ao reenviar esta mesma chamada com <c>X-Authorization-Token</c> depois de um 422
+/// <c>PENDING_ITEMS</c> — motivo registrado no <c>AuditLog</c> (<c>action=CLOSE_WITH_PENDING</c>)
+/// junto do autorizador.
 /// </summary>
-public sealed record RequestBillRequest(string SplitMode, short? People);
+public sealed record RequestBillRequest(string SplitMode, short? People, string? Reason = null);
 
 /// <summary>
 /// <see cref="AlreadyRequested"/> é verdadeiro quando a sessão já estava em <c>BILL_REQUESTED</c>
 /// (re-solicitação idempotente: só atualiza a preferência de divisão, sem gerar um segundo alerta
 /// ao caixa — mesma lógica de "chamada repetida" da US-025, aplicada aqui).
+/// <see cref="PendingItems"/> (US-035) só é preenchido no modo <c>WARN</c> — no modo <c>BLOCK</c>
+/// sem itens pendentes ou já autorizado a chamada segue normalmente; com pendência e sem
+/// autorização a chamada nem chega a ter sucesso (422 <c>PENDING_ITEMS</c>, ver <c>ApiErrorCodes</c>).
 /// </summary>
-public sealed record RequestBillResponse(TableSessionResponse Session, bool AlreadyRequested);
+public sealed record RequestBillResponse(
+    TableSessionResponse Session,
+    bool AlreadyRequested,
+    IReadOnlyList<BillPendingItemResponse>? PendingItems = null);

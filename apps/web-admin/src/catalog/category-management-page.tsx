@@ -1,5 +1,16 @@
 import { useEffect, useId, useState } from 'react';
-import { Badge, Button, Card, DataTable, EmptyState, Field, IconButton, Input } from '@nexora/ui';
+import {
+  AlertBanner,
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  Field,
+  IconButton,
+  Input,
+  Modal,
+} from '@nexora/ui';
 import type { CategoryDto, CreateCategoryRequest, UpdateCategoryRequest } from '@nexora/contracts';
 import './catalog.css';
 
@@ -128,39 +139,43 @@ export function CategoryManagementPage({
   }
 
   return (
-    <main className="catalog-shell" aria-labelledby="categories-title">
-      <header className="catalog-header">
-        <div>
-          <p className="catalog-eyebrow">CARDÁPIO</p>
-          <h1 id="categories-title">Categorias</h1>
-          <p className="catalog-lead">
+    <main className="db-page nx-anim-in" aria-labelledby="categories-title">
+      <header className="db-page__header">
+        <div className="db-page__heading">
+          <p className="db-page__eyebrow">Cardápio</p>
+          <h1 className="db-page__title" id="categories-title">
+            Categorias
+          </h1>
+          <p className="db-page__lead">
             Organize o cardápio em grupos (Pizzas, Bebidas, Sobremesas) e defina a ordem de exibição
             em todos os canais.
           </p>
         </div>
-        <Button type="button" onClick={() => setCreating(true)}>
-          Nova categoria
-        </Button>
+        <div className="db-page__actions">
+          <Button type="button" onClick={() => setCreating(true)}>
+            Nova categoria
+          </Button>
+        </div>
       </header>
 
       {notice ? (
-        <p className="catalog-notice" role="status">
+        <AlertBanner tone="success" title="Cardápio atualizado">
           {notice}
-        </p>
+        </AlertBanner>
       ) : null}
-      {error ? (
-        <p className="catalog-error" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <AlertBanner tone="danger">{error}</AlertBanner> : null}
 
       {ordered.length === 0 ? (
         <EmptyState icon="category" title="Nenhuma categoria cadastrada">
           Crie a primeira categoria para começar a montar o cardápio.
         </EmptyState>
       ) : (
-        <div className="catalog-workbench">
-          <Card padding="none" className="catalog-table-card">
+        <div className="db-workbench db-workbench--rail">
+          <Card
+            padding="none"
+            title="Categorias do cardápio"
+            subtitle="A ordem aqui é a ordem que o cliente vê em todos os canais."
+          >
             <DataTable
               rowKey="id"
               rows={ordered}
@@ -216,7 +231,7 @@ export function CategoryManagementPage({
 
           {selected ? (
             <Card
-              className="catalog-editor"
+              className="db-form-card"
               title={selected.name}
               subtitle={`Posição ${selected.position + 1}`}
             >
@@ -239,7 +254,7 @@ export function CategoryManagementPage({
                 />
               </Field>
 
-              <div className="catalog-editor__footer">
+              <div className="db-editor__footer">
                 <Button
                   type="button"
                   variant="ghost"
@@ -258,43 +273,37 @@ export function CategoryManagementPage({
         </div>
       )}
 
-      {creating ? (
-        <div className="catalog-dialog-backdrop">
-          <section
-            className="catalog-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-category-title"
-          >
-            <p className="catalog-eyebrow">NOVA CATEGORIA</p>
-            <h2 id="create-category-title">Criar categoria</h2>
-            <div className="catalog-dialog__fields">
-              <Field label="Nome" htmlFor={createNameFieldId}>
-                <Input
-                  id={createNameFieldId}
-                  value={createName}
-                  onChange={(event) => setCreateName(event.target.value)}
-                />
-              </Field>
-              <Field label="Descrição" htmlFor={createDescriptionFieldId} hint="Opcional">
-                <Input
-                  id={createDescriptionFieldId}
-                  value={createDescription}
-                  onChange={(event) => setCreateDescription(event.target.value)}
-                />
-              </Field>
-            </div>
-            <div className="catalog-dialog__actions">
-              <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
-                Cancelar
-              </Button>
-              <Button type="button" busy={busy} onClick={() => void createCategory()}>
-                Criar categoria
-              </Button>
-            </div>
-          </section>
-        </div>
-      ) : null}
+      <Modal
+        open={creating}
+        onClose={() => setCreating(false)}
+        eyebrow="Nova categoria"
+        title="Criar categoria"
+        actions={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" busy={busy} onClick={() => void createCategory()}>
+              Criar categoria
+            </Button>
+          </>
+        }
+      >
+        <Field label="Nome" htmlFor={createNameFieldId}>
+          <Input
+            id={createNameFieldId}
+            value={createName}
+            onChange={(event) => setCreateName(event.target.value)}
+          />
+        </Field>
+        <Field label="Descrição" htmlFor={createDescriptionFieldId} hint="Opcional">
+          <Input
+            id={createDescriptionFieldId}
+            value={createDescription}
+            onChange={(event) => setCreateDescription(event.target.value)}
+          />
+        </Field>
+      </Modal>
     </main>
   );
 }

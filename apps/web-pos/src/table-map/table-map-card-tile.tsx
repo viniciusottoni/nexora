@@ -23,6 +23,8 @@ export interface TableMapCardTileProps {
   readonly onRequestBill?: (sessionId: string) => void;
   /** US-027 §10 — abre a tela de divisão da conta quando a mesa já pediu a conta (`billRequested`). */
   readonly onOpenBilling?: (sessionId: string) => void;
+  /** US-030 §7, cenário "Pedido pelo celular do garçom" — lança/acrescenta itens na comanda de uma mesa já ocupada. */
+  readonly onComposeOrder?: (sessionId: string) => void;
 }
 
 /**
@@ -50,6 +52,7 @@ function TableMapCardTileComponent({
   onAcknowledgeCall,
   onRequestBill,
   onOpenBilling,
+  onComposeOrder,
 }: Readonly<TableMapCardTileProps>) {
   // Reconstrução mínima só para reaproveitar a mesma lógica de prioridade de sinais do backend
   // (selectTopSignals/urgencyScore) — não afeta a memoização acima, que já decidiu se este corpo
@@ -100,6 +103,13 @@ function TableMapCardTileComponent({
       {waiterCalled && onAcknowledgeCall ? (
         <Button size="sm" variant="secondary" onClick={() => onAcknowledgeCall(id)}>
           Atendido
+        </Button>
+      ) : null}
+
+      {/* US-030 §7 — o garçom lança/acrescenta itens direto da mesa ocupada, sem precisar de outra tela. */}
+      {status !== 'FREE' && sessionId && onComposeOrder ? (
+        <Button size="sm" variant="secondary" onClick={() => onComposeOrder(sessionId)}>
+          Lançar pedido
         </Button>
       ) : null}
 

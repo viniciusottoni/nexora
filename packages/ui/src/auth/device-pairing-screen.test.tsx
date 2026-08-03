@@ -2,7 +2,11 @@
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { DevicePairingScreen, pairingFailureMessage } from './device-pairing-screen.js';
+import {
+  DevicePairingScreen,
+  browserFingerprintSource,
+  pairingFailureMessage,
+} from './device-pairing-screen.js';
 
 describe('DevicePairingScreen', () => {
   it('pede somente o cÃ³digo de pareamento', () => {
@@ -24,5 +28,25 @@ describe('DevicePairingScreen', () => {
       'C\u00f3digo de pareamento j\u00e1 utilizado. Gere um novo c\u00f3digo.',
     );
     expect(inProgress).toContain('ainda est\u00e1 sendo processada');
+  });
+
+  it('separa a identidade de Gestao local, Caixa e KDS no mesmo navegador', () => {
+    expect(browserFingerprintSource('SUPPORT_TABLET')).not.toBe(browserFingerprintSource('CASHIER'));
+    expect(browserFingerprintSource('CASHIER')).not.toBe(browserFingerprintSource('KDS'));
+  });
+
+  it('nao exibe em ingles a falha interna devolvida pela API', async () => {
+    const message = await pairingFailureMessage(
+      new Response(
+        JSON.stringify({
+          code: 'INTERNAL_ERROR',
+          detail: 'An error occurred while processing your request.',
+        }),
+        { status: 500 },
+      ),
+    );
+
+    expect(message).toContain('N\u00e3o foi poss\u00edvel autorizar');
+    expect(message).not.toContain('An error occurred');
   });
 });

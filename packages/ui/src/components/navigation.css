@@ -11,7 +11,10 @@
   color: #fff;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  /* Sem `height: 100%`: a altura explícita cancelava o `align-items: stretch` do shell e a
+     barra parava na altura do conteúdo, deixando um rasgo claro abaixo dela. Como item
+     flex ela estica sozinha; `align-self` garante isso mesmo se o shell alinhar de outro modo. */
+  align-self: stretch;
   min-height: 0;
 }
 .db-sidenav--light {
@@ -138,6 +141,10 @@
   font: var(--type-caption);
   color: var(--text-muted);
   margin-top: 1px;
+  /* A barra tem 56px fixos: subtítulo longo trunca em vez de crescer sobre o conteúdo. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .db-topbar--brand .db-topbar__subtitle {
   color: rgba(255, 255, 255, 0.72);

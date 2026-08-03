@@ -1,5 +1,13 @@
 import { useId, useState, type ChangeEvent } from 'react';
-import { Button, BrandingPreview, Card, ContrastAdvisor, Field, Input } from '@nexora/ui';
+import {
+  AlertBanner,
+  BrandingPreview,
+  Button,
+  Card,
+  ContrastAdvisor,
+  Field,
+  Input,
+} from '@nexora/ui';
 import type { Branding, UpdateBrandingRequest } from '@nexora/contracts';
 import { LOGO_CONTENT_TYPE_BY_MIME, type LogoUploadResult } from './branding-api.js';
 import './branding.css';
@@ -119,36 +127,43 @@ export function BrandingManagementPage({
   }
 
   return (
-    <main className="branding-shell" aria-labelledby="branding-title">
-      <header className="branding-header">
-        <div>
-          <p className="branding-eyebrow">IDENTIDADE VISUAL</p>
-          <h1 id="branding-title">Marca do estabelecimento</h1>
-          <p className="branding-lead">
+    <main className="db-page nx-anim-in" aria-labelledby="branding-title">
+      <header className="db-page__header">
+        <div className="db-page__heading">
+          <p className="db-page__eyebrow">Identidade visual</p>
+          <h1 className="db-page__title" id="branding-title">
+            Marca do estabelecimento
+          </h1>
+          <p className="db-page__lead">
             Cores, logo e textos aplicados em runtime em todas as telas — cardápio, caixa e cozinha.
             Nenhum build novo é gerado ao salvar.
           </p>
         </div>
-        <Button type="button" busy={busy} disabled={!dirty} onClick={() => void save()}>
-          Salvar identidade visual
-        </Button>
+        <div className="db-page__actions">
+          <Button type="button" busy={busy} disabled={!dirty} onClick={() => void save()}>
+            Salvar identidade visual
+          </Button>
+        </div>
       </header>
 
       {notice ? (
-        <p className="branding-notice" role="status">
+        <AlertBanner tone="success" title="Identidade visual salva">
           {notice}
-        </p>
+        </AlertBanner>
       ) : null}
       {error ? (
-        <p className="branding-error" role="alert">
+        <AlertBanner tone="danger" title="Falha ao salvar">
           {error}
-        </p>
+        </AlertBanner>
       ) : null}
 
-      <div className="branding-workbench">
-        <div className="branding-fields nx-stagger">
-          <Card className="branding-card">
-            <h2>Cores</h2>
+      <div className="db-workbench db-workbench--rail">
+        <div className="db-stack nx-stagger">
+          <Card
+            className="db-form-card"
+            title="Cores"
+            subtitle="A cor primária veste botões e destaques; contraste é verificado aqui mesmo."
+          >
             <ContrastAdvisor
               primary={draft.colors.primary}
               surface={draft.colors.surface}
@@ -179,12 +194,11 @@ export function BrandingManagementPage({
             </div>
           </Card>
 
-          <Card className="branding-card">
-            <h2>Logo</h2>
-            <p className="branding-card__hint">
-              Envie versões clara e escura — a aplicação escolhe pelo tema do dispositivo do
-              cliente.
-            </p>
+          <Card
+            className="db-form-card"
+            title="Logo"
+            subtitle="Envie versões clara e escura — a aplicação escolhe pelo tema do dispositivo do cliente."
+          >
             <div className="branding-logo-grid">
               <LogoField
                 label="Logo clara"
@@ -205,8 +219,7 @@ export function BrandingManagementPage({
             </div>
           </Card>
 
-          <Card className="branding-card">
-            <h2>Tipografia e forma</h2>
+          <Card className="db-form-card" title="Tipografia e forma">
             <div className="branding-color-grid">
               <Field label="Fonte de texto" htmlFor={fontBodyId}>
                 <Input
@@ -235,8 +248,11 @@ export function BrandingManagementPage({
             </div>
           </Card>
 
-          <Card className="branding-card">
-            <h2>Textos públicos</h2>
+          <Card
+            className="db-form-card"
+            title="Textos públicos"
+            subtitle="O que o cliente lê no cardápio da mesa."
+          >
             <Field label="Boas-vindas" htmlFor={welcomeId}>
               <Input
                 id={welcomeId}
@@ -271,7 +287,7 @@ export function BrandingManagementPage({
         </div>
 
         <aside className="branding-preview-column" aria-label="Pré-visualização">
-          <p className="branding-eyebrow">PRÉ-VISUALIZAÇÃO</p>
+          <p className="db-page__eyebrow">Pré-visualização</p>
           <BrandingPreview
             tenantName={tenantName}
             welcome={draft.texts.welcome}

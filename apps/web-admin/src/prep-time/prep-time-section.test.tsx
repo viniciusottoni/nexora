@@ -81,6 +81,6 @@ describe('PrepTimeSection', () => {
       />,
     );
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Catálogo indisponível.');
+    expect(await screen.findByText('Catálogo indisponível.')).toBeInTheDocument();
   });
 });

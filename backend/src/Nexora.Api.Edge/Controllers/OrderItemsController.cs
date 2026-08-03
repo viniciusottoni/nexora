@@ -1,7 +1,10 @@
 using Nexora.Api.Edge.Infrastructure;
+using Nexora.Api.Edge.Infrastructure.Auth;
 using Nexora.Application.Orders.Commands.AddOrderItem;
 using Nexora.Application.Orders.Commands.AdvanceOrderItemStatus;
+using Nexora.Application.Orders.Commands.CancelOrderItem;
 using Nexora.Application.Orders.Commands.RepeatOrderItem;
+using Nexora.Application.Orders.Queries.GetOrderItemTimeline;
 using Nexora.Contracts.Errors;
 using Nexora.Contracts.Operation;
 using Nexora.Shared.Security;
@@ -118,7 +121,9 @@ public sealed class OrderItemsController : ControllerBase
     /// <summary>
     /// Avança um item um passo na fila de produção — ver docstring completa do gap de escopo em
     /// <c>AdvanceOrderItemStatusCommandHandler</c> (não é o KDS, é o mínimo para provar a entrega
-    /// em tempo real de ponta a ponta da US-024).
+    /// em tempo real de ponta a ponta da US-024). <c>X-Occurred-At</c> (US-032/ADR-034) é o
+    /// horário do relógio do dispositivo que disparou o avanço — o handler corrige o desvio
+    /// contra o relógio do edge antes de gravar o carimbo.
     /// </summary>
     [HttpPost("v1/orders/{orderId:guid}/items/{itemId:guid}/advance")]
     [Authorize(Policy = "KdsAdvance")]
@@ -128,9 +133,59 @@ public sealed class OrderItemsController : ControllerBase
         [FromRoute] Guid orderId,
         [FromRoute] Guid itemId,
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
+        [FromHeader(Name = "X-Occurred-At")] DateTimeOffset? occurredAt,
         CancellationToken cancellationToken)
     {
-        var result = await _sender.Send(new AdvanceOrderItemStatusCommand(orderId, itemId), cancellationToken);
+        var result = await _sender.Send(new AdvanceOrderItemStatusCommand(orderId, itemId, occurredAt), cancellationToken);
+        return result.ToActionResult(HttpContext);
+    }
+
+    /// <summary>
+    /// US-032 §7 — os seis carimbos T0 a T5 (cada um com autor e dispositivo, RN-004) e os sete
+    /// intervalos derivados MET-001 a MET-007. Sustenta o drill-down do painel (RF-BI-11), embora
+    /// a exibição em si seja US-071 (fora desta história).
+    /// </summary>
+    [HttpGet("v1/orders/{orderId:guid}/items/{itemId:guid}/timeline")]
+    [Authorize(Policy = "OrderItemTimelineRead")]
+    [ProducesResponseType(typeof(OrderItemTimelineResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetTimeline(
+        [FromRoute] Guid orderId,
+        [FromRoute] Guid itemId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetOrderItemTimelineQuery(orderId, itemId), cancellationToken);
+        return result.ToActionResult(HttpContext);
+    }
+
+    /// <summary>
+    /// US-033 (Cancelar item ou pedido com autorização) §7 — <c>X-Authorization-Token</c> é
+    /// OPCIONAL na borda HTTP: a exigência de autorização é CONDICIONAL ao item já ter sido
+    /// iniciado (<c>wasStarted</c>), algo que só o handler sabe depois de carregar o item, então
+    /// esta action NÃO usa <c>[RequiresAuthorizationToken]</c> (esse filtro exigiria o header
+    /// sempre) — ver a docstring completa de <c>CancelOrderItemCommand</c>. A policy
+    /// <c>OrderCancelItem</c> só confere a permissão BASE de tentar cancelar
+    /// (<c>order:cancel_queued</c>); a elevação para item iniciado (<c>order:cancel_started</c>) é
+    /// resolvida pelo handler via <c>X-Authorization-Token</c>.
+    /// </summary>
+    [HttpPatch("v1/orders/{orderId:guid}/items/{itemId:guid}/cancel")]
+    [Authorize(Policy = "OrderCancelItem")]
+    [ProducesResponseType(typeof(CancelOrderItemResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Cancel(
+        [FromRoute] Guid orderId,
+        [FromRoute] Guid itemId,
+        [FromBody] CancelOrderItemRequest request,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
+        [FromHeader(Name = RequiresAuthorizationTokenAttribute.HeaderName)] string? authorizationToken,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(
+            new CancelOrderItemCommand(orderId, itemId, request.Reason, request.Notes, authorizationToken),
+            cancellationToken);
+
         return result.ToActionResult(HttpContext);
     }
 }

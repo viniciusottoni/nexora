@@ -4,6 +4,13 @@ import { EmptyState, Icon, OrderLine, StatusPill, SyncStatus, type StatusPillSta
 import { ConsumptionApi, ConsumptionApiError, ConsumptionRealtimeConnection, type ConsumptionMode } from './consumption-api.js';
 import './consumption-view.css';
 
+// Ligado UMA VEZ no carregamento do módulo — nunca recriado inline no valor default de uma prop
+// (isso geraria uma função NOVA a cada render, e como `fetcher` entra no array de deps do
+// `useMemo` abaixo, cada render recriaria `api` e disparava `useEffect` de novo: loop infinito de
+// requisição observado em teste real). Ver docstring de
+// `packages/ui/src/auth/operational-authenticated-fetch.ts` sobre o motivo do `.bind`.
+const boundFetch: typeof fetch = (...args: Parameters<typeof fetch>) => globalThis.fetch(...args);
+
 export interface ConsumptionViewProps {
   readonly sessionToken: string;
   readonly baseUrl?: string;
@@ -24,7 +31,12 @@ interface RepeatFeedback {
  * (US-028). Atualização em tempo real via SignalR com fallback de polling a cada 5s (ADR-011),
  * sinalizado pelo indicador `SyncStatus`.
  */
-export function ConsumptionView({ sessionToken, baseUrl = '', fetcher = fetch, pollIntervalMs = 5000 }: Readonly<ConsumptionViewProps>) {
+export function ConsumptionView({
+  sessionToken,
+  baseUrl = '',
+  fetcher = boundFetch,
+  pollIntervalMs = 5000,
+}: Readonly<ConsumptionViewProps>) {
   const api = useMemo(() => new ConsumptionApi(sessionToken, baseUrl, fetcher), [sessionToken, baseUrl, fetcher]);
   const [consumption, setConsumption] = useState<SessionConsumptionResponse | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

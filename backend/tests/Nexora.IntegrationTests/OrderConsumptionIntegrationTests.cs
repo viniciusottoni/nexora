@@ -12,6 +12,7 @@ using Nexora.Domain.Catalog;
 using Nexora.Domain.Operation;
 using Nexora.Domain.Platform;
 using Nexora.Infrastructure.Devices;
+using Nexora.Infrastructure.Persistence;
 using Nexora.IntegrationTests.Fakes;
 using Nexora.IntegrationTests.Fixtures;
 using Nexora.Shared.Errors;
@@ -190,8 +191,8 @@ public sealed class OrderConsumptionIntegrationTests
     {
         var world = await SeedWorldAsync();
         var (variantId, modifierId) = await SeedProductWithModifierAsync(world.TenantId, "Pizza Meio a Meio", "Grande", unitPrice: 50m, modifierPriceDelta: 3m);
-        var (fractionVariantId1, _) = await SeedProductWithModifierAsync(world.TenantId, "Pizza Portuguesa", "Grande", unitPrice: 52m);
-        var (fractionVariantId2, _) = await SeedProductWithModifierAsync(world.TenantId, "Pizza Calabresa", "Grande", unitPrice: 48m);
+        var (fractionVariantId1, _) = await SeedProductWithModifierAsync(world.TenantId, "Pizza Portuguesa", "Grande", unitPrice: 52m, allowsFractions: true, fractionGroup: "PIZZA");
+        var (fractionVariantId2, _) = await SeedProductWithModifierAsync(world.TenantId, "Pizza Calabresa", "Grande", unitPrice: 48m, allowsFractions: true, fractionGroup: "PIZZA");
         var sessionId = await OpenSessionAsync(world);
 
         var tenantContext = new StaticTenantContext(world.TenantId, world.StoreId);
@@ -319,14 +320,25 @@ public sealed class OrderConsumptionIntegrationTests
     }
 
     private async Task<(Guid VariantId, Guid ModifierId)> SeedProductWithModifierAsync(
-        Guid tenantId, string productName, string variantName, decimal unitPrice, decimal? modifierPriceDelta = null)
+        Guid tenantId, string productName, string variantName, decimal unitPrice, decimal? modifierPriceDelta = null,
+        bool allowsFractions = false, string? fractionGroup = null)
     {
         await using var db = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId));
 
         var category = Category.Create(tenantId, "Categoria de teste");
         db.Categories.Add(category);
 
-        var product = Product.Create(tenantId, category.Id, productName);
+        // US-030/US-013: fração só é aceita quando o produto permite fracionamento e compartilha o
+        // MESMO grupo de fração das demais variantes combinadas — sem isto, o item meio a meio
+        // seria recusado com 422 FRACTION_NOT_ALLOWED/FRACTION_GROUP_MISMATCH pela validação real
+        // de OrderItemFractionPricing (antes desta wave, o mock de AddOrderItemCommandHandler não
+        // validava isso — ver relatório da US-030).
+        var product = Product.Create(tenantId, category.Id, productName, allowsFractions: allowsFractions, maxFractions: allowsFractions ? (short)2 : (short)1);
+        if (allowsFractions && fractionGroup is not null)
+        {
+            product.SetFractionGroup(fractionGroup);
+        }
+
         db.Products.Add(product);
 
         var variant = ProductVariant.Create(tenantId, product.Id, variantName);
@@ -390,6 +402,14 @@ public sealed class OrderConsumptionIntegrationTests
         // depende de IAlertsBroadcaster — nenhum teste desta classe inspeciona essas chamadas
         // (isso é coberto por BillRequestIntegrationTests), então um duplo simples basta aqui.
         services.AddSingleton<IAlertsBroadcaster>(new RecordingAlertsBroadcaster());
+        // US-031: AddOrderItemCommand/AdvanceOrderItemStatusCommand também dependem de IStationBroadcaster
+        // — nenhum teste desta classe inspeciona essas chamadas (isso é coberto por
+        // KdsRoutingIntegrationTests), então um duplo simples basta aqui.
+        services.AddSingleton<IStationBroadcaster>(new RecordingStationBroadcaster());
+        if (db is AppDbContext appDbContext)
+        {
+            services.AddSingleton<IOrderShortCodeAllocator>(new OrderShortCodeAllocator(appDbContext));
+        }
 
         services.AddMediatR(cfg =>
         {

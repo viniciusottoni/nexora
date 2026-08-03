@@ -112,8 +112,8 @@ describe('UnavailableListPage', () => {
 
     render(<UnavailableListPage api={api} subscribeFn={noopSubscribe} />);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Não foi possível carregar os itens indisponíveis.',
-    );
+    expect(
+      await screen.findByText('Não foi possível carregar os itens indisponíveis.'),
+    ).toBeInTheDocument();
   });
 });

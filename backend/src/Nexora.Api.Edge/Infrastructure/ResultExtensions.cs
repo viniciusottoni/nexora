@@ -74,7 +74,7 @@ public static class ResultExtensions
         problem.Extensions["traceId"] = ResolveTraceId();
     }
 
-    private static IActionResult BuildErrorResult(
+    private static ObjectResult BuildErrorResult(
         string? code,
         string message,
         IReadOnlyDictionary<string, string[]>? fieldErrors,
@@ -138,12 +138,63 @@ public static class ResultExtensions
             (meta ??= new Dictionary<string, object>())["sessionId"] = sessionIdValues[0];
         }
 
+        // US-030 §7: 422 MODIFIER_GROUP_REQUIRED/MODIFIER_GROUP_SELECTION_INVALID { itemIndex,
+        // groupId, groupName } e 422 PRODUCT_UNAVAILABLE { variantId } — mesma convenção acima
+        // (chave reservada em Errors, convertida para meta só aqui).
+        if (fieldErrors.TryGetValue("itemIndex", out var itemIndexValues) && itemIndexValues.Length > 0 &&
+            int.TryParse(itemIndexValues[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var itemIndex))
+        {
+            (meta ??= new Dictionary<string, object>())["itemIndex"] = itemIndex;
+        }
+
+        if (fieldErrors.TryGetValue("groupId", out var groupIdValues) && groupIdValues.Length > 0)
+        {
+            (meta ??= new Dictionary<string, object>())["groupId"] = groupIdValues[0];
+        }
+
+        if (fieldErrors.TryGetValue("groupName", out var groupNameValues) && groupNameValues.Length > 0)
+        {
+            (meta ??= new Dictionary<string, object>())["groupName"] = groupNameValues[0];
+        }
+
+        if (fieldErrors.TryGetValue("variantId", out var variantIdValues) && variantIdValues.Length > 0)
+        {
+            (meta ??= new Dictionary<string, object>())["variantId"] = variantIdValues[0];
+        }
+
+        // US-035 §7: 422 PENDING_ITEMS { meta: { pendingItems: [{ name, status }] } } — valor é o
+        // JSON já serializado da lista inteira (não um escalar simples como os casos acima), então
+        // é reidratado como JsonElement para sair como array de objetos na resposta, não como string.
+        if (fieldErrors.TryGetValue(Nexora.Application.Tables.Support.PendingItemsClosePolicy.MetaErrorsKey, out var pendingItemsValues) &&
+            pendingItemsValues.Length > 0)
+        {
+            (meta ??= new Dictionary<string, object>())["pendingItems"] =
+                System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(pendingItemsValues[0]);
+        }
+
+        // US-033 §7: 403 AUTHORIZATION_REQUIRED { meta: { action, itemStatus } } — cancelamento de
+        // item/pedido já iniciado sem token válido. Mesma convenção de chave reservada acima.
+        if (fieldErrors.TryGetValue("action", out var actionValues) && actionValues.Length > 0)
+        {
+            (meta ??= new Dictionary<string, object>())["action"] = actionValues[0];
+        }
+
+        if (fieldErrors.TryGetValue("itemStatus", out var itemStatusValues) && itemStatusValues.Length > 0)
+        {
+            (meta ??= new Dictionary<string, object>())["itemStatus"] = itemStatusValues[0];
+        }
+
         if (meta is null)
         {
             return null;
         }
 
-        var remaining = fieldErrors.Where(kv => kv.Key is not ("retryAfterSeconds" or "sessionId"))
+        var reservedKeys = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "retryAfterSeconds", "sessionId", "itemIndex", "groupId", "groupName", "variantId", "action", "itemStatus",
+            Nexora.Application.Tables.Support.PendingItemsClosePolicy.MetaErrorsKey,
+        };
+        var remaining = fieldErrors.Where(kv => !reservedKeys.Contains(kv.Key))
             .ToDictionary(kv => kv.Key, kv => kv.Value);
         fieldErrors = remaining.Count == 0 ? null : remaining;
 
@@ -241,6 +292,7 @@ public static class ResultExtensions
         ApiErrorCodes.DeviceNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.DeviceActorRequired => (StatusCodes.Status403Forbidden, false, false),
         ApiErrorCodes.DeviceStoreContextMissing => (StatusCodes.Status403Forbidden, false, false),
+        ApiErrorCodes.DeviceMustBeRevokedBeforeDelete => (StatusCodes.Status422UnprocessableEntity, true, false),
 
         // Installation (edge/cloud).
         ApiErrorCodes.InstallationNotFound => (StatusCodes.Status404NotFound, false, false),
@@ -292,12 +344,26 @@ public static class ResultExtensions
         ApiErrorCodes.BillInvalidAmount => (StatusCodes.Status422UnprocessableEntity, true, false),
         ApiErrorCodes.BillNotRequested => (StatusCodes.Status422UnprocessableEntity, true, false),
 
+        // Bloquear fechamento com item pendente (US-035) — mesma semântica de
+        // AuthorizationRequired (requiresAuthorization=true): o caixa pode reenviar autorizado.
+        ApiErrorCodes.PendingItems => (StatusCodes.Status422UnprocessableEntity, true, true),
+
         // Consumo da mesa em tempo real (US-024) e repetição de item (US-028) — gap de US-030,
         // ver docstring de AddOrderItemCommandHandler.
         ApiErrorCodes.OrderNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.OrderItemNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.ProductUnavailable => (StatusCodes.Status422UnprocessableEntity, true, false),
         ApiErrorCodes.OrderItemVariantPriceNotFound => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Cancelar item ou pedido com autorização (US-033) — 409, família CONFLICT_* do ADR-021
+        // (não é erro de validação de entrada, é conflito de estado: pedido fechado/cancelado, ou
+        // item já servido/já cancelado — a orientação de "detail" aponta o fluxo de estorno).
+        ApiErrorCodes.InvalidStateTransition => (StatusCodes.Status409Conflict, true, false),
+
+        // Criar pedido com itens, modificadores e frações (US-030).
+        ApiErrorCodes.ModifierGroupRequired => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.ModifierGroupSelectionInvalid => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OrderNotAcceptingItems => (StatusCodes.Status422UnprocessableEntity, true, false),
 
         // Catálogo (US-010/US-011/US-015) — o edge só expõe disponibilidade
         // (ProductAvailabilityController, US-015), mas MarkProductUnavailable/MarkProductAvailable

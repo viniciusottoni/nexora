@@ -76,7 +76,7 @@ public static class ResultExtensions
         problem.Extensions["traceId"] = ResolveTraceId();
     }
 
-    private static IActionResult BuildErrorResult(
+    private static ObjectResult BuildErrorResult(
         string? code,
         string message,
         IReadOnlyDictionary<string, string[]>? fieldErrors,
@@ -85,6 +85,15 @@ public static class ResultExtensions
         var effectiveCode = code ?? ApiErrorCodes.UnknownError;
         var (status, recoverable, requiresAuthorization) = MapErrorCode(effectiveCode);
         var meta = ExtractMeta(ref fieldErrors);
+        var pendingItemsMeta = ExtractPendingItemsMeta(ref fieldErrors);
+        if (pendingItemsMeta is { Count: > 0 })
+        {
+            meta ??= new Dictionary<string, object>();
+            foreach (var (metaKey, metaValue) in pendingItemsMeta)
+            {
+                meta[metaKey] = metaValue;
+            }
+        }
 
         ProblemDetails problem = fieldErrors is { Count: > 0 }
             ? new ValidationProblemDetails(ToMutableErrors(fieldErrors)) { Status = status }
@@ -135,6 +144,35 @@ public static class ResultExtensions
         fieldErrors = fieldErrors.Count == 1
             ? null
             : fieldErrors.Where(kv => kv.Key != retryAfterKey).ToDictionary(kv => kv.Key, kv => kv.Value);
+
+        return meta;
+    }
+
+    /// <summary>
+    /// US-035 §7: 422 PENDING_ITEMS { meta: { pendingItems: [{ name, status }] } } — mesma
+    /// convenção de <see cref="ExtractMeta"/> acima, mas o valor é o JSON já serializado da lista
+    /// inteira (não um escalar simples), reidratado como <see cref="System.Text.Json.JsonElement"/>
+    /// para sair como array de objetos na resposta, não como string. Método separado (em vez de
+    /// estender <see cref="ExtractMeta"/>) para não editar em paralelo com outro agente naquele
+    /// método específico (ver docstring desta classe: "não editar em paralelo").
+    /// </summary>
+    private static Dictionary<string, object>? ExtractPendingItemsMeta(ref IReadOnlyDictionary<string, string[]>? fieldErrors)
+    {
+        const string key = Nexora.Application.Tables.Support.PendingItemsClosePolicy.MetaErrorsKey;
+
+        if (fieldErrors is null || !fieldErrors.TryGetValue(key, out var values) || values.Length == 0)
+        {
+            return null;
+        }
+
+        var meta = new Dictionary<string, object>
+        {
+            ["pendingItems"] = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(values[0]),
+        };
+
+        fieldErrors = fieldErrors.Count == 1
+            ? null
+            : fieldErrors.Where(kv => kv.Key != key).ToDictionary(kv => kv.Key, kv => kv.Value);
 
         return meta;
     }
@@ -230,6 +268,7 @@ public static class ResultExtensions
         ApiErrorCodes.DeviceNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.DeviceActorRequired => (StatusCodes.Status403Forbidden, false, false),
         ApiErrorCodes.DeviceStoreContextMissing => (StatusCodes.Status403Forbidden, false, false),
+        ApiErrorCodes.DeviceMustBeRevokedBeforeDelete => (StatusCodes.Status422UnprocessableEntity, true, false),
 
         // Installation (edge/cloud).
         ApiErrorCodes.InstallationNotFound => (StatusCodes.Status404NotFound, false, false),
@@ -276,6 +315,13 @@ public static class ResultExtensions
         ApiErrorCodes.OrderNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.OrderItemNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.ProductUnavailable => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // US-030 (Criar pedido com itens, modificadores e frações) — autoridade do dado é o edge
+        // (só ele expõe OrdersController/OrderItemsController); mapeado aqui só para manter o
+        // catálogo de códigos idêntico ao gêmeo de Nexora.Api.Edge.
+        ApiErrorCodes.ModifierGroupRequired => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.ModifierGroupSelectionInvalid => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OrderNotAcceptingItems => (StatusCodes.Status422UnprocessableEntity, true, false),
         ApiErrorCodes.OrderItemVariantPriceNotFound => (StatusCodes.Status422UnprocessableEntity, true, false),
 
         // Dividir a conta (US-027) — autoridade do dado é o edge (só ele expõe os controllers);
@@ -284,6 +330,11 @@ public static class ResultExtensions
         ApiErrorCodes.BillItemAssignmentInvalid => (StatusCodes.Status422UnprocessableEntity, true, false),
         ApiErrorCodes.BillInvalidAmount => (StatusCodes.Status422UnprocessableEntity, true, false),
         ApiErrorCodes.BillNotRequested => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Bloquear fechamento com item pendente (US-035) — autoridade do dado é o edge (só ele
+        // expõe os controllers); mapeado aqui só para manter o catálogo idêntico ao gêmeo de
+        // Nexora.Api.Edge, como a docstring desta classe pede.
+        ApiErrorCodes.PendingItems => (StatusCodes.Status422UnprocessableEntity, true, true),
 
         // Catálogo — categorias/produtos/variantes/preço por canal (US-010/US-011). Gap
         // pré-existente fechado nesta tarefa: os módulos de catálogo já declaravam esses códigos

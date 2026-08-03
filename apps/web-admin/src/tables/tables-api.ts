@@ -42,15 +42,21 @@ export class AreasApi {
   }
 
   async activate(id: string): Promise<void> {
-    await write(this.baseUrl, this.fetcher, `/v1/areas/${encodeURIComponent(id)}/activate`, { method: 'POST' });
+    await write(this.baseUrl, this.fetcher, `/v1/areas/${encodeURIComponent(id)}/activate`, {
+      method: 'POST',
+    });
   }
 
   async deactivate(id: string): Promise<void> {
-    await write(this.baseUrl, this.fetcher, `/v1/areas/${encodeURIComponent(id)}/deactivate`, { method: 'POST' });
+    await write(this.baseUrl, this.fetcher, `/v1/areas/${encodeURIComponent(id)}/deactivate`, {
+      method: 'POST',
+    });
   }
 
   async remove(id: string): Promise<void> {
-    await write(this.baseUrl, this.fetcher, `/v1/areas/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    await write(this.baseUrl, this.fetcher, `/v1/areas/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
   }
 
   private async writeArea(path: string, init: RequestInit): Promise<AreaDto> {
@@ -68,7 +74,9 @@ export class TablesApi {
 
   async list(areaId?: string): Promise<TableListResponse> {
     const query = areaId ? `?areaId=${encodeURIComponent(areaId)}` : '';
-    const response = await this.fetcher(`${this.baseUrl}/v1/tables${query}`, { credentials: 'include' });
+    const response = await this.fetcher(`${this.baseUrl}/v1/tables${query}`, {
+      credentials: 'include',
+    });
     await requireSuccess(response);
     return tableListResponseSchema.parse(await response.json());
   }
@@ -91,10 +99,15 @@ export class TablesApi {
   }
 
   async update(id: string, input: UpdateTableRequest): Promise<TableDto> {
-    const response = await write(this.baseUrl, this.fetcher, `/v1/tables/${encodeURIComponent(id)}`, {
-      method: 'PATCH',
-      body: JSON.stringify(input),
-    });
+    const response = await write(
+      this.baseUrl,
+      this.fetcher,
+      `/v1/tables/${encodeURIComponent(id)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(input),
+      },
+    );
     return tableSchema.parse(await response.json());
   }
 
@@ -106,15 +119,21 @@ export class TablesApi {
   }
 
   async activate(id: string): Promise<void> {
-    await write(this.baseUrl, this.fetcher, `/v1/tables/${encodeURIComponent(id)}/activate`, { method: 'POST' });
+    await write(this.baseUrl, this.fetcher, `/v1/tables/${encodeURIComponent(id)}/activate`, {
+      method: 'POST',
+    });
   }
 
   async deactivate(id: string): Promise<void> {
-    await write(this.baseUrl, this.fetcher, `/v1/tables/${encodeURIComponent(id)}/deactivate`, { method: 'POST' });
+    await write(this.baseUrl, this.fetcher, `/v1/tables/${encodeURIComponent(id)}/deactivate`, {
+      method: 'POST',
+    });
   }
 
   async remove(id: string): Promise<void> {
-    await write(this.baseUrl, this.fetcher, `/v1/tables/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    await write(this.baseUrl, this.fetcher, `/v1/tables/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
   }
 
   /** Cenário Gherkin "Exportação para impressão" — devolve o PDF pronto para download (um QR Code por página). */

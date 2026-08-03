@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { billPendingItemSchema } from './billing.js';
 import { billSplitModeSchema, tableSessionSchema } from './operation-table-sessions.js';
 
 /**
@@ -27,6 +28,9 @@ export const requestBillRequestSchema = z
   .object({
     splitMode: billSplitModeSchema,
     people: z.number().int().positive().optional(),
+    // US-035 §10: só relevante ao reenviar esta mesma chamada com X-Authorization-Token depois de
+    // um 422 PENDING_ITEMS — motivo registrado no AuditLog junto do autorizador.
+    reason: z.string().nullable().optional(),
   })
   .refine((value) => value.splitMode !== 'BY_PERSON' || (value.people !== undefined && value.people > 0), {
     message: 'Informe quantas pessoas vão dividir a conta',
@@ -36,6 +40,8 @@ export const requestBillRequestSchema = z
 export const requestBillResponseSchema = z.object({
   session: tableSessionSchema,
   alreadyRequested: z.boolean(),
+  // US-035: só preenchido no modo WARN com item pendente.
+  pendingItems: z.array(billPendingItemSchema).nullable().optional(),
 });
 
 export type CallWaiterResponse = z.infer<typeof callWaiterResponseSchema>;

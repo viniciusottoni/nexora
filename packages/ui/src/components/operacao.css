@@ -14,11 +14,14 @@
   flex-direction: column;
   gap: var(--sp-4);
   cursor: pointer;
-  transition: var(--transition-control), box-shadow var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+  transition:
+    var(--transition-control),
+    box-shadow var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
   text-align: left;
   min-height: 132px;
   box-shadow: var(--shadow-subtle);
-  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) backwards;
 }
 .db-table-card:hover {
   box-shadow: var(--shadow-hover);
@@ -79,7 +82,7 @@
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
-  animation: nx-scale-in var(--dur-slow) var(--ease-out) both;
+  animation: nx-scale-in var(--dur-slow) var(--ease-out) backwards;
 }
 .db-order-ticket__head {
   display: flex;
@@ -117,7 +120,7 @@
   gap: var(--sp-4);
   padding: var(--sp-3) var(--sp-5);
   align-items: flex-start;
-  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
+  animation: nx-slide-in var(--dur-base) var(--ease-out) backwards;
 }
 .db-order-ticket__item .db-order-ticket__name,
 .db-order-ticket__item .db-order-ticket__qty {
@@ -186,10 +189,13 @@
   border-radius: var(--brand-radius);
   text-align: left;
   cursor: pointer;
-  transition: var(--transition-control), box-shadow var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+  transition:
+    var(--transition-control),
+    box-shadow var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
   width: 100%;
   align-items: flex-start;
-  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) backwards;
 }
 .db-menu-item-card:hover {
   box-shadow: var(--shadow-hover);
@@ -290,7 +296,7 @@
   align-items: flex-start;
   padding: var(--sp-5) 0;
   border-bottom: var(--border-1) solid var(--border-subtle);
-  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
+  animation: nx-slide-in var(--dur-base) var(--ease-out) backwards;
 }
 .db-order-line:last-child {
   border-bottom: 0;

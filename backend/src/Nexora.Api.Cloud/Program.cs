@@ -96,6 +96,10 @@ builder.Services.AddSwaggerGen();
 // precisa de HttpContext/RequestDelegate (ASP.NET Core, proibido em Infrastructure — ADR-039).
 builder.Services.AddScoped<IIdempotencyStore, IdempotencyStore>();
 
+// US-030 §8: geração de short_code (ADR-016) com lock consultivo do Postgres — só Infrastructure
+// fala Npgsql/SQL cru (ADR-039).
+builder.Services.AddScoped<IOrderShortCodeAllocator, OrderShortCodeAllocator>();
+
 // ---------------------------------------------------------------------------
 // Options (IOptions<T>).
 // ---------------------------------------------------------------------------
@@ -131,6 +135,12 @@ builder.Services.AddSingleton<IAvailabilityBroadcaster, SignalRAvailabilityBroad
 builder.Services.AddSingleton<IAlertsBroadcaster, NullAlertsBroadcaster>();
 builder.Services.AddSingleton<ITableMapBroadcaster, NullTableMapBroadcaster>();
 builder.Services.AddSingleton<IOrderConsumptionBroadcaster, NullOrderConsumptionBroadcaster>();
+// IStationBroadcaster (US-031) — roteamento por praça também é autoridade exclusiva do edge (KDS
+// vive na LAN da loja); mesmo raciocínio no-op acima.
+builder.Services.AddSingleton<IStationBroadcaster, NullStationBroadcaster>();
+// ISyncStatusBroadcaster (US-034) — detectar/anunciar a própria queda de internet é conceito
+// exclusivo do edge (é ele que fala com a nuvem, nunca o inverso); mesmo raciocínio no-op acima.
+builder.Services.AddSingleton<ISyncStatusBroadcaster, NullSyncStatusBroadcaster>();
 
 // Devices — geração de código de pareamento e de segredo do dispositivo (réplica de
 // Nexora.Api.Edge/Program.cs). Pareamento acontece com a loja (edge), não com a nuvem, mas o
@@ -335,6 +345,54 @@ builder.Services.AddAuthorization(options =>
         PermissionAuthorization.HasPermission(
             context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
             "table:manage")));
+
+    // Políticas de CRUD de cardápio — praças de produção, categorias e produtos (US-010/US-011/
+    // US-017) compartilham o recurso "catalog" do catálogo de permissões
+    // (Nexora.Domain.Platform.PermissionCatalog): "catalog:read" (listar) e "catalog:write"
+    // (criar/editar/excluir). Mesmo nome do gêmeo em Nexora.Api.Edge/Program.cs.
+    options.AddPolicy("StationRead", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "catalog:read")));
+
+    options.AddPolicy("StationWrite", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "catalog:write")));
+
+    options.AddPolicy("CategoryRead", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "catalog:read")));
+
+    options.AddPolicy("CategoryWrite", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "catalog:write")));
+
+    options.AddPolicy("ProductRead", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "catalog:read")));
+
+    options.AddPolicy("ProductWrite", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "catalog:write")));
+
+    // Disponibilidade operacional de produto (US-015) — mesma família de ProductRead/ProductWrite
+    // acima, mas também satisfeita por "catalog:set_unavailable" (ação dedicada do catálogo de
+    // permissões para marcar item indisponível sem conceder CRUD completo). Mesmo nome do gêmeo em
+    // Nexora.Api.Edge/Program.cs.
+    options.AddPolicy("ProductAvailability", policy => policy.RequireAssertion(context =>
+    {
+        var permissions = context.User
+            .FindAll(PermissionAuthorization.PermissionClaimType)
+            .Select(c => c.Value)
+            .ToArray();
+        return PermissionAuthorization.HasPermission(permissions, "catalog:set_unavailable")
+               || PermissionAuthorization.HasPermission(permissions, "catalog:write");
+    }));
 });
 
 // ---------------------------------------------------------------------------

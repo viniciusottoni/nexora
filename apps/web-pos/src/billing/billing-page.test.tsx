@@ -90,6 +90,98 @@ describe('BillingPage', () => {
     );
   });
 
+  // US-035 (Bloquear fechamento com item pendente) — os três modos configuráveis (RN-017).
+  const pendingItem = { id: '0198aabb-6666-7000-8000-000000000001', name: 'Petit Gateau', status: 'READY' };
+
+  it('modo BLOCK desabilita o botão de pagamento e lista os itens pendentes (cenário "Fechamento bloqueado")', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = input.toString();
+      if (url.includes('split=BY_AMOUNT')) {
+        return jsonResponse({
+          ...byPersonBill,
+          splitMode: 'BY_AMOUNT',
+          pendingItems: [pendingItem],
+          hasPendingItems: true,
+          pendingItemsMode: 'BLOCK',
+          remainingAmount: '100.00',
+        });
+      }
+      return jsonResponse({ ...byPersonBill, pendingItems: [pendingItem], hasPendingItems: true, pendingItemsMode: 'BLOCK' });
+    });
+
+    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher as unknown as typeof fetch} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Por valor' }));
+
+    expect(await screen.findByText(/Fechamento bloqueado/)).toBeInTheDocument();
+    expect(screen.getByText(/Petit Gateau/)).toBeInTheDocument();
+    expect(screen.getByText('READY')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Registrar pagamento' })).toBeDisabled();
+  });
+
+  it('modo BLOCK reabilita o pagamento depois de autorizar com PIN e motivo (cenário "Fechamento autorizado mesmo com pendência")', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      if (url.includes('/v1/auth/authorize')) {
+        return jsonResponse({
+          authorizationToken: 'token-autorizacao',
+          expiresIn: 120,
+          authorizedBy: { id: '0198aabb-7777-7000-8000-000000000001', name: 'Gerente Ana' },
+        });
+      }
+      if (init?.method === 'POST' && url.includes('/partial-payment')) {
+        expect(new Headers(init.headers).get('X-Authorization-Token')).toBe('token-autorizacao');
+        return jsonResponse({
+          paymentId: '0198aabb-4444-7000-8000-000000000002',
+          amountPaid: '50.00',
+          remainingAmount: '50.00',
+          total: '100.00',
+          sessionStatus: 'BILLREQUESTED',
+        });
+      }
+      if (url.includes('split=BY_AMOUNT')) {
+        return jsonResponse({
+          ...byPersonBill,
+          splitMode: 'BY_AMOUNT',
+          pendingItems: [pendingItem],
+          hasPendingItems: true,
+          pendingItemsMode: 'BLOCK',
+          remainingAmount: '100.00',
+        });
+      }
+      return jsonResponse({ ...byPersonBill, pendingItems: [pendingItem], hasPendingItems: true, pendingItemsMode: 'BLOCK' });
+    });
+
+    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher as unknown as typeof fetch} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Por valor' }));
+    await screen.findByText(/Fechamento bloqueado/);
+    expect(screen.getByRole('button', { name: 'Registrar pagamento' })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('PIN do gerente'), { target: { value: '1234' } });
+    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'Cliente desistiu do item' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Autorizar fechamento' }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Registrar pagamento' })).not.toBeDisabled());
+
+    fireEvent.change(screen.getByLabelText('Valor pago agora'), { target: { value: '50' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar pagamento' }));
+
+    await waitFor(() => expect(screen.getByText(/Restam R\$ 50,00 em aberto/)).toBeInTheDocument());
+  });
+
+  it('modo IGNORE não exibe nenhum aviso, mesmo com item pendente', async () => {
+    const fetcher = vi.fn(async () =>
+      jsonResponse({ ...byPersonBill, pendingItems: [pendingItem], hasPendingItems: true, pendingItemsMode: 'IGNORE' }),
+    );
+
+    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher as unknown as typeof fetch} />);
+
+    await screen.findByText('R$ 33,34');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Fechamento bloqueado/)).not.toBeInTheDocument();
+  });
+
   it('modo por item recusa calcular com item órfão e mostra a mensagem estável', async () => {
     const itemId = '0198aabb-5555-7000-8000-000000000001';
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {

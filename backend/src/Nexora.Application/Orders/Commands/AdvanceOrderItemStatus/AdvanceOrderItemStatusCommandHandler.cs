@@ -3,6 +3,7 @@ using Nexora.Application.Abstractions.Events;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Realtime;
+using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Orders.Support;
 using Nexora.Contracts.Operation;
 using Nexora.Domain.Operation;
@@ -10,6 +11,7 @@ using Nexora.Domain.Platform;
 using Nexora.Shared.Errors;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Nexora.Application.Orders.Commands.AdvanceOrderItemStatus;
 
@@ -21,23 +23,39 @@ namespace Nexora.Application.Orders.Commands.AdvanceOrderItemStatus;
 /// cozinha marcar um item como pronto... o status deve mudar na tela em até 2 segundos").
 ///
 /// [DECISÃO DE ESCOPO] Isto NÃO é o KDS (US-036 e vizinhas, fora de E-02): não há fila por praça,
-/// não há <c>oven_slot</c>/<c>priority_score</c>, não há tela de cozinha. É só o gatilho mínimo,
-/// reaproveitando os métodos de domínio já prontos (<see cref="OrderItem.Fire"/>/
-/// <see cref="OrderItem.SendToOven"/>/<see cref="OrderItem.TakeOutOfOven"/>/
+/// não há tela de cozinha. É só o gatilho mínimo, reaproveitando os métodos de domínio já prontos
+/// (<see cref="OrderItem.Fire"/>/<see cref="OrderItem.SendToOven"/>/<see cref="OrderItem.TakeOutOfOven"/>/
 /// <see cref="OrderItem.MarkReady"/>/<see cref="OrderItem.MarkServed"/>), para que esta wave tenha
 /// como demonstrar e testar a entrega em tempo real sem esperar pelo épico de KDS.
+///
+/// US-032 (Carimbos de tempo T0 a T5): autor e dispositivo agora vêm de
+/// <see cref="ICurrentTenantContext"/> (antes fixos em <see cref="Guid.Empty"/> — comentário
+/// removido, ver relatório da história) e o horário gravado passa pela correção de desvio de
+/// relógio do ADR-034 (<see cref="ClockSkewPolicy"/>) antes de virar carimbo/`DomainEvent.OccurredAt`.
 /// </summary>
 internal sealed class AdvanceOrderItemStatusCommandHandler : IRequestHandler<AdvanceOrderItemStatusCommand, Result<OrderItemResponse>>
 {
     private readonly IApplicationDbContext _db;
     private readonly IEventOriginProvider _eventOrigin;
     private readonly IOrderConsumptionBroadcaster _broadcaster;
+    private readonly IStationBroadcaster _stationBroadcaster;
+    private readonly ICurrentTenantContext _tenantContext;
+    private readonly ILogger<AdvanceOrderItemStatusCommandHandler> _logger;
 
-    public AdvanceOrderItemStatusCommandHandler(IApplicationDbContext db, IEventOriginProvider eventOrigin, IOrderConsumptionBroadcaster broadcaster)
+    public AdvanceOrderItemStatusCommandHandler(
+        IApplicationDbContext db,
+        IEventOriginProvider eventOrigin,
+        IOrderConsumptionBroadcaster broadcaster,
+        IStationBroadcaster stationBroadcaster,
+        ICurrentTenantContext tenantContext,
+        ILogger<AdvanceOrderItemStatusCommandHandler> logger)
     {
         _db = db;
         _eventOrigin = eventOrigin;
         _broadcaster = broadcaster;
+        _stationBroadcaster = stationBroadcaster;
+        _tenantContext = tenantContext;
+        _logger = logger;
     }
 
     public async Task<Result<OrderItemResponse>> Handle(AdvanceOrderItemStatusCommand request, CancellationToken cancellationToken)
@@ -54,29 +72,45 @@ internal sealed class AdvanceOrderItemStatusCommandHandler : IRequestHandler<Adv
             return Result<OrderItemResponse>.Failure("Item não encontrado.", ApiErrorCodes.OrderItemNotFound);
         }
 
-        var actorId = Guid.Empty; // sem tela de KDS nesta wave — ver docstring da classe.
+        var actorId = _tenantContext.UserId ?? Guid.Empty;
+        var deviceId = _tenantContext.DeviceId;
+
+        // ADR-034: aceita o horário do dispositivo (X-Occurred-At) quando o desvio contra o
+        // relógio do edge é ≤ 2 min; fora disso usa o relógio do edge e marca o evento como
+        // suspeito (ClockSuspect) para diagnóstico — nunca descarta o evento.
+        var clockResolution = ClockSkewPolicy.Resolve(request.OccurredAt, DateTimeOffset.UtcNow);
+        var occurredAt = clockResolution.OccurredAt;
+
+        if (clockResolution.ClockSuspect)
+        {
+            _logger.LogWarning(
+                "Desvio de relógio do dispositivo {DeviceId} acima da tolerância do ADR-034 ao avançar o item {OrderItemId}: desvio de {DeviationSeconds}s — horário do dispositivo descartado, usado o relógio do edge.",
+                deviceId,
+                item.Id,
+                clockResolution.Deviation?.TotalSeconds);
+        }
+
         switch (item.Status)
         {
             case OrderItemStatus.Queued:
-                item.Fire(actorId);
+                item.Fire(actorId, occurredAt, deviceId);
                 break;
             case OrderItemStatus.Fired:
-                item.SendToOven(ovenSlot: null);
+                item.SendToOven(ovenSlot: null, ovenInBy: actorId, occurredAt: occurredAt, deviceId: deviceId);
                 break;
             case OrderItemStatus.InOven:
-                item.TakeOutOfOven();
+                item.TakeOutOfOven(ovenOutBy: actorId, occurredAt: occurredAt, deviceId: deviceId);
                 break;
             case OrderItemStatus.OutOfOven:
-                item.MarkReady(actorId);
+                item.MarkReady(actorId, occurredAt, deviceId);
                 break;
             case OrderItemStatus.Ready:
-                item.MarkServed(actorId);
+                item.MarkServed(actorId, occurredAt, deviceId);
                 break;
             default:
                 return Result<OrderItemResponse>.Failure("Este item já está em um estado final.", ApiErrorCodes.ValidationError);
         }
 
-        var now = DateTimeOffset.UtcNow;
         _db.DomainEvents.Add(DomainEvent.Create(
             item.TenantId,
             type: OrderItemStatusLabels.ToRealtimeEventType(item.Status),
@@ -84,8 +118,11 @@ internal sealed class AdvanceOrderItemStatusCommandHandler : IRequestHandler<Adv
             aggregateId: item.Id,
             payload: JsonSerializer.Serialize(new { orderItemId = item.Id, status = OrderItemStatusLabels.ToWireStatus(item.Status) }),
             origin: _eventOrigin.Origin,
-            occurredAt: now,
-            storeId: item.Order.StoreId));
+            occurredAt: occurredAt,
+            storeId: item.Order.StoreId,
+            actorId: actorId == Guid.Empty ? null : actorId,
+            deviceId: deviceId,
+            clockSuspect: clockResolution.ClockSuspect));
 
         var productName = $"{item.Variant.Product.Name} {item.Variant.Name}".Trim();
 
@@ -93,6 +130,15 @@ internal sealed class AdvanceOrderItemStatusCommandHandler : IRequestHandler<Adv
         {
             await _broadcaster.ItemStatusChanged(
                 item.TenantId, item.Order.Session.TableId, item.Id, productName, OrderItemStatusLabels.ToWireStatus(item.Status), cancellationToken);
+        }
+
+        // US-031 (Roteamento simultâneo para cozinha e caixa) — a PRÓPRIA praça também precisa saber
+        // que o item avançou na fila dela (ex.: sumir da fila do forno ao ser disparado); caixa/
+        // garçom/mesa já foram avisados acima pelo broadcaster de consumo (US-024), sem duplicar.
+        if (item.StationId is { } stationId)
+        {
+            await _stationBroadcaster.ItemStatusChanged(
+                item.TenantId, stationId, item.Id, productName, OrderItemStatusLabels.ToWireStatus(item.Status), cancellationToken);
         }
 
         return Result<OrderItemResponse>.Success(OrderItemMapper.Map(item, productName));

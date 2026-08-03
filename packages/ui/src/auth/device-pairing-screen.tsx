@@ -39,7 +39,7 @@ export function DevicePairingScreen({
           code,
           label: defaultLabel,
           kind,
-          fingerprint: await browserFingerprint(),
+          fingerprint: await browserFingerprint(kind),
         }),
       });
       if (!response.ok) throw new Error(await pairingFailureMessage(response));
@@ -111,6 +111,8 @@ export async function pairingFailureMessage(response: Response): Promise<string>
       'Muitas tentativas de pareamento. Aguarde alguns minutos e tente novamente.',
     REQUEST_IN_PROGRESS:
       'A solicita\u00e7\u00e3o anterior ainda est\u00e1 sendo processada. Aguarde alguns segundos e tente novamente.',
+    INTERNAL_ERROR:
+      'N\u00e3o foi poss\u00edvel autorizar o dispositivo. Tente novamente ou renove o c\u00f3digo.',
   };
 
   if (code && knownMessages[code]) return knownMessages[code];
@@ -119,8 +121,15 @@ export async function pairingFailureMessage(response: Response): Promise<string>
   return 'N\u00e3o foi poss\u00edvel autorizar o dispositivo.';
 }
 
-async function browserFingerprint(): Promise<string> {
-  const source = `${navigator.userAgent}|${navigator.language}|${screen.width}x${screen.height}`;
+async function browserFingerprint(kind: DeviceKindDto): Promise<string> {
+  // O mesmo navegador pode executar Gestão local, Caixa e KDS em origens/portas diferentes.
+  // O namespace por tipo + origem impede que esses aplicativos sejam confundidos com o mesmo
+  // dispositivo físico durante os testes locais, preservando estabilidade entre reinícios.
+  const source = browserFingerprintSource(kind);
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(source));
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+export function browserFingerprintSource(kind: DeviceKindDto): string {
+  return `${kind}|${location.origin}|${navigator.userAgent}|${navigator.language}|${screen.width}x${screen.height}`;
 }

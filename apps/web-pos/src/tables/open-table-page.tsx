@@ -5,6 +5,13 @@ import type { OperationalRequestIdentity } from '@nexora/ui';
 import { PosApiError, PosTablesApi } from './tables-api.js';
 import './open-table.css';
 
+// Ligado UMA VEZ no carregamento do módulo — nunca recriado inline no valor default de uma prop
+// (isso geraria uma função NOVA a cada render, e como `fetcher` entra no array de deps do
+// `useMemo` abaixo, cada render recriaria `api` e disparava `useEffect` de novo: loop infinito de
+// requisição observado em teste real). Ver docstring de
+// `packages/ui/src/auth/operational-authenticated-fetch.ts` sobre o motivo do `.bind`.
+const boundFetch: typeof fetch = (...args: Parameters<typeof fetch>) => globalThis.fetch(...args);
+
 export interface OpenTablePageProps {
   readonly identity: OperationalRequestIdentity;
   readonly baseUrl?: string;
@@ -24,7 +31,7 @@ export interface OpenTablePageProps {
 export function OpenTablePage({
   identity,
   baseUrl = '',
-  fetcher = fetch,
+  fetcher = boundFetch,
   preselectedTableId,
   onExit,
 }: Readonly<OpenTablePageProps>) {

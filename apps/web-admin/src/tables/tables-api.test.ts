@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AreasApi, TablesApi } from './tables-api.js';
 
-const area = { id: '0198aabb-1111-7000-8000-000000000001', name: 'Salão', position: 0, active: true, tableCount: 0 };
+const area = {
+  id: '0198aabb-1111-7000-8000-000000000001',
+  name: 'Salão',
+  position: 0,
+  active: true,
+  tableCount: 0,
+};
 const table = {
   id: '0198aabb-2222-7000-8000-000000000002',
   areaId: area.id,
@@ -14,7 +20,10 @@ const table = {
 };
 
 function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 /**
@@ -42,7 +51,9 @@ describe('AreasApi', () => {
     await api.create({ name: 'Salão', position: 0 });
     await api.update(area.id, { name: 'Varanda', position: 1 });
 
-    const keys = fetcher.mock.calls.map((call) => new Headers(call[1]?.headers).get('Idempotency-Key'));
+    const keys = fetcher.mock.calls.map((call) =>
+      new Headers(call[1]?.headers).get('Idempotency-Key'),
+    );
     expect(keys[0]).toBeTruthy();
     expect(keys[1]).toBeTruthy();
     expect(keys[0]).not.toBe(keys[1]);

@@ -23,6 +23,17 @@ public sealed class EdgeInstallation
     // TODO: value object tipado quando o formato de health for definido — hoje é JSONB livre
     public string Health { get; private set; } = "{}";
 
+    /// <summary>Último estado de conectividade edge↔nuvem observado (US-034 §6) — ver <see cref="RecordHeartbeat"/>.</summary>
+    public SyncConnectivity Connectivity { get; private set; } = SyncConnectivity.Unknown;
+
+    /// <summary>
+    /// Instante em que a nuvem foi observada inalcançável pela última vez — não nulo enquanto
+    /// <see cref="Connectivity"/> for <see cref="SyncConnectivity.Offline"/>; volta a nulo no
+    /// exato heartbeat que detecta a reconexão (US-034 §7, campo <c>offlineSince</c> do
+    /// <c>GET /v1/health</c>).
+    /// </summary>
+    public DateTimeOffset? OfflineSince { get; private set; }
+
     public string? InstallTokenHash { get; private set; }
     public DateTimeOffset? TokenExpiresAt { get; private set; }
     public DateTimeOffset? TokenConsumedAt { get; private set; }
@@ -150,15 +161,57 @@ public sealed class EdgeInstallation
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
-    public void RecordHeartbeat(long syncedSeq, int? clockOffsetMs, string? healthJson = null)
+    /// <summary>
+    /// Registra o resultado de um ping de saúde (US-006, <c>PollSyncHealthCommand</c>) e decide,
+    /// no próprio Domain, se isso representa uma TRANSIÇÃO de conectividade (US-034 §6: "o edge não
+    /// reimplementa sincronização — só detecta e comunica"). <paramref name="observedConnectivity"/>
+    /// já vem traduzido pelo chamador (Application) a partir do resultado bruto do poller
+    /// (<c>DependencyStatus</c>) — o Domain nunca conhece esse tipo, só o vocabulário próprio
+    /// (<see cref="SyncConnectivity"/>), preservando a regra de "Domain sem dependência de
+    /// Infrastructure/Application" (ADR-039).
+    ///
+    /// <see cref="SyncConnectivity.Unknown"/> nunca dispara transição (nem grava
+    /// <see cref="OfflineSince"/>) — é o caso de ambiente sem <c>SyncEndpoint</c> configurado
+    /// (dev/teste) ou o primeiro poll antes de qualquer sinal real: sem observação real de
+    /// conectividade, não há "queda" nem "retorno" para anunciar.
+    /// </summary>
+    public SyncConnectivityTransition RecordHeartbeat(
+        long syncedSeq, int? clockOffsetMs, SyncConnectivity observedConnectivity, string? healthJson = null)
     {
-        LastSeenAt = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
+
+        LastSeenAt = now;
         LastSyncedSeq = syncedSeq;
         ClockOffsetMs = clockOffsetMs;
 
         if (healthJson is not null)
             Health = healthJson;
 
-        UpdatedAt = DateTimeOffset.UtcNow;
+        var transition = SyncConnectivityTransition.None;
+
+        if (observedConnectivity != SyncConnectivity.Unknown && observedConnectivity != Connectivity)
+        {
+            if (observedConnectivity == SyncConnectivity.Offline)
+            {
+                // EVT-083 edge.offline_detected — Online/Unknown -> Offline.
+                OfflineSince = now;
+                transition = new SyncConnectivityTransition(SyncTransitionKind.WentOffline, now, null);
+            }
+            else if (Connectivity == SyncConnectivity.Offline)
+            {
+                // EVT-084 edge.reconnected — só é "reconexão" quando o estado ANTERIOR era
+                // Offline de verdade (Unknown -> Online, na primeira observação, não conta —
+                // não houve queda para retornar de).
+                var offlineSince = OfflineSince;
+                var duration = offlineSince is null ? (TimeSpan?)null : now - offlineSince.Value;
+                transition = new SyncConnectivityTransition(SyncTransitionKind.Reconnected, offlineSince, duration);
+                OfflineSince = null;
+            }
+
+            Connectivity = observedConnectivity;
+        }
+
+        UpdatedAt = now;
+        return transition;
     }
 }

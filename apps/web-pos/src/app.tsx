@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Button,
   Card,
@@ -11,10 +11,13 @@ import {
   PinScreen,
   readRegisteredDeviceIdentity,
   RuntimeBrandingProvider,
+  SyncStatus,
   useRuntimeBranding,
   type OperationalSession,
 } from '@nexora/ui';
 import { BillingPage } from './billing/billing-page.js';
+import { configurePosOrderQueue, posOrderQueue } from './offline/pos-order-queue.js';
+import { OrderCompositionPage } from './order-composition/order-composition-page.js';
 import { OpenTablePage } from './tables/open-table-page.js';
 import { TableMapPage } from './table-map/table-map-page.js';
 import './styles.css';
@@ -63,11 +66,48 @@ function BrandedPos() {
   // US-027 §10: sessão cuja conta está sendo dividida — acionada a partir do card de mesa com
   // `billRequested=true` no mapa, mesmo padrão de `openingTableId` acima.
   const [billingSessionId, setBillingSessionId] = useState<string>();
+  // US-030 §7, cenário "Pedido pelo celular do garçom": sessão cuja comanda está sendo composta —
+  // acionada a partir do botão "Lançar pedido" de uma mesa ocupada no mapa, mesmo padrão acima.
+  const [composingSessionId, setComposingSessionId] = useState<string>();
+  // US-034 §8/§10 — contador da fila local de pedidos (queda de LAN), lido no shell autenticado
+  // (não numa tela específica) porque o indicador precisa ser PERMANENTE mesmo quando o garçom sai
+  // da tela de composição de pedido para o mapa de mesas.
+  const [queuedOrderCount, setQueuedOrderCount] = useState(0);
+  const refreshQueuedOrderCount = useCallback(() => {
+    void posOrderQueue.count().then(setQueuedOrderCount).catch(() => {});
+  }, []);
   useEffect(() => {
     void readRegisteredDeviceIdentity()
       .then(setDevice)
       .catch(() => setDevice(null));
   }, []);
+  // US-034 §7/§10 — reenvio automático ao reconectar: só `window.addEventListener('online', ...)`
+  // (nenhum segundo mecanismo de detecção concorrente) mais uma tentativa já no carregamento
+  // (cobre o caso "app reaberto já online, mas com backlog de uma queda anterior"). Nenhuma tela
+  // deste app tem uma conexão realtime PERSISTENTE durante a janela vulnerável — TableMapPage e
+  // OrderCompositionPage são mutuamente exclusivas (só uma montada por vez), e é justamente na
+  // segunda que um pedido pode ficar na fila — por isso a configuração/reenvio moram aqui, no
+  // shell autenticado, não em nenhuma tela específica.
+  useEffect(() => {
+    if (!device || !session) return;
+    configurePosOrderQueue({ accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret });
+
+    let active = true;
+    async function syncQueue() {
+      await posOrderQueue.flush().catch(() => {});
+      if (active) refreshQueuedOrderCount();
+    }
+    void syncQueue();
+
+    function handleOnline() {
+      void syncQueue();
+    }
+    window.addEventListener('online', handleOnline);
+    return () => {
+      active = false;
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [device, session, refreshQueuedOrderCount]);
   const client = useMemo(
     () => (device ? new OperationalAuthClient({ baseUrl: '', ...device }) : undefined),
     [device],
@@ -122,6 +162,17 @@ function BrandedPos() {
           setIntentionId(crypto.randomUUID());
         }}
       />
+      {queuedOrderCount > 0 ? (
+        // US-034 §10: indicador discreto e PERMANENTE (nunca modal/pop-up) — usa `SyncStatus`
+        // (packages/ui) já existente, mais uma legenda sem jargão técnico com a redação exata da
+        // história ("trabalhando sem internet · N registros aguardando envio").
+        <div className="pos-offline-banner nx-anim-in" role="status">
+          <SyncStatus state="local" queued={queuedOrderCount} />
+          <span className="pos-offline-banner__hint">
+            {`Trabalhando sem internet · ${queuedOrderCount} ${queuedOrderCount === 1 ? 'registro' : 'registros'} aguardando envio.`}
+          </span>
+        </div>
+      ) : null}
       {/* US-023: o mapa de mesas é a tela inicial do garçom/caixa, não um menu (§10) — substitui o
           placeholder estático de PosHome (ainda exportado/testado à parte) assim que autenticado.
           US-022 ("abrir mesa") passa a ser uma ação disparada ao tocar numa mesa livre no mapa. */}
@@ -137,11 +188,19 @@ function BrandedPos() {
           sessionId={billingSessionId}
           onExit={() => setBillingSessionId(undefined)}
         />
+      ) : composingSessionId ? (
+        <OrderCompositionPage
+          identity={{ accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret }}
+          sessionId={composingSessionId}
+          onExit={() => setComposingSessionId(undefined)}
+          onOrderQueued={refreshQueuedOrderCount}
+        />
       ) : (
         <TableMapPage
           identity={{ accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret }}
           onSelectTable={setOpeningTableId}
           onOpenBilling={setBillingSessionId}
+          onComposeOrder={setComposingSessionId}
         />
       )}
       <CreatedByFooter />

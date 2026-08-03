@@ -4,6 +4,7 @@ using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Tables.Sessions;
+using Nexora.Application.Tables.Support;
 using Nexora.Contracts.Operation;
 using Nexora.Domain.Cashier;
 using Nexora.Domain.Operation;
@@ -14,18 +15,28 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Nexora.Application.Tables.Commands.RegisterPartialPayment;
 
-/// <summary>US-027 §4, cenário "Divisão por valor" — ver docstring de <see cref="RegisterPartialPaymentCommand"/>.</summary>
+/// <summary>
+/// US-027 §4, cenário "Divisão por valor" — ver docstring de <see cref="RegisterPartialPaymentCommand"/>.
+/// A checagem de itens pendentes (US-035, RN-017) roda ANTES da validação de valor/forma de
+/// pagamento — bloquear é uma decisão independente de quanto está sendo pago.
+/// </summary>
 internal sealed class RegisterPartialPaymentCommandHandler : IRequestHandler<RegisterPartialPaymentCommand, Result<PartialPaymentResponse>>
 {
     private readonly IApplicationDbContext _db;
     private readonly ICurrentTenantContext _tenantContext;
     private readonly IEventOriginProvider _eventOrigin;
+    private readonly IAuthorizationTokenValidator _authorizationValidator;
 
-    public RegisterPartialPaymentCommandHandler(IApplicationDbContext db, ICurrentTenantContext tenantContext, IEventOriginProvider eventOrigin)
+    public RegisterPartialPaymentCommandHandler(
+        IApplicationDbContext db,
+        ICurrentTenantContext tenantContext,
+        IEventOriginProvider eventOrigin,
+        IAuthorizationTokenValidator authorizationValidator)
     {
         _db = db;
         _tenantContext = tenantContext;
         _eventOrigin = eventOrigin;
+        _authorizationValidator = authorizationValidator;
     }
 
     public async Task<Result<PartialPaymentResponse>> Handle(RegisterPartialPaymentCommand request, CancellationToken cancellationToken)
@@ -43,6 +54,16 @@ internal sealed class RegisterPartialPaymentCommandHandler : IRequestHandler<Reg
             return Result<PartialPaymentResponse>.Failure(
                 "Só é possível registrar um pagamento parcial depois que a conta foi solicitada.", ApiErrorCodes.BillNotRequested);
         }
+
+        var pendingItemsResult = await PendingItemsClosePolicy.EnforceAsync(
+            _db, _authorizationValidator, session.TenantId, session.StoreId, session.Id,
+            request.AuthorizationToken, request.Reason, DateTimeOffset.UtcNow, cancellationToken);
+        if (pendingItemsResult.IsFailure)
+        {
+            return Result<PartialPaymentResponse>.Failure(pendingItemsResult.Error!, pendingItemsResult.Code, pendingItemsResult.Errors);
+        }
+
+        var pendingItemsForWarning = pendingItemsResult.Value!;
 
         if (!TryParseMethod(request.Method, out var method))
         {
@@ -110,7 +131,7 @@ internal sealed class RegisterPartialPaymentCommandHandler : IRequestHandler<Reg
         var remaining = openBalance - request.Amount;
 
         return Result<PartialPaymentResponse>.Success(new PartialPaymentResponse(
-            payment.Id, request.Amount, remaining, total, session.Status.ToString().ToUpperInvariant()));
+            payment.Id, request.Amount, remaining, total, session.Status.ToString().ToUpperInvariant(), pendingItemsForWarning));
     }
 
     private static bool TryParseMethod(string? method, out PaymentMethod parsed)

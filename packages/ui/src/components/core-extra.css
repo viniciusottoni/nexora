@@ -11,15 +11,41 @@
   transition: var(--transition-control);
   position: relative;
 }
-.db-icon-button:hover { background: var(--surface-sunken); color: var(--text-primary); }
-.db-icon-button:active { transform: translateY(1px); }
-.db-icon-button[disabled] { opacity: 0.4; cursor: not-allowed; }
-.db-icon-button--sm { width: 32px; height: 32px; }
-.db-icon-button--md { width: 40px; height: 40px; }
-.db-icon-button--lg { width: 48px; height: 48px; }
-.db-icon-button--solid { background: var(--brand-primary); color: var(--brand-on-primary); }
-.db-icon-button--solid:hover { background: var(--brand-primary-hover, var(--action-primary-hover)); color: var(--brand-on-primary); }
-.db-icon-button--outline { border-color: var(--border-default); background: var(--surface-card); }
+.db-icon-button:hover {
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+}
+.db-icon-button:active {
+  transform: translateY(1px);
+}
+.db-icon-button[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.db-icon-button--sm {
+  width: 32px;
+  height: 32px;
+}
+.db-icon-button--md {
+  width: 40px;
+  height: 40px;
+}
+.db-icon-button--lg {
+  width: 48px;
+  height: 48px;
+}
+.db-icon-button--solid {
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+}
+.db-icon-button--solid:hover {
+  background: var(--brand-primary-hover, var(--action-primary-hover));
+  color: var(--brand-on-primary);
+}
+.db-icon-button--outline {
+  border-color: var(--border-default);
+  background: var(--surface-card);
+}
 .db-icon-button__dot {
   position: absolute;
   top: 5px;
@@ -47,22 +73,70 @@
   white-space: nowrap;
   border: var(--border-1) solid transparent;
 }
-.db-badge--sm { height: 20px; padding: 0 var(--sp-3); font-size: var(--fs-11); }
-.db-badge--md { height: 26px; padding: 0 var(--sp-4); font-size: var(--fs-12); }
-.db-badge--lg { height: 32px; padding: 0 var(--sp-5); font-size: var(--fs-14); }
-.db-badge--neutral { background: var(--surface-sunken); color: var(--text-secondary); border-color: var(--border-subtle); }
-.db-badge--brand { background: var(--surface-brand-subtle); color: var(--nx-navy-700); }
-.db-badge--info { background: var(--nx-blue-100); color: var(--nx-blue-600); }
-.db-badge--success { background: var(--nx-success-100); color: var(--nx-success-600); }
-.db-badge--warning { background: var(--nx-warning-100); color: var(--nx-warning-600); }
-.db-badge--danger { background: var(--nx-danger-100); color: var(--nx-danger-600); }
-.db-badge--accent { background: var(--nx-teal-100); color: var(--nx-teal-600); }
-.db-badge--solid { background: var(--nx-navy-800); color: #fff; }
-.db-badge--square { border-radius: var(--radius-sm); }
+.db-badge--sm {
+  height: 20px;
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-11);
+}
+.db-badge--md {
+  height: 26px;
+  padding: 0 var(--sp-4);
+  font-size: var(--fs-12);
+}
+.db-badge--lg {
+  height: 32px;
+  padding: 0 var(--sp-5);
+  font-size: var(--fs-14);
+}
+.db-badge--neutral {
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  border-color: var(--border-subtle);
+}
+.db-badge--brand {
+  background: var(--surface-brand-subtle);
+  color: var(--nx-navy-700);
+}
+.db-badge--info {
+  background: var(--nx-blue-100);
+  color: var(--nx-blue-600);
+}
+.db-badge--success {
+  background: var(--nx-success-100);
+  color: var(--nx-success-600);
+}
+.db-badge--warning {
+  background: var(--nx-warning-100);
+  color: var(--nx-warning-600);
+}
+.db-badge--danger {
+  background: var(--nx-danger-100);
+  color: var(--nx-danger-600);
+}
+.db-badge--accent {
+  background: var(--nx-teal-100);
+  color: var(--nx-teal-600);
+}
+.db-badge--solid {
+  background: var(--nx-navy-800);
+  color: #fff;
+}
+.db-badge--square {
+  border-radius: var(--radius-sm);
+}
 
 /* BrandMark — porte fiel de Design System/components/core/BrandMark.jsx */
-.db-brand-mark { display: inline-flex; align-items: center; gap: var(--sp-4); min-width: 0; }
-.db-brand-mark__img { display: block; height: 100%; width: auto; }
+.db-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+.db-brand-mark__img {
+  display: block;
+  height: 100%;
+  width: auto;
+}
 .db-brand-mark__word {
   font-family: var(--font-display);
   font-weight: var(--fw-black);
@@ -77,8 +151,12 @@
   color: var(--text-muted);
   margin-top: 3px;
 }
-.db-brand-mark--inverse .db-brand-mark__word { color: #fff; }
-.db-brand-mark--inverse .db-brand-mark__sub { color: rgba(255, 255, 255, 0.7); }
+.db-brand-mark--inverse .db-brand-mark__word {
+  color: #fff;
+}
+.db-brand-mark--inverse .db-brand-mark__sub {
+  color: rgba(255, 255, 255, 0.7);
+}
 .db-brand-mark__tenant {
   width: var(--db-brand-mark-size);
   height: var(--db-brand-mark-size);
@@ -91,4 +169,64 @@
   font-family: var(--font-display);
   font-weight: var(--fw-black);
   flex: 0 0 auto;
+}
+
+/* Modal — sem spec própria no Design System/; consolidado a partir do padrão de
+   backdrop + painel que se repetia, idêntico, em cada página de gestão do web-admin
+   (praças, papéis, dispositivos, mesas, categorias, produtos, modificadores). A animação de
+   entrada vem das classes utilitárias nx-anim-in/nx-anim-scale-in (components/motion.css),
+   aplicadas pelo próprio componente Modal — não redeclare aqui. */
+.db-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: var(--gutter-page);
+  /* Único lugar do sistema com transparência: o véu do modal (readme.md § "Borda, canto e sombra") */
+  background: var(--surface-overlay);
+}
+.db-modal {
+  width: min(31rem, 100%);
+  max-height: calc(100dvh - var(--sp-9));
+  overflow-y: auto;
+  padding: var(--sp-8);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--brand-radius);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-overlay);
+}
+.db-modal__eyebrow {
+  margin: 0;
+  font: var(--type-overline);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+/* O tom destrutivo é sinalizado no overline, não por borda colorida decorativa —
+   borda de 2px+ existe só em foco, linha de total e contorno de atraso. */
+.db-modal--danger .db-modal__eyebrow {
+  color: var(--text-danger);
+}
+.db-modal__title {
+  margin: var(--sp-2) 0 var(--sp-6);
+  font: var(--type-h1);
+  color: var(--text-primary);
+}
+.db-modal__body {
+  display: grid;
+  gap: var(--sp-6);
+}
+.db-modal__body > p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+.db-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--sp-5);
+  margin-top: var(--sp-8);
+  padding-top: var(--sp-6);
+  border-top: var(--border-1) solid var(--border-subtle);
 }

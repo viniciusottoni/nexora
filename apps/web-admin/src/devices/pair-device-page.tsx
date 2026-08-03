@@ -1,5 +1,5 @@
 import { useId, useState, type FormEvent } from 'react';
-import { Button, Card, Field, Input } from '@nexora/ui';
+import { AlertBanner, Button, Card, Field, Input } from '@nexora/ui';
 import type { DeviceKindDto, PairDeviceRequest } from '@nexora/contracts';
 import './devices.css';
 
@@ -38,26 +38,30 @@ export function PairDevicePage({ profile, onPair }: Readonly<PairDevicePageProps
   }
 
   return (
-    <main className="devices-shell devices-shell--pairing">
+    <main className="devices-shell--pairing">
       <Card className="pairing-card" aria-labelledby="pairing-title">
         <div className="pairing-card__mark" aria-hidden="true">
           06
         </div>
-        <p className="devices-eyebrow">TERMINAL SEGURO</p>
+        <p className="db-page__eyebrow">Terminal seguro</p>
         <h1 id="pairing-title">Autorizar dispositivo</h1>
-        <p className="devices-lead">
+        <p className="db-page__lead">
           Digite o código mostrado no painel do gestor. Ele vale por 10 minutos e só pode ser usado
           uma vez.
         </p>
 
         {paired ? (
-          <div className="pairing-success" role="status">
-            <strong>Dispositivo autorizado</strong>
-            <span>{profile.label} já pode operar nesta loja.</span>
-          </div>
+          <AlertBanner tone="success" title="Dispositivo autorizado" className="pairing-success">
+            {profile.label} já pode operar nesta loja.
+          </AlertBanner>
         ) : (
           <form className="pairing-form" onSubmit={(event) => void submit(event)} noValidate>
-            <Field label="Código de pareamento" htmlFor={codeId} className="pairing-code-field" {...(error ? { error } : {})}>
+            <Field
+              label="Código de pareamento"
+              htmlFor={codeId}
+              className="pairing-code-field"
+              {...(error ? { error } : {})}
+            >
               <Input
                 id={codeId}
                 value={code}

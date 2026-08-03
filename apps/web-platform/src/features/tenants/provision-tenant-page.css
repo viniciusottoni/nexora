@@ -1,180 +1,88 @@
-.provision-shell {
-  width: min(1120px, calc(100% - 2rem));
-  margin: 0 auto;
-  padding: 4.5rem 0 6rem;
-}
-.provision-heading {
-  max-width: 700px;
-  margin-bottom: 2rem;
-  /* .provision-form-card/.install-card/.checklist-card já entram via .db-card (packages/ui) —
-     este cabeçalho (form OU resultado, mesma classe nos dois branches de provision-tenant-page.tsx)
-     não tem um Card por trás, então precisa da própria entrada para não "pipocar" na tela. */
-  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
-}
-.provision-eyebrow {
-  color: var(--color-primary);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-.provision-heading h1 {
-  margin: 0.45rem 0 0.6rem;
-  font: 700 clamp(2.2rem, 5vw, 4.3rem)/0.98 var(--font-display);
-  letter-spacing: -0.035em;
-}
-.provision-heading p,
-.form-section__heading p,
-.form-footer p {
-  color: var(--color-text-muted);
-}
-.provision-form-card {
-  overflow: hidden;
-}
+/* Provisionar estabelecimento — casca, cabeçalho, bancada, formulário e rodapé vêm de
+   `console.css` (@nexora/ui). Aqui fica só o que é desta tela: as seções numeradas do
+   formulário, o comando de instalação e o checklist de lançamento. */
+
+/* Seções numeradas (01 Negócio, 02 Proprietário, 03 Primeira loja): rótulo à esquerda, campos à
+   direita. A numeração é a única razão de existir o mono aqui — número de passo é código. */
 .form-section {
   display: grid;
-  grid-template-columns: minmax(190px, 0.65fr) minmax(0, 1.8fr);
-  gap: 2.2rem;
-  padding: 2rem;
-  border-bottom: 1px solid var(--color-border);
+  grid-template-columns: minmax(11rem, 0.6fr) minmax(0, 1.8fr);
+  gap: var(--sp-9);
+  padding: var(--sp-8);
+  border-bottom: var(--border-1) solid var(--border-subtle);
 }
+
 .form-section__heading {
   display: flex;
-  gap: 1rem;
   align-items: flex-start;
+  gap: var(--sp-5);
 }
-.form-section__heading > span,
-.install-card__number {
-  color: var(--color-secondary);
-  font: 700 0.8rem/1 var(--font-mono);
-}
-.form-section__heading h2,
-.install-card h2,
-.checklist-card h2 {
-  margin: 0 0 0.2rem;
-  font: 700 1.35rem/1.1 var(--font-display);
-}
-.form-section__heading p {
-  margin: 0;
-  font-size: 0.82rem;
-}
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.2rem;
-}
-.native-field {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--sp-3);
-}
-.native-field > span {
-  color: var(--text-secondary);
-  font: var(--type-label);
-}
-.native-field select {
-  height: var(--density-desk-control);
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid var(--color-border);
-  border-radius: calc(var(--radius-base) * 0.65);
-  background: var(--color-surface-raised);
-  color: var(--color-text);
-  padding: 0 0.8rem;
-  font: var(--type-body);
-  transition: var(--transition-control);
-}
-.native-field select:focus {
-  border-color: var(--color-primary);
-  outline: 3px solid color-mix(in srgb, var(--color-primary) 16%, transparent);
-}
-.native-field small {
+.form-section__number {
+  font: var(--fw-bold) var(--fs-12) / 1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--text-muted);
-  font: var(--type-caption);
+  padding-top: 3px;
 }
-.form-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  padding: 1.4rem 2rem;
-  background: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface-raised));
+.form-section__heading h2 {
+  margin: 0 0 var(--sp-2);
+  font: var(--type-h3);
+  color: var(--text-primary);
 }
-.form-footer p {
-  max-width: 570px;
-  margin: 0;
-  font-size: 0.8rem;
-}
-.form-error {
-  margin: 0 2rem 1.5rem;
-  border-left: 3px solid var(--color-danger);
-  padding: 0.8rem 1rem;
-  color: var(--color-danger);
-  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
-  /* Erro de validação (slug em uso, etc.) — entra suavemente em vez de empurrar o layout de
-     forma abrupta bem acima do botão de submissão. */
-  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
-}
-.provision-result-grid {
+
+/* Rodapé do formulário: superfície afundada para fechar o cartão, com a consequência da ação à
+   esquerda e o botão à direita (mesmo padrão dos editores do web-admin). */
+.provision-footer {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 1.4rem;
-  align-items: start;
+  gap: var(--sp-5);
+  padding: var(--sp-6) var(--sp-8) var(--sp-8);
+  background: var(--surface-sunken);
 }
-.install-card,
-.checklist-card {
-  padding: 1.7rem;
+.provision-footer .db-editor__footer {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
 }
-.install-card {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 1.2rem;
-}
-.secure-note {
-  color: var(--color-warning);
-  font-size: 0.83rem;
-  font-weight: 600;
-}
+
+/* Comando de instalação: bloco de código real — mono, superfície afundada, quebra em qualquer
+   ponto porque o token é uma cadeia longa sem espaços. */
 .install-command {
   display: block;
   overflow-wrap: anywhere;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 1rem;
-  background: var(--color-surface);
-  font: 500 0.78rem/1.6 var(--font-mono);
+  padding: var(--sp-6);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font: var(--fw-medium) var(--fs-13) / var(--lh-relaxed) var(--font-mono);
 }
+
 .install-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.7rem;
-  margin-top: 1rem;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
 }
+
 .copy-status {
-  min-height: 1.3rem;
-  margin-bottom: 0;
-  color: var(--color-success);
-  font-size: 0.78rem;
+  min-height: var(--sp-7);
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-success);
 }
 .copy-status:not(:empty) {
-  /* .tsx troca a `key` a cada confirmação de cópia — remonta este <p> de propósito para a
+  /* O .tsx troca a `key` a cada confirmação de cópia — remonta este <p> de propósito para a
      entrada tocar de novo a cada clique em "Copiar comando", já que o texto de confirmação é
      sempre a mesma frase (uma troca de conteúdo sem remontar não dispararia a animação). */
-  animation: nx-slide-in var(--dur-fast) var(--ease-out) both;
+  animation: nx-slide-in var(--dur-fast) var(--ease-out) backwards;
 }
-.checklist-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 1.2rem;
-  border-bottom: 1px solid var(--color-border);
+
+/* Contador do checklist: número-herói pequeno, em mono tabular, no cabeçalho do cartão. */
+.checklist-count {
+  font: var(--fw-bold) var(--fs-20) / 1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
 }
-.checklist-card__header strong {
-  font: 700 1.4rem/1 var(--font-mono);
-  color: var(--color-primary);
-}
+
 .deployment-list {
   display: grid;
   gap: 0;
@@ -184,60 +92,39 @@
 }
 .deployment-list li {
   display: grid;
-  grid-template-columns: 2rem 1fr;
-  gap: 0.8rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--sp-5);
   align-items: center;
-  padding: 0.85rem 0;
-  border-bottom: 1px solid var(--color-border);
+  min-height: var(--density-desk-row);
+  padding: var(--sp-4) 0;
+  border-bottom: var(--border-1) solid var(--border-subtle);
 }
-.deployment-list li > span {
-  display: grid;
-  width: 1.75rem;
-  height: 1.75rem;
-  place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  color: var(--color-text-muted);
-  font: 600 0.67rem var(--font-mono);
-  transition: var(--transition-control);
-}
-.deployment-list li[data-status='COMPLETED'] > span {
-  border-color: var(--color-success);
-  color: white;
-  background: var(--color-success);
+.deployment-list li:last-child {
+  border-bottom: 0;
 }
 .deployment-list strong,
 .deployment-list small {
   display: block;
 }
 .deployment-list strong {
-  font-size: 0.82rem;
+  font: var(--type-label);
+  color: var(--text-primary);
+}
+.deployment-list li[data-status='PENDING'] strong {
+  color: var(--text-secondary);
 }
 .deployment-list small {
-  color: var(--color-text-muted);
-  font-size: 0.7rem;
+  font: var(--type-caption);
+  color: var(--text-muted);
 }
-@media (max-width: 760px) {
-  .provision-shell {
-    padding-top: 2.5rem;
+
+@media (max-width: 60rem) {
+  .form-section {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-6);
+    padding: var(--sp-6);
   }
-  .form-section,
-  .provision-result-grid {
-    grid-template-columns: 1fr;
-  }
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-  .form-footer {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .form-footer button {
-    width: 100%;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  * {
-    scroll-behavior: auto !important;
+  .provision-footer {
+    padding: var(--sp-6);
   }
 }

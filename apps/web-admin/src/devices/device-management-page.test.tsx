@@ -13,6 +13,8 @@ const device = {
   needsReview: true,
 };
 
+const revokedDevice = { ...device, id: '0198aabb-2222-7000-8000-000000000002', active: false };
+
 describe('DeviceManagementPage', () => {
   it('orienta pareamento local sem chamar rota de criaÃ§Ã£o na nuvem', () => {
     render(
@@ -20,6 +22,7 @@ describe('DeviceManagementPage', () => {
         devices={[device]}
         onRename={async () => undefined}
         onRevoke={async () => undefined}
+        onDelete={async () => undefined}
       />,
     );
 
@@ -39,6 +42,7 @@ describe('DeviceManagementPage', () => {
         })}
         onRename={async () => undefined}
         onRevoke={async () => undefined}
+        onDelete={async () => undefined}
       />,
     );
 
@@ -61,6 +65,7 @@ describe('DeviceManagementPage', () => {
         })}
         onRename={async () => undefined}
         onRevoke={onRevoke}
+        onDelete={async () => undefined}
       />,
     );
 
@@ -70,5 +75,28 @@ describe('DeviceManagementPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sim, revogar dispositivo' }));
 
     await waitFor(() => expect(onRevoke).toHaveBeenCalledWith(device.id));
+  });
+
+  it('só oferece excluir para dispositivo já revogado, e exige confirmação', async () => {
+    const onDelete = vi.fn(async () => undefined);
+    render(
+      <DeviceManagementPage
+        devices={[revokedDevice]}
+        onRename={async () => undefined}
+        onRevoke={async () => undefined}
+        onDelete={onDelete}
+      />,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: `Revogar ${revokedDevice.label}` }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: `Excluir ${revokedDevice.label}` }));
+    const dialog = screen.getByRole('dialog', { name: 'Excluir dispositivo?' });
+    expect(dialog).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Sim, excluir dispositivo' }));
+
+    await waitFor(() => expect(onDelete).toHaveBeenCalledWith(revokedDevice.id));
   });
 });

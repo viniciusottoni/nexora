@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button } from '@nexora/ui';
+import { AlertBanner, Button, Modal } from '@nexora/ui';
 import type { ProductImageContentType } from './products-api.js';
 
 export interface ImageCropResult {
@@ -144,61 +144,52 @@ export function ImageCropDialog({ file, onCancel, onConfirm }: Readonly<ImageCro
   }
 
   return (
-    <div className="catalog-dialog-backdrop">
-      <section
-        className="catalog-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="crop-dialog-title"
-      >
-        <p className="catalog-eyebrow">FOTO DO PRODUTO</p>
-        <h2 id="crop-dialog-title">Recortar foto</h2>
-        <p className="catalog-crop-hint">
-          Arraste para posicionar e use o controle para aproximar.
-        </p>
-
-        {error ? (
-          <p className="catalog-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-
-        <canvas
-          ref={canvasRef}
-          width={DISPLAY_SIZE}
-          height={DISPLAY_SIZE}
-          className="catalog-crop-canvas"
-          role="img"
-          aria-label="Área de recorte da foto"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerLeave={handlePointerUp}
-        />
-
-        <label className="catalog-crop-zoom">
-          Zoom
-          <input
-            type="range"
-            min={MIN_ZOOM}
-            max={MAX_ZOOM}
-            step={0.05}
-            value={zoom}
-            onChange={(event) => handleZoomChange(Number(event.target.value))}
-            aria-label="Ajustar zoom da foto"
-          />
-        </label>
-
-        <div className="catalog-dialog__actions">
+    <Modal
+      open
+      onClose={onCancel}
+      eyebrow="Foto do produto"
+      title="Recortar foto"
+      actions={
+        <>
           <Button type="button" variant="ghost" onClick={onCancel}>
             Cancelar
           </Button>
           <Button type="button" onClick={confirm} disabled={!imageReady}>
             Usar recorte
           </Button>
-        </div>
-      </section>
-    </div>
+        </>
+      }
+    >
+      <p className="db-hint">Arraste para posicionar e use o controle para aproximar.</p>
+
+      {error ? <AlertBanner tone="danger">{error}</AlertBanner> : null}
+
+      <canvas
+        ref={canvasRef}
+        width={DISPLAY_SIZE}
+        height={DISPLAY_SIZE}
+        className="catalog-crop-canvas"
+        role="img"
+        aria-label="Área de recorte da foto"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+      />
+
+      <label className="catalog-crop-zoom">
+        Zoom
+        <input
+          type="range"
+          min={MIN_ZOOM}
+          max={MAX_ZOOM}
+          step={0.05}
+          value={zoom}
+          onChange={(event) => handleZoomChange(Number(event.target.value))}
+          aria-label="Ajustar zoom da foto"
+        />
+      </label>
+    </Modal>
   );
 }
 

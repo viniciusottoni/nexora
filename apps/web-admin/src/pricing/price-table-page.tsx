@@ -81,16 +81,7 @@ export function PriceTablePage({
   onBulkAdjust,
 }: Readonly<PriceTablePageProps>) {
   return (
-    <main className="pricing-shell" aria-labelledby="pricing-title">
-      <header className="pricing-header">
-        <p className="pricing-eyebrow">PREÇO POR CANAL DE VENDA</p>
-        <h1 id="pricing-title">{variantName}</h1>
-        <p className="pricing-lead">
-          Preço diferente por canal — a taxa do delivery ou do marketplace não precisa comer a
-          margem do salão.
-        </p>
-      </header>
-
+    <div className="db-stack">
       <ChannelPriceTable
         variantId={variantId}
         variantName={variantName}
@@ -103,7 +94,7 @@ export function PriceTablePage({
         onLoadSnapshot={onLoadCategoryPriceSnapshot}
         onConfirm={onBulkAdjust}
       />
-    </main>
+    </div>
   );
 }
 
@@ -175,16 +166,16 @@ function ChannelPriceTable({
   }
 
   return (
-    <Card title="Tabela de preços por canal" subtitle={variantName} className="pricing-table-card">
-      {error ? (
-        <p className="pricing-error" role="alert">
-          {error}
-        </p>
-      ) : null}
+    <Card
+      title="Tabela de preços por canal"
+      subtitle={`${variantName} — a taxa do delivery ou do marketplace não precisa comer a margem do salão.`}
+      className="db-form-card"
+    >
+      {error ? <AlertBanner tone="danger">{error}</AlertBanner> : null}
       {notice ? (
-        <p className="pricing-notice" role="status">
+        <AlertBanner tone="success" title="Preços atualizados">
           {notice}
-        </p>
+        </AlertBanner>
       ) : null}
 
       {deliveryCheaperWarning ? (
@@ -194,34 +185,36 @@ function ChannelPriceTable({
         </AlertBanner>
       ) : null}
 
-      <table className="pricing-channel-table">
-        <thead>
-          <tr>
-            <th scope="col">Canal</th>
-            <th scope="col">Preço</th>
-            <th scope="col">Origem</th>
-          </tr>
-        </thead>
-        <tbody>
-          {CHANNEL_ORDER.map((channel) => {
-            const row = byChannel.get(channel);
-            return (
-              <ChannelPriceRow
-                key={channel}
-                channel={channel}
-                cents={centsByChannel[channel] ?? 0}
-                isInherited={row?.isInherited ?? false}
-                onChange={(cents) =>
-                  setCentsByChannel((current) => ({ ...current, [channel]: cents }))
-                }
-              />
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="db-table-wrap">
+        <table className="db-table pricing-channel-table">
+          <thead>
+            <tr>
+              <th scope="col">Canal</th>
+              <th scope="col">Preço</th>
+              <th scope="col">Origem</th>
+            </tr>
+          </thead>
+          <tbody>
+            {CHANNEL_ORDER.map((channel) => {
+              const row = byChannel.get(channel);
+              return (
+                <ChannelPriceRow
+                  key={channel}
+                  channel={channel}
+                  cents={centsByChannel[channel] ?? 0}
+                  isInherited={row?.isInherited ?? false}
+                  onChange={(cents) =>
+                    setCentsByChannel((current) => ({ ...current, [channel]: cents }))
+                  }
+                />
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-      <div className="pricing-table-card__footer">
-        <p>
+      <div className="db-editor__footer">
+        <p className="db-hint">
           {dirtyChannels.length > 0
             ? `${dirtyChannels.length} canal(is) alterado(s)`
             : 'Nenhuma alteração pendente'}
@@ -335,18 +328,14 @@ function BulkAdjustSection({
     <Card
       title="Reajuste em massa por categoria"
       subtitle="Aplica um percentual em um canal para todas as variações ativas da categoria"
-      className="pricing-bulk-card"
+      className="db-form-card"
     >
-      {error ? (
-        <p className="pricing-error" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <AlertBanner tone="danger">{error}</AlertBanner> : null}
       {result ? (
-        <p className="pricing-notice" role="status">
+        <AlertBanner tone="success" title="Reajuste aplicado">
           {result.updated} preço(s) atualizado(s), vigentes a partir de{' '}
           {new Date(result.effectiveFrom).toLocaleString('pt-BR')}.
-        </p>
+        </AlertBanner>
       ) : null}
 
       <div className="pricing-bulk-fields">
@@ -386,7 +375,7 @@ function BulkAdjustSection({
         </Field>
       </div>
 
-      <div className="pricing-bulk-actions">
+      <div className="db-page__actions">
         <Button
           type="button"
           variant="ghost"
@@ -408,30 +397,32 @@ function BulkAdjustSection({
 
       {preview ? (
         preview.length === 0 ? (
-          <p className="pricing-lead">Nenhuma variação ativa nesta categoria e canal.</p>
+          <p className="db-hint">Nenhuma variação ativa nesta categoria e canal.</p>
         ) : (
-          <table className="pricing-preview-table">
-            <thead>
-              <tr>
-                <th scope="col">Variação</th>
-                <th scope="col">Antes</th>
-                <th scope="col">Depois</th>
-              </tr>
-            </thead>
-            <tbody>
-              {preview.map((item) => (
-                <tr key={item.variantId}>
-                  <td>{item.variantName}</td>
-                  <td>{centsToDisplay(decimalStringToCents(item.currentAmount))}</td>
-                  <td>
-                    {centsToDisplay(
-                      applyPercentCents(decimalStringToCents(item.currentAmount), percent),
-                    )}
-                  </td>
+          <div className="db-table-wrap">
+            <table className="db-table db-table--compact pricing-preview-table">
+              <thead>
+                <tr>
+                  <th scope="col">Variação</th>
+                  <th scope="col">Antes</th>
+                  <th scope="col">Depois</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {preview.map((item) => (
+                  <tr key={item.variantId}>
+                    <td>{item.variantName}</td>
+                    <td>{centsToDisplay(decimalStringToCents(item.currentAmount))}</td>
+                    <td>
+                      {centsToDisplay(
+                        applyPercentCents(decimalStringToCents(item.currentAmount), percent),
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )
       ) : null}
     </Card>

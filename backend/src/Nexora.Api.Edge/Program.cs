@@ -91,6 +91,10 @@ builder.Services.AddSwaggerGen();
 // precisa de HttpContext/RequestDelegate (ASP.NET Core, proibido em Infrastructure — ADR-039).
 builder.Services.AddScoped<IIdempotencyStore, IdempotencyStore>();
 
+// US-030 §8: geração de short_code (ADR-016) com lock consultivo do Postgres — só Infrastructure
+// fala Npgsql/SQL cru (ADR-039).
+builder.Services.AddScoped<IOrderShortCodeAllocator, OrderShortCodeAllocator>();
+
 // ---------------------------------------------------------------------------
 // Options (IOptions<T>) — uma Configure<T> por classe de opções consumida
 // pelas implementações concretas registradas abaixo.
@@ -188,6 +192,14 @@ builder.Services.AddSingleton<ITableMapBroadcaster, SignalRTableMapBroadcaster>(
 // do mesmo padrão acima, salas role:{papel}/user:{id} em vez de tenant (ver Hubs.AlertsHub).
 builder.Services.AddSingleton<IAlertsBroadcaster, SignalRAlertsBroadcaster>();
 builder.Services.AddHostedService<WaiterCallEscalationWorker>();
+
+// SignalR (US-031) — roteamento de pedido/item por praça (ADR-011), salas station:{id}/
+// role:{papel}/table:{id} (ver Hubs.KdsHub).
+builder.Services.AddSingleton<IStationBroadcaster, SignalRStationBroadcaster>();
+
+// SignalR (US-034) — estado de conectividade edge<->nuvem (sync.status) para todos os
+// dispositivos da loja, sala tenant:{id} (ADR-011, ver Hubs.SyncStatusHub).
+builder.Services.AddSingleton<ISyncStatusBroadcaster, SignalRSyncStatusBroadcaster>();
 
 // ---------------------------------------------------------------------------
 // Autenticação — JWT Bearer (ADR-037/doc. 05). Mesmo formato de claims/segredo
@@ -394,6 +406,47 @@ builder.Services.AddAuthorization(options =>
         return PermissionAuthorization.HasPermission(permissions, "kds:advance");
     }));
 
+    // Leitura da fila do KDS (US-031, GET /v1/kds/queue) — "kds:read" ou "kds:advance" (quem já
+    // pode avançar item plausivelmente também pode só olhar a fila) satisfazem.
+    options.AddPolicy("KdsQueueRead", policy => policy.RequireAssertion(context =>
+    {
+        var permissions = context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value).ToArray();
+        return PermissionAuthorization.HasPermission(permissions, "kds:read")
+               || PermissionAuthorization.HasPermission(permissions, "kds:advance");
+    }));
+
+    // Criação de pedido pelo garçom/POS (US-030 §7, POST /v1/orders) — "order:create" já existe
+    // no catálogo fechado (Nexora.Domain.Platform.PermissionCatalog); o caminho público (cliente
+    // via QR) usa a policy "SessionScope" já existente, nunca esta.
+    options.AddPolicy("OrderCreate", policy => policy.RequireAssertion(context =>
+    {
+        var permissions = context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value).ToArray();
+        return PermissionAuthorization.HasPermission(permissions, "order:create");
+    }));
+
+    // Leitura de pedido (US-030 §7, GET /v1/orders/{id}) — "order:read"/"kds:read"/"report:read"
+    // cobrem os papéis que plausivelmente consultam um pedido isolado, mesmo raciocínio de
+    // "OrderItemTimelineRead" (US-032).
+    options.AddPolicy("OrderRead", policy => policy.RequireAssertion(context =>
+    {
+        var permissions = context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value).ToArray();
+        return PermissionAuthorization.HasPermission(permissions, "order:read")
+               || PermissionAuthorization.HasPermission(permissions, "kds:read")
+               || PermissionAuthorization.HasPermission(permissions, "report:read");
+    }));
+
+    // Timeline de carimbos de um item (US-032 §7 — drill-down do painel, RF-BI-11) — leitura, não
+    // exige a permissão de AVANÇAR o KDS: "order:read"/"kds:read"/"report:read" já existem no
+    // catálogo fechado (Nexora.Domain.Platform.PermissionCatalog) e cobrem os três papéis que
+    // plausivelmente consultam isto (quem administra pedido, quem opera o KDS, quem lê relatório).
+    options.AddPolicy("OrderItemTimelineRead", policy => policy.RequireAssertion(context =>
+    {
+        var permissions = context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value).ToArray();
+        return PermissionAuthorization.HasPermission(permissions, "order:read")
+               || PermissionAuthorization.HasPermission(permissions, "kds:read")
+               || PermissionAuthorization.HasPermission(permissions, "report:read");
+    }));
+
     // Divisão da conta (US-027) — "table:close_request" já existe no catálogo fechado desde antes
     // desta história (descrição "Solicitar fechamento") e nunca tinha sido usado por nenhuma
     // policy real: é exatamente o gesto de "preparar o fechamento da comanda" que assign-items/
@@ -413,6 +466,19 @@ builder.Services.AddAuthorization(options =>
     {
         var permissions = context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value).ToArray();
         return PermissionAuthorization.HasPermission(permissions, "payment:register");
+    }));
+
+    // Cancelamento de item/pedido (US-033) — só a permissão BASE de tentar cancelar
+    // ("order:cancel_queued", item ainda na fila; "order:cancel_started" também satisfaz, papéis
+    // com a permissão mais forte não precisam da mais fraca). A elevação para item JÁ INICIADO é
+    // verificada dentro do handler via X-Authorization-Token (ADR-023) — não pode ser uma policy
+    // estática porque depende do ESTADO do item/pedido no momento da chamada, não do papel de
+    // quem chama.
+    options.AddPolicy("OrderCancelItem", policy => policy.RequireAssertion(context =>
+    {
+        var permissions = context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value).ToArray();
+        return PermissionAuthorization.HasPermission(permissions, "order:cancel_queued")
+               || PermissionAuthorization.HasPermission(permissions, "order:cancel_started");
     }));
 });
 
@@ -501,6 +567,14 @@ app.MapHub<TableMapHub>("/hubs/table-map").WithMetadata(new IdempotencyExemptAtt
 // US-025/US-026: alerta dirigido a papel/pessoa (chamar garçom, pedir a conta), esquema padrão —
 // só staff se conecta (ver docstring de AlertsHub).
 app.MapHub<AlertsHub>("/hubs/alerts").WithMetadata(new IdempotencyExemptAttribute());
+
+// US-031: roteamento de pedido/item por praça (ADR-011), esquema padrão — só staff (KDS, caixa,
+// garçom) se conecta (ver docstring de KdsHub).
+app.MapHub<KdsHub>("/hubs/kds").WithMetadata(new IdempotencyExemptAttribute());
+
+// US-034: estado de conectividade edge<->nuvem (sync.status) para todos os dispositivos da loja
+// (ADR-011), esquema padrão (ver docstring de SyncStatusHub).
+app.MapHub<SyncStatusHub>("/hubs/sync-status").WithMetadata(new IdempotencyExemptAttribute());
 
 app.Run();
 

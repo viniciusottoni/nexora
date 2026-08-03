@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   addOrderItemRequestSchema,
+  createOrderRequestSchema,
+  createOrderResponseSchema,
+  createPublicOrderRequestSchema,
   orderItemResponseSchema,
+  orderResponseSchema,
   repeatOrderItemResponseSchema,
   sessionConsumptionResponseSchema,
   tableConsumptionEventSchema,
@@ -101,5 +105,86 @@ describe('contratos de consumo/repeticao de item (US-024/US-028)', () => {
       data: { orderItemId: itemId, productName: 'Pizza G Mussarela' },
     });
     expect(event.type).toBe('order.item.ready');
+  });
+});
+
+describe('contratos de criacao de pedido (US-030 §7)', () => {
+  const sessionId = '0198aabb-7777-7000-8000-000000000007';
+
+  it('valida o corpo minimo de POST /v1/orders (garcom/POS, canal e mesa explicitos)', () => {
+    const request = createOrderRequestSchema.parse({
+      channel: 'DineIn',
+      sessionId,
+      items: [{ variantId, quantity: 1 }],
+    });
+    expect(request.channel).toBe('DineIn');
+    expect(request.items).toHaveLength(1);
+  });
+
+  it('recusa pedido sem nenhum item', () => {
+    expect(() =>
+      createOrderRequestSchema.parse({ channel: 'DineIn', sessionId, items: [] }),
+    ).toThrow();
+  });
+
+  it('aceita item com modificadores, fracoes (meio a meio) e observacao livre', () => {
+    const request = createOrderRequestSchema.parse({
+      channel: 'DineIn',
+      sessionId,
+      items: [
+        {
+          variantId,
+          quantity: 1,
+          notes: 'bem assada, sem cebola',
+          modifiers: [{ modifierId: itemId, quantity: 1 }],
+          fractions: [
+            { variantId, weight: 0.5 },
+            { variantId: orderId, weight: 0.5 },
+          ],
+        },
+      ],
+    });
+    expect(request.items[0]?.notes).toBe('bem assada, sem cebola');
+    expect(request.items[0]?.fractions).toHaveLength(2);
+  });
+
+  it('valida o corpo de POST /v1/public/orders (cliente na mesa, sem channel/sessionId)', () => {
+    const request = createPublicOrderRequestSchema.parse({ items: [{ variantId, quantity: 2 }] });
+    expect(request.items[0]?.quantity).toBe(2);
+  });
+
+  it('valida o envelope { order, promisedAt, estimatedMinutes } do pedido confirmado, com codigo curto', () => {
+    const response = createOrderResponseSchema.parse({
+      order: {
+        id: orderId,
+        shortCode: 'A47',
+        status: 'PLACED',
+        sessionId,
+        channel: 'DineIn',
+        total: '60.00',
+        placedAt: '2026-07-31T20:47:12.334Z',
+        items: [buildItem()],
+      },
+      promisedAt: '2026-07-31T20:59:00Z',
+      estimatedMinutes: 12,
+    });
+    expect(response.order.shortCode).toBe('A47');
+    expect(response.order.status).toBe('PLACED');
+    expect(response.estimatedMinutes).toBe(12);
+  });
+
+  it('recusa status de pedido fora do vocabulario conhecido', () => {
+    expect(() =>
+      orderResponseSchema.parse({
+        id: orderId,
+        shortCode: 'A47',
+        status: 'PENDING',
+        sessionId: null,
+        channel: 'DineIn',
+        total: '60.00',
+        placedAt: null,
+        items: [],
+      }),
+    ).toThrow();
   });
 });

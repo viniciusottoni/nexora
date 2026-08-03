@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { Card, EmptyState, Select } from '@nexora/ui';
+import { Card, EmptyState, Field, Select } from '@nexora/ui';
 import type { CategoryDto, PricingChannel, ProductDto, VariantDto } from '@nexora/contracts';
 import {
   PriceTablePage,
@@ -88,48 +88,54 @@ export function PricingSection({
   }
 
   return (
-    <main className="pricing-section-shell" aria-labelledby="pricing-section-title">
-      <header className="pricing-section-header">
-        <p className="pricing-section-eyebrow">CARDÁPIO · PREÇOS</p>
-        <h1 id="pricing-section-title">Preço por canal de venda</h1>
-        <p className="pricing-section-lead">
-          Escolha um produto e uma variação para editar o preço por canal, ou use o reajuste em
-          massa por categoria.
-        </p>
+    <main className="db-page nx-anim-in" aria-labelledby="pricing-section-title">
+      <header className="db-page__header">
+        <div className="db-page__heading">
+          <p className="db-page__eyebrow">Cardápio · preços</p>
+          <h1 className="db-page__title" id="pricing-section-title">
+            Preço por canal de venda
+          </h1>
+          <p className="db-page__lead">
+            Escolha um produto e uma variação para editar o preço por canal, ou use o reajuste em
+            massa por categoria.
+          </p>
+        </div>
       </header>
 
-      <div className="pricing-section-picker">
-        <label htmlFor={productFieldId}>Produto</label>
-        <Select
-          id={productFieldId}
-          value={productId ?? ''}
-          onChange={(event) => setProductId(event.target.value || undefined)}
-        >
-          <option value="">Selecione um produto</option>
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name}
-            </option>
-          ))}
-        </Select>
-
-        {productId ? (
-          <>
-            <label htmlFor={variantFieldId}>Variação</label>
+      <Card className="db-form-card" title="Item a precificar" padding="tight">
+        <div className="db-form-row">
+          <Field label="Produto" htmlFor={productFieldId}>
             <Select
-              id={variantFieldId}
-              value={variantId ?? ''}
-              onChange={(event) => setVariantId(event.target.value || undefined)}
+              id={productFieldId}
+              value={productId ?? ''}
+              onChange={(event) => setProductId(event.target.value || undefined)}
             >
-              {variants.map((variant) => (
-                <option key={variant.id} value={variant.id}>
-                  {variant.name}
+              <option value="">Selecione um produto</option>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name}
                 </option>
               ))}
             </Select>
-          </>
-        ) : null}
-      </div>
+          </Field>
+
+          {productId ? (
+            <Field label="Variação" htmlFor={variantFieldId}>
+              <Select
+                id={variantFieldId}
+                value={variantId ?? ''}
+                onChange={(event) => setVariantId(event.target.value || undefined)}
+              >
+                {variants.map((variant) => (
+                  <option key={variant.id} value={variant.id}>
+                    {variant.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ) : null}
+        </div>
+      </Card>
 
       {selectedVariant ? (
         <PriceTableLoader
@@ -141,8 +147,8 @@ export function PricingSection({
           onLoadCategoryPriceSnapshot={loadCategoryPriceSnapshot}
         />
       ) : (
-        <Card className="pricing-section-empty">
-          <EmptyState title="Selecione um produto e uma variação">
+        <Card padding="none">
+          <EmptyState icon="sell" title="Selecione um produto e uma variação">
             A tabela de preços por canal aparece aqui.
           </EmptyState>
         </Card>
@@ -187,9 +193,11 @@ function PriceTableLoader({
 
   if (!channels) {
     return (
-      <Card className="pricing-section-empty" role="status">
-        <span className="nx-spinner" aria-hidden="true" />
-        Carregando tabela de preços…
+      <Card role="status">
+        <p className="db-loading">
+          <span className="nx-spinner" aria-hidden="true" />
+          Carregando tabela de preços…
+        </p>
       </Card>
     );
   }

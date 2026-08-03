@@ -88,6 +88,65 @@ describe('BillingApi', () => {
     expect(JSON.parse(init.body as string)).toMatchObject({ amount: 50, method: 'CASH' });
   });
 
+  it('envia X-Authorization-Token no pagamento parcial quando informado (US-035 §10)', async () => {
+    const fetcher = vi.fn(async () =>
+      jsonResponse({
+        paymentId: '0198aabb-4444-7000-8000-000000000003',
+        amountPaid: '50.00',
+        remainingAmount: '0.00',
+        total: '50.00',
+        sessionStatus: 'BILLREQUESTED',
+      }),
+    );
+    const api = new BillingApi('', fetcher as unknown as typeof fetch);
+
+    await api.registerPartialPayment(identity, 'session-1', { amount: 50, method: 'CASH', reason: 'Cliente desistiu' }, 'token-abc');
+
+    const [, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
+    expect(new Headers(init.headers).get('X-Authorization-Token')).toBe('token-abc');
+  });
+
+  it('propaga o código PENDING_ITEMS e a lista de itens pendentes (US-035 §7)', async () => {
+    const fetcher = vi.fn(async () =>
+      jsonResponse(
+        {
+          detail: 'Há itens que ainda não foram entregues.',
+          code: 'PENDING_ITEMS',
+          meta: { pendingItems: [{ name: 'Petit Gateau', status: 'READY' }] },
+        },
+        422,
+      ),
+    );
+    const api = new BillingApi('', fetcher as unknown as typeof fetch);
+
+    await expect(api.registerPartialPayment(identity, 'session-1', { amount: 50, method: 'CASH' })).rejects.toMatchObject({
+      code: 'PENDING_ITEMS',
+      meta: { pendingItems: [{ name: 'Petit Gateau', status: 'READY' }] },
+    });
+  });
+
+  it('autoriza o fechamento com item pendente via /v1/auth/authorize (US-035 §10)', async () => {
+    const fetcher = vi.fn(async () =>
+      jsonResponse({
+        authorizationToken: 'token-autorizacao',
+        expiresIn: 120,
+        authorizedBy: { id: '0198aabb-7777-7000-8000-000000000001', name: 'Gerente Ana' },
+      }),
+    );
+    const api = new BillingApi('', fetcher as unknown as typeof fetch);
+
+    const grant = await api.authorizeCloseWithPending(identity, { sessionId: 'session-1', pin: '1234', reason: 'Cliente desistiu' });
+
+    expect(grant.authorizationToken).toBe('token-autorizacao');
+    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toContain('/v1/auth/authorize');
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      action: 'CLOSE_WITH_PENDING',
+      pin: '1234',
+      context: { sessionId: 'session-1', reason: 'Cliente desistiu' },
+    });
+  });
+
   it('erro genérico vira BillingApiError com mensagem amigável', async () => {
     const fetcher = vi.fn(async () => jsonResponse({}, 500));
     const api = new BillingApi('', fetcher as unknown as typeof fetch);

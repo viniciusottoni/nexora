@@ -78,24 +78,11 @@ export function PrepTimeSection({
     };
   }, [products, prepTimeApi, variantsApi]);
 
-  if (loadError)
-    return (
-      <p className="prep-time-error" role="alert">
-        {loadError}
-      </p>
-    );
-  if (!rows) {
-    return (
-      <p className="prep-time-loading" role="status">
-        <span className="nx-spinner" aria-hidden="true" />
-        Carregando variações…
-      </p>
-    );
-  }
-
   return (
     <PrepTimePage
-      variants={rows}
+      variants={rows ?? []}
+      loading={!rows && !loadError}
+      loadError={loadError}
       stations={stations}
       onUpdatePrepTime={async (variantId, input) => {
         await prepTimeApi.updatePrepTime(variantId, input);

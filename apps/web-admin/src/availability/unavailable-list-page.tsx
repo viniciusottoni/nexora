@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Badge, Button, Card, EmptyState } from '@nexora/ui';
+import { AlertBanner, Badge, Button, Card, EmptyState } from '@nexora/ui';
 import {
   AvailabilityApi,
   subscribeToAvailability,
@@ -71,63 +71,89 @@ export function UnavailableListPage({
     }
   }
 
-  if (error) {
-    return (
-      <p className="unavailable-list-error" role="alert">
-        {error}
-      </p>
-    );
-  }
-
   if (!items) {
     return (
-      <output className="unavailable-list-loading">
-        <span className="nx-spinner" aria-hidden="true" />
-        Carregando itens indisponíveis…
-      </output>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <EmptyState title="Nenhum item indisponível">
-        Todo o cardápio está disponível para venda agora.
-      </EmptyState>
+      <main className="db-page nx-anim-in" aria-labelledby="unavailable-title">
+        <header className="db-page__header">
+          <div className="db-page__heading">
+            <p className="db-page__eyebrow">Cardápio</p>
+            <h1 className="db-page__title" id="unavailable-title">
+              Itens indisponíveis
+            </h1>
+            <p className="db-page__lead">
+              Item marcado como indisponível sai do cardápio na hora, em todos os canais. Voltar a
+              vender é um clique — e vale imediatamente.
+            </p>
+          </div>
+        </header>
+        {error ? <AlertBanner tone="danger">{error}</AlertBanner> : null}
+        <output className="db-loading">
+          <span className="nx-spinner" aria-hidden="true" />
+          Carregando itens indisponíveis…
+        </output>
+      </main>
     );
   }
 
   return (
-    <section className="unavailable-list" aria-label="Itens indisponíveis">
-      <header className="unavailable-list__header">
-        <h2>Itens indisponíveis</h2>
-        <Badge tone="danger">{items.length}</Badge>
+    <main className="db-page nx-anim-in" aria-labelledby="unavailable-title">
+      <header className="db-page__header">
+        <div className="db-page__heading">
+          <p className="db-page__eyebrow">Cardápio</p>
+          <h1 className="db-page__title" id="unavailable-title">
+            Itens indisponíveis
+          </h1>
+          <p className="db-page__lead">
+            Item marcado como indisponível sai do cardápio na hora, em todos os canais. Voltar a
+            vender é um clique — e vale imediatamente.
+          </p>
+        </div>
       </header>
-      <ul className="unavailable-list__items nx-stagger">
-        {items.map((item) => (
-          <li key={item.productId}>
-            <Card className="unavailable-list__card">
-              <div>
-                <strong>{item.productName}</strong>
-                {item.unavailableReason ? <p>{item.unavailableReason}</p> : null}
-                {item.unavailableSince ? (
-                  <time className="unavailable-list__since" dateTime={item.unavailableSince}>
-                    Desde {formatDateTime(item.unavailableSince)}
-                  </time>
-                ) : null}
-              </div>
-              <Button
-                type="button"
-                variant="accent"
-                busy={restoringId === item.productId}
-                onClick={() => void restore(item.productId)}
-              >
-                Marcar disponível
-              </Button>
-            </Card>
-          </li>
-        ))}
-      </ul>
-    </section>
+      {error ? <AlertBanner tone="danger">{error}</AlertBanner> : null}
+
+      {items.length === 0 ? (
+        <Card padding="none">
+          <EmptyState icon="block" title="Nenhum item indisponível">
+            Todo o cardápio está disponível para venda agora.
+          </EmptyState>
+        </Card>
+      ) : (
+        <Card
+          as="section"
+          aria-label="Itens indisponíveis"
+          title="Fora do cardápio agora"
+          subtitle="Enquanto estiver aqui, o item não aparece para o cliente em nenhum canal."
+          actions={<Badge tone="danger">{items.length}</Badge>}
+        >
+          <ul className="unavailable-list__items nx-stagger">
+            {items.map((item) => (
+              <li key={item.productId} className="unavailable-list__item">
+                <span className="db-list__text">
+                  <span className="db-list__name">{item.productName}</span>
+                  {item.unavailableReason ? (
+                    <span className="db-list__meta">{item.unavailableReason}</span>
+                  ) : null}
+                  {item.unavailableSince ? (
+                    <time className="unavailable-list__since" dateTime={item.unavailableSince}>
+                      Desde {formatDateTime(item.unavailableSince)}
+                    </time>
+                  ) : null}
+                </span>
+                <Button
+                  type="button"
+                  variant="accent"
+                  size="sm"
+                  busy={restoringId === item.productId}
+                  onClick={() => void restore(item.productId)}
+                >
+                  Marcar disponível
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+    </main>
   );
 }
 

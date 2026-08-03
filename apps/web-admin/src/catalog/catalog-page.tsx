@@ -87,7 +87,7 @@ export function CatalogPage({
 
   return (
     <div className="catalog-tabs-shell">
-      <nav className="catalog-tabs-nav" aria-label="Seções do catálogo">
+      <nav aria-label="Seções do catálogo">
         <SegmentedControl
           options={[
             { value: 'categories', label: 'Categorias' },

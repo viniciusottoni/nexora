@@ -3,7 +3,7 @@
 }
 body {
   margin: 0;
-  background: var(--brand-surface, var(--color-surface));
+  background: var(--surface-page);
   color: var(--color-text);
 }
 .pos-shell {
@@ -88,15 +88,47 @@ body {
   margin-top: 1.5rem;
   font-size: 1rem;
 }
+.pos-authenticated {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Chrome fixo do produto (Design System readme.md § "Espaço, densidade e layout") reserva a
+   própria linha em vez de flutuar sobre a página — um OperatorBar em position:fixed cobria os
+   controles do próprio cabeçalho da tela (Switch "Minhas mesas" e SegmentedControl de ordenação,
+   ambos com o mesmo canto superior direito), tornando-os invisíveis apesar de renderizados. */
 .pos-authenticated > .db-operator-bar {
-  position: fixed;
-  z-index: 10;
-  top: 0.65rem;
-  right: 1rem;
+  flex: 0 0 auto;
+  align-self: flex-end;
   width: min(24rem, calc(100% - 2rem));
+  margin: 0.65rem 1rem 0 0;
   /* OperatorBar (packages/ui) não tem animação própria — entra deslizando ao autenticar, mesma
      assinatura de entrada do resto do app (nunca duração/easing "solto"). */
   animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+}
+
+/* US-034 §10 — indicador discreto e permanente da fila local de pedidos (queda de LAN), visível
+   independente da tela que o garçom estiver usando (mapa de mesas, composição de pedido etc.). */
+.pos-authenticated > .pos-offline-banner {
+  position: fixed;
+  z-index: 9;
+  left: 1rem;
+  bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: calc(100% - 2rem);
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-raised);
+  font-size: 0.8125rem;
+}
+
+.pos-offline-banner__hint {
+  color: var(--text-muted);
 }
 .pos-device-missing,
 .pos-loading {
@@ -105,7 +137,7 @@ body {
   place-content: center;
   padding: 2rem;
   text-align: center;
-  background: var(--brand-surface);
+  background: var(--surface-page);
   color: var(--color-text);
   animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }

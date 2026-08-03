@@ -24,7 +24,7 @@ namespace Nexora.Api.Cloud.Workers;
 /// deveria editar arquivos de <c>Nexora.Infrastructure</c> (fora do escopo desta história) — por
 /// isso o worker fica no projeto de Api, referenciando só <c>Nexora.Application</c>.
 /// </summary>
-public sealed class AvailabilityAutoRestoreWorker : BackgroundService
+public sealed partial class AvailabilityAutoRestoreWorker : BackgroundService
 {
     /// <summary>
     /// Intervalo de varredura — não precisa ser fino: a virada do dia operacional acontece uma vez
@@ -55,7 +55,7 @@ public sealed class AvailabilityAutoRestoreWorker : BackgroundService
             {
                 // Nunca deixa uma falha pontual (ex.: banco fora do ar) derrubar o worker — mesma
                 // resiliência de EmailOutboxDeliveryWorker/SyncOutboxWorker.
-                _logger.LogWarning(ex, "Falha ao varrer produtos indisponíveis para retorno automático.");
+                LogVarreduraFalhou(ex);
             }
 
             try
@@ -97,11 +97,16 @@ public sealed class AvailabilityAutoRestoreWorker : BackgroundService
             }
             else
             {
-                _logger.LogWarning(
-                    "Falha ao restaurar produtos indisponíveis do tenant {TenantId}: {Erro}", tenantId, result.Error);
+                LogRestauracaoFalhou(tenantId, result.Error);
             }
         }
 
         return restoredTotal;
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Falha ao varrer produtos indisponíveis para retorno automático.")]
+    private partial void LogVarreduraFalhou(Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Falha ao restaurar produtos indisponíveis do tenant {TenantId}: {Erro}")]
+    private partial void LogRestauracaoFalhou(Guid tenantId, string? erro);
 }

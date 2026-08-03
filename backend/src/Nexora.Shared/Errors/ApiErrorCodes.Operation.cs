@@ -58,6 +58,32 @@ public static partial class ApiErrorCodes
     /// <summary>Variante sem preço vigente cadastrado no canal de salão (DINE_IN) — não deveria acontecer em operação normal, mas evita lançar um item com preço zerado silenciosamente.</summary>
     public const string OrderItemVariantPriceNotFound = "ORDER_ITEM_VARIANT_PRICE_NOT_FOUND";
 
+    // US-030 (Criar pedido com itens, modificadores e frações) — POST /v1/orders, POST
+    // /v1/public/orders e POST /v1/orders/{id}/items.
+
+    /// <summary>
+    /// US-030 §4, cenário "Grupo de modificadores obrigatório pendente": um grupo
+    /// <c>IsRequired</c> vinculado ao produto do item não teve nenhum modificador escolhido.
+    /// Valor literal idêntico ao contrato de API da história (<c>{ "code": "MODIFIER_GROUP_REQUIRED",
+    /// "meta": { "itemIndex", "groupId", "groupName" } }</c>).
+    /// </summary>
+    public const string ModifierGroupRequired = "MODIFIER_GROUP_REQUIRED";
+
+    /// <summary>
+    /// Quantidade de modificadores escolhidos de um grupo fora do intervalo <c>MinSelect</c>..<c>MaxSelect</c>
+    /// configurado (US-030 §5, RN "grupo respeita mínimo e máximo de seleção") — mesmo formato de
+    /// <c>meta</c> de <see cref="ModifierGroupRequired"/>.
+    /// </summary>
+    public const string ModifierGroupSelectionInvalid = "MODIFIER_GROUP_SELECTION_INVALID";
+
+    /// <summary>
+    /// <c>POST /v1/orders/{id}/items</c>: o pedido alvo não está em um status que aceita novo item
+    /// (só <c>PLACED</c>/<c>IN_PRODUCTION</c> aceitam, US-030 §4 cenário "Acréscimo a pedido já
+    /// confirmado") — rascunho nunca deveria chegar aqui, e pedido pronto/despachado/entregue/
+    /// fechado/cancelado não recebe mais item novo.
+    /// </summary>
+    public const string OrderNotAcceptingItems = "ORDER_NOT_ACCEPTING_ITEMS";
+
     /// <summary>
     /// US-025, <c>POST /v1/tables/{id}/acknowledge-call</c>: não há nenhum alerta <c>WAITER_CALLED</c>
     /// pendente para a mesa (já foi confirmado antes, ou o cliente nunca chamou).
@@ -91,4 +117,19 @@ public static partial class ApiErrorCodes
     /// depois que a conta foi pedida.
     /// </summary>
     public const string BillNotRequested = "BILL_NOT_REQUESTED";
+
+    // US-031 (Roteamento simultâneo para cozinha e caixa) — GET /v1/kds/queue reaproveita
+    // ApiErrorCodes.StationNotFound (ApiErrorCodes.Stations.cs, já existente).
+
+    // US-035 (Bloquear fechamento com item pendente) — request-bill e pagamento parcial.
+
+    /// <summary>
+    /// <c>POST /v1/sessions/{id}/request-bill</c>, <c>POST /v1/public/table/{qrToken}/request-bill</c>
+    /// e <c>POST /v1/sessions/{id}/bill/partial-payment</c>: existe item não entregue (status
+    /// diferente de SERVED/CANCELLED) e o tenant está no modo <c>BLOCK</c>
+    /// (<c>operation.pendingItemsOnClose</c>) sem um <c>X-Authorization-Token</c> válido para a ação
+    /// <c>CLOSE_WITH_PENDING</c> — US-035 §7. <c>meta.pendingItems</c> traz <c>{ name, status }</c>
+    /// de cada item pendente.
+    /// </summary>
+    public const string PendingItems = "PENDING_ITEMS";
 }

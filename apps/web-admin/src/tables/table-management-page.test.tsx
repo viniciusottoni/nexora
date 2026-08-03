@@ -6,8 +6,20 @@ import type { AreaDto, TableDto } from '@nexora/contracts';
 import { TableManagementPage, type TableManagementPageProps } from './table-management-page.js';
 
 const areas: readonly AreaDto[] = [
-  { id: '0198aabb-1111-7000-8000-000000000001', name: 'Salão', position: 0, active: true, tableCount: 2 },
-  { id: '0198aabb-1111-7000-8000-000000000002', name: 'Varanda', position: 1, active: false, tableCount: 0 },
+  {
+    id: '0198aabb-1111-7000-8000-000000000001',
+    name: 'Salão',
+    position: 0,
+    active: true,
+    tableCount: 2,
+  },
+  {
+    id: '0198aabb-1111-7000-8000-000000000002',
+    name: 'Varanda',
+    position: 1,
+    active: false,
+    tableCount: 0,
+  },
 ];
 
 const tables: readonly TableDto[] = [
@@ -72,7 +84,9 @@ describe('TableManagementPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Novo ambiente' }));
     const dialog = screen.getByRole('dialog', { name: 'Novo ambiente' });
-    fireEvent.change(within(dialog).getByLabelText('Nome do ambiente'), { target: { value: 'Mezanino' } });
+    fireEvent.change(within(dialog).getByLabelText('Nome do ambiente'), {
+      target: { value: 'Mezanino' },
+    });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Criar ambiente' }));
 
     await waitFor(() => expect(handlers.onCreateArea).toHaveBeenCalledWith('Mezanino'));
@@ -144,7 +158,7 @@ describe('TableManagementPage', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Excluir' })[0]!);
     fireEvent.click(screen.getByRole('button', { name: 'Sim, excluir mesa' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
+    expect(await screen.findByRole('status')).toHaveTextContent(
       'Esta mesa tem sessões no histórico e não pode ser excluída.',
     );
     expect(handlers.onDeleteTable).toHaveBeenCalled();

@@ -1,130 +1,47 @@
-.branding-shell {
-  width: min(78rem, calc(100% - 2rem));
-  margin: 0 auto;
-  padding: clamp(2rem, 5vw, 4.5rem) 0;
-  color: var(--color-text);
-  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
-}
+/* Identidade visual — cabeçalho, bancada e cartões de formulário vêm de `console.css` (@nexora/ui).
+   Aqui ficam os controles de cor, o envio de logo e a coluna de pré-visualização. */
 
-.branding-header {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 2rem;
-  padding-bottom: 1.75rem;
-  border-bottom: 1px solid var(--color-border);
-}
-.branding-header h1 {
-  margin: 0.15rem 0 0.5rem;
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 5vw, 3.75rem);
-  line-height: 1;
-  letter-spacing: -0.035em;
-}
-.branding-eyebrow {
-  margin: 0;
-  color: var(--color-primary);
-  font: 700 0.72rem/1.2 var(--font-mono);
-  letter-spacing: 0.14em;
-}
-.branding-lead {
-  max-width: 42rem;
-  margin: 0;
-  color: var(--color-text-muted);
-}
-
-.branding-notice {
-  margin: 1rem 0 0;
-  padding: 0.8rem 1rem;
-  border-left: 0.3rem solid var(--color-success);
-  background: color-mix(in srgb, var(--color-success) 8%, transparent);
-  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
-}
-.branding-error {
-  margin: 1rem 0 0;
-  padding: 0.8rem 1rem;
-  border-left: 0.3rem solid var(--color-danger);
-  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
-  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
-}
-.branding-loading {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 2rem 0;
-  color: var(--color-text-muted);
-}
-
-.branding-workbench {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
-  gap: 1.25rem;
-  align-items: start;
-  margin-top: 1.5rem;
-}
-
-.branding-fields {
-  display: grid;
-  gap: 1.25rem;
-}
-
-.branding-card {
-  padding: clamp(1.1rem, 3vw, 1.75rem);
-  display: grid;
-  gap: 1rem;
-}
-.branding-card h2 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-}
-.branding-card__hint {
-  margin: -0.5rem 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.82rem;
-}
-
-.branding-color-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: 1rem;
-}
-.branding-color-input {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-.branding-color-input input[type='color'] {
-  width: 2.4rem;
-  height: 2.4rem;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: calc(var(--radius-base) * 0.5);
-  background: none;
-  cursor: pointer;
-  flex: 0 0 auto;
-  transition: transform var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
-}
-.branding-color-input input[type='color']:hover {
-  transform: translateY(-1px);
-  border-color: var(--color-primary);
-}
-.branding-color-input input[type='color']:active {
-  transform: translateY(0);
-}
-
+.branding-color-grid,
 .branding-logo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: 1rem;
+  gap: var(--sp-6);
 }
+
+.branding-color-input {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+/* Amostra de cor com a mesma altura de controle da gestão (36px). */
+.branding-color-input input[type='color'] {
+  width: var(--density-desk-control);
+  height: var(--density-desk-control);
+  padding: 0;
+  border: var(--border-1) solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: none;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition:
+    var(--transition-control),
+    transform var(--dur-fast) var(--ease-standard);
+}
+.branding-color-input input[type='color']:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-strong);
+}
+.branding-color-input input[type='color']:active {
+  transform: translateY(1px);
+}
+
 .branding-logo-preview {
   display: grid;
   place-items: center;
-  height: 5rem;
-  margin-bottom: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: calc(var(--radius-base) * 0.6);
+  height: 80px;
+  margin-bottom: var(--sp-4);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 .branding-logo-preview img {
@@ -133,44 +50,45 @@
   object-fit: contain;
 }
 .branding-logo-preview span {
-  color: color-mix(in srgb, white 60%, transparent);
-  font-size: 0.75rem;
+  font: var(--type-caption);
+  color: var(--text-muted);
 }
 .branding-logo-uploading {
   display: block;
-  margin-top: 0.4rem;
-  color: var(--color-text-muted);
-  font-size: 0.78rem;
+  margin-top: var(--sp-3);
+  font: var(--type-caption);
+  color: var(--text-muted);
 }
 
+/* Área de texto: mesmo desenho do Input do Design System (borda, raio, foco). */
 .branding-terms {
   width: 100%;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid var(--color-border);
-  border-radius: calc(var(--radius-base) * 0.55);
-  background: var(--color-surface-raised);
-  color: var(--color-text);
-  font: inherit;
+  padding: var(--sp-4) var(--sp-5);
+  border: var(--border-1) solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font: var(--type-body);
   resize: vertical;
+  transition: var(--transition-control);
+}
+.branding-terms:focus-visible {
+  outline: none;
+  border-color: var(--border-brand);
+  box-shadow: var(--focus-ring);
 }
 
+/* A prévia acompanha a rolagem: é a referência enquanto os campos mudam. */
 .branding-preview-column {
   display: grid;
-  gap: 0.6rem;
+  gap: var(--sp-4);
   align-content: start;
   position: sticky;
-  top: 1.5rem;
+  top: 0;
 }
 
 @media (max-width: 60rem) {
-  .branding-workbench {
-    grid-template-columns: 1fr;
-  }
   .branding-preview-column {
     position: static;
-  }
-  .branding-header {
-    align-items: stretch;
-    flex-direction: column;
   }
 }

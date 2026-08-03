@@ -3170,6 +3170,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("fired_by");
 
+                    b.Property<Guid?>("FiredDeviceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("fired_device_id");
+
                     b.Property<decimal>("ModifiersTotal")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("money_amount")
@@ -3188,9 +3192,25 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("oven_in_at");
 
+                    b.Property<Guid?>("OvenInBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("oven_in_by");
+
+                    b.Property<Guid?>("OvenInDeviceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("oven_in_device_id");
+
                     b.Property<DateTimeOffset?>("OvenOutAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("oven_out_at");
+
+                    b.Property<Guid?>("OvenOutBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("oven_out_by");
+
+                    b.Property<Guid?>("OvenOutDeviceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("oven_out_device_id");
 
                     b.Property<short?>("OvenSlot")
                         .HasColumnType("smallint")
@@ -3199,6 +3219,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("PlacedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("placed_at");
+
+                    b.Property<Guid?>("PlacedDeviceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("placed_device_id");
 
                     b.Property<int?>("PriorityScore")
                         .HasColumnType("integer")
@@ -3217,6 +3241,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("ReadyBy")
                         .HasColumnType("uuid")
                         .HasColumnName("ready_by");
+
+                    b.Property<Guid?>("ReadyDeviceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ready_device_id");
 
                     b.Property<Guid?>("RefireOfId")
                         .HasColumnType("uuid")
@@ -3237,6 +3265,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("ServedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("served_by");
+
+                    b.Property<Guid?>("ServedDeviceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("served_device_id");
 
                     b.Property<Guid?>("StationId")
                         .HasColumnType("uuid")
@@ -3294,7 +3326,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("idx_item_queue")
                         .HasFilter("status IN (0,1,2,3)");
 
-                    b.ToTable("order_item", (string)null);
+                    b.ToTable("order_item", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_item_sequence", "(fired_at IS NULL OR fired_at >= placed_at)\nAND (oven_in_at IS NULL OR (fired_at IS NOT NULL AND oven_in_at >= fired_at))\nAND (oven_out_at IS NULL OR (oven_in_at IS NOT NULL AND oven_out_at >= oven_in_at))\nAND (ready_at IS NULL OR (fired_at IS NOT NULL AND ready_at >= fired_at AND (oven_out_at IS NULL OR ready_at >= oven_out_at)))\nAND (served_at IS NULL OR (ready_at IS NOT NULL AND served_at >= ready_at))");
+                        });
                 });
 
             modelBuilder.Entity("Nexora.Domain.Operation.OrderItemFraction", b =>
@@ -3806,6 +3841,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
 
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("deleted_at");
+
                     b.Property<string>("Fingerprint")
                         .IsRequired()
                         .HasColumnType("text")
@@ -3971,6 +4010,12 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("clock_offset_ms");
 
+                    b.Property<int>("Connectivity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("connectivity");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
@@ -4004,6 +4049,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("bigint")
                         .HasDefaultValue(0L)
                         .HasColumnName("last_synced_seq");
+
+                    b.Property<DateTimeOffset?>("OfflineSince")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("offline_since");
 
                     b.Property<string>("PublicKey")
                         .HasColumnType("text")

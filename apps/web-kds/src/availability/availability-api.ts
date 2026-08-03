@@ -13,6 +13,11 @@ export type {
   UnavailableProductsResponse,
 };
 
+// Mantém o receiver exigido pelo `fetch` nativo do navegador. Guardar `fetch` diretamente em uma
+// propriedade e depois chamá-lo como `this.fetcher(...)` faz o browser recebê-lo com a instância de
+// `AvailabilityApi` como `this`, resultando em "Illegal invocation".
+const browserFetch: typeof fetch = (...args: Parameters<typeof fetch>) => globalThis.fetch(...args);
+
 /**
  * US-015 (Marcar produto indisponível com propagação imediata) — cliente HTTP + realtime do KDS.
  */
@@ -25,7 +30,7 @@ export type {
 export class AvailabilityApi {
   constructor(
     private readonly baseUrl = '',
-    private readonly fetcher: typeof fetch = fetch,
+    private readonly fetcher: typeof fetch = browserFetch,
     private readonly accessToken?: string,
   ) {}
 
@@ -190,7 +195,8 @@ export function subscribeToAvailability(
   options: AvailabilitySubscriptionOptions = {},
 ): AvailabilitySubscription {
   const pollIntervalMs = options.pollIntervalMs ?? 5000;
-  const api = options.api ?? new AvailabilityApi(options.baseUrl ?? '', fetch, options.accessToken);
+  const api =
+    options.api ?? new AvailabilityApi(options.baseUrl ?? '', browserFetch, options.accessToken);
   const setIntervalFn = options.setIntervalFn ?? setInterval;
   const clearIntervalFn = options.clearIntervalFn ?? clearInterval;
   const webSocketFactory = options.webSocketFactory ?? defaultWebSocketFactory;

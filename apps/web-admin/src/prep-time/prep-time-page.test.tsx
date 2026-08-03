@@ -147,7 +147,7 @@ describe('PrepTimePage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Salvar tempo de preparo' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Falha simulada de rede.');
+    expect(await screen.findByRole('status')).toHaveTextContent('Falha simulada de rede.');
   });
 
   it('bloqueia limiares inválidos antes de chamar a API', async () => {
@@ -166,6 +166,6 @@ describe('PrepTimePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Salvar tempo de preparo' }));
 
     expect(onUpdatePrepTime).not.toHaveBeenCalled();
-    expect(screen.getByRole('alert')).toHaveTextContent('atenção não pode ser menor');
+    expect(screen.getByRole('status')).toHaveTextContent('atenção não pode ser menor');
   });
 });
