@@ -49,10 +49,13 @@ builder.Services.AddDbContext<AppDbContext>((sp, options) =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
            .UseSnakeCaseNamingConvention();
-    options.AddInterceptors(sp.GetRequiredService<TenantConnectionInterceptor>());
+    options.AddInterceptors(sp.GetRequiredService<TenantConnectionInterceptor>(), sp.GetRequiredService<AuditTraceInterceptor>());
 });
 builder.Services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 builder.Services.AddScoped<TenantConnectionInterceptor>();
+// AuditTraceInterceptor (E-09/US-090) só lê Activity.Current — sem estado por requisição, por
+// isso Singleton (ao contrário do TenantConnectionInterceptor acima, que precisa variar por escopo).
+builder.Services.AddSingleton<AuditTraceInterceptor>();
 
 // ---------------------------------------------------------------------------
 // CQRS/MediatR (ADR-037) — pipeline: Validation -> Logging -> Transaction.

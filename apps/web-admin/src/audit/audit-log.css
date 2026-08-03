@@ -1,0 +1,89 @@
+/* US-091 (Consulta e filtro da trilha) — grade de filtros e painel de detalhe da linha expandida.
+   A tabela em si não precisa de CSS próprio: reusa `db-table`/`db-table-wrap` de DataTable
+   (mesma regra de pricing.css, "a tabela reusa as classes reais da DataTable"). */
+
+.audit-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--sp-6);
+}
+
+.audit-detail {
+  display: grid;
+  gap: var(--sp-6);
+  margin-top: var(--sp-6);
+  padding: var(--sp-6);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.audit-detail__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--sp-5);
+  margin: 0;
+}
+
+.audit-detail__meta-item dt {
+  margin: 0 0 var(--sp-1);
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+
+.audit-detail__meta-item dd {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+
+.audit-detail__changes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--sp-6);
+}
+
+.audit-detail__block {
+  display: grid;
+  gap: var(--sp-3);
+  align-content: start;
+}
+
+.audit-detail__kv-list {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.audit-detail__kv-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+}
+
+.audit-detail__kv-key {
+  color: var(--text-muted);
+  font: var(--type-caption);
+}
+
+.audit-detail__kv-value {
+  color: var(--text-primary);
+  font-weight: var(--fw-medium);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 48rem) {
+  .audit-filters,
+  .audit-detail__meta,
+  .audit-detail__changes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -31,7 +31,8 @@ public static class PermissionCatalog
         "user:*", "user:read", "user:write",
         "config:*", "config:read", "config:write",
         "device:*", "device:manage",
-        "tenant:*", "tenant:manage"
+        "tenant:*", "tenant:manage",
+        "audit:*", "audit:read"
     };
 
     private static readonly IReadOnlyDictionary<string, string> ResourceNames = new Dictionary<string, string>
@@ -51,7 +52,8 @@ public static class PermissionCatalog
         ["user"] = "Equipe e acessos",
         ["config"] = "Configurações",
         ["device"] = "Dispositivos",
-        ["tenant"] = "Estabelecimento"
+        ["tenant"] = "Estabelecimento",
+        ["audit"] = "Auditoria"
     };
 
     private static readonly IReadOnlyDictionary<string, string> ActionDescriptions = new Dictionary<string, string>
@@ -94,7 +96,8 @@ public static class PermissionCatalog
         "stock:adjust",
         "payment:refund",
         "order:close_with_pending",
-        "order:override_price"
+        "order:override_price",
+        "audit:read"
     };
 
     public static IReadOnlyList<PermissionCatalogEntry> Build(IReadOnlyList<string> codes)

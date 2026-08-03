@@ -28,6 +28,16 @@ public interface IApplicationDbContext
     DbSet<Domain.Platform.InstallationNonce> InstallationNonces { get; }
     DbSet<Domain.Platform.PairingCode> PairingCodes { get; }
     DbSet<Domain.Platform.AuditLog> AuditLogs { get; }
+
+    /// <summary>
+    /// E-09/US-091, filtro <c>minAmount</c> — <c>Before</c>/<c>After</c> são JSONB livre sem coluna
+    /// tipada de valor (mesma simplificação já documentada em <see cref="Domain.Platform.AuditLog"/>),
+    /// então a extração numérica exige SQL específico do provider (Postgres <c>-&gt;&gt;</c>/cast).
+    /// <c>Application</c> só referencia <c>Microsoft.EntityFrameworkCore</c> sem provider (ADR-039)
+    /// — por isso este método, implementado em <c>AppDbContext</c> (Infrastructure, que já
+    /// referencia Npgsql), existe como porta estreita em vez de a Application montar SQL cru.
+    /// </summary>
+    IQueryable<Domain.Platform.AuditLog> AuditLogsWithMinAmount(decimal minAmount);
     DbSet<Domain.Platform.IdempotencyKey> IdempotencyKeys { get; }
     DbSet<Domain.Platform.DomainEvent> DomainEvents { get; }
     DbSet<Domain.Platform.MediaAsset> MediaAssets { get; }

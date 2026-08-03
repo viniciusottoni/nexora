@@ -20,6 +20,19 @@ public partial class AppDbContext
     public DbSet<Domain.Platform.InstallationNonce> InstallationNonces => Set<Domain.Platform.InstallationNonce>();
     public DbSet<Domain.Platform.PairingCode> PairingCodes => Set<Domain.Platform.PairingCode>();
     public DbSet<Domain.Platform.AuditLog> AuditLogs => Set<Domain.Platform.AuditLog>();
+
+    /// <inheritdoc cref="Application.Abstractions.Persistence.IApplicationDbContext.AuditLogsWithMinAmount"/>
+    public IQueryable<Domain.Platform.AuditLog> AuditLogsWithMinAmount(decimal minAmount) =>
+        AuditLogs.FromSqlInterpolated(
+            $"""
+            SELECT * FROM audit_log
+            WHERE COALESCE(
+                (after->>'discount')::numeric,
+                (after->>'amount')::numeric,
+                (after->>'newAmount')::numeric,
+                (after->>'total')::numeric
+            ) >= {minAmount}
+            """);
     public DbSet<Domain.Platform.IdempotencyKey> IdempotencyKeys => Set<Domain.Platform.IdempotencyKey>();
     public DbSet<Domain.Platform.DomainEvent> DomainEvents => Set<Domain.Platform.DomainEvent>();
     public DbSet<Domain.Platform.MediaAsset> MediaAssets => Set<Domain.Platform.MediaAsset>();

@@ -137,19 +137,9 @@ internal sealed class BulkAdjustPricesByCategoryCommandHandler
             var newPrice = Price.Create(tenantId, variant.Id, channel, newAmount, actorId, now);
             _db.Prices.Add(newPrice);
 
-            _db.AuditLogs.Add(AuditLog.Create(
-                tenantId,
-                action: "PRICE_CHANGED",
-                entity: "price",
-                occurredAt: now,
-                actorId: actorId,
-                deviceId: _tenantContext.DeviceId,
-                entityId: newPrice.Id,
-                before: JsonSerializer.Serialize(new { amount = effective.Amount, channel = channel.ToString(), inherited = effective.IsInherited }),
-                after: JsonSerializer.Serialize(new { amount = newPrice.Amount, channel = channel.ToString() })));
-
-            // EVT-052 price.changed (US-014 §6).
-            _db.DomainEvents.Add(DomainEvent.Create(
+            // EVT-052 price.changed (US-014 §6). Criado antes do AuditLog para correlacionar via
+            // DomainEventId (E-09/US-090).
+            var priceChangedEvent = DomainEvent.Create(
                 tenantId,
                 type: "price.changed",
                 aggregateType: "product_variant",
@@ -165,7 +155,20 @@ internal sealed class BulkAdjustPricesByCategoryCommandHandler
                 origin: "CLOUD",
                 occurredAt: now,
                 actorId: actorId,
-                deviceId: _tenantContext.DeviceId));
+                deviceId: _tenantContext.DeviceId);
+            _db.DomainEvents.Add(priceChangedEvent);
+
+            _db.AuditLogs.Add(AuditLog.Create(
+                tenantId,
+                action: "PRICE_CHANGED",
+                entity: "price",
+                occurredAt: now,
+                actorId: actorId,
+                deviceId: _tenantContext.DeviceId,
+                entityId: newPrice.Id,
+                before: JsonSerializer.Serialize(new { amount = effective.Amount, channel = channel.ToString(), inherited = effective.IsInherited }),
+                after: JsonSerializer.Serialize(new { amount = newPrice.Amount, channel = channel.ToString() }),
+                domainEventId: priceChangedEvent.Id));
 
             updated++;
         }

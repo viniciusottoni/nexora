@@ -65,10 +65,13 @@ builder.Services.AddDbContext<AppDbContext>((sp, options) =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
            .UseSnakeCaseNamingConvention();
-    options.AddInterceptors(sp.GetRequiredService<TenantConnectionInterceptor>());
+    options.AddInterceptors(sp.GetRequiredService<TenantConnectionInterceptor>(), sp.GetRequiredService<AuditTraceInterceptor>());
 });
 builder.Services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 builder.Services.AddScoped<TenantConnectionInterceptor>();
+// AuditTraceInterceptor (E-09/US-090) só lê Activity.Current — sem estado por requisição, por
+// isso Singleton (ao contrário do TenantConnectionInterceptor acima, que precisa variar por escopo).
+builder.Services.AddSingleton<AuditTraceInterceptor>();
 
 // ---------------------------------------------------------------------------
 // CQRS/MediatR (ADR-037) — mesmo pipeline do Api.Edge.
@@ -334,6 +337,14 @@ builder.Services.AddAuthorization(options =>
         PermissionAuthorization.HasPermission(
             context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
             "user:write")));
+
+    // Política de consulta da trilha de auditoria (E-09/US-091, RF-AUD-03 "acesso restrito a
+    // perfis autorizados"). Mesmo padrão de "RoleRead"/"RoleWrite" acima — "audit:read", "audit:*"
+    // ou "*" do catálogo (Nexora.Domain.Platform.PermissionCatalog) satisfazem.
+    options.AddPolicy("AuditRead", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "audit:read")));
 
     // Política de gestão de ambientes/mesas do salão (US-020). Mesmo padrão de
     // "DeviceManage"/"ConfigWrite" acima, usando o recurso "table" do catálogo

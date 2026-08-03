@@ -11,7 +11,10 @@ internal sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
     public void Configure(EntityTypeBuilder<AuditLog> builder)
     {
         builder.ToTable("audit_log");
-        // append-only — trigger prevent_mutation() bloqueia UPDATE/DELETE (documento 00/10, editado à mão na migration)
+        // append-only (E-09/US-090): UPDATE/DELETE revogados do papel app_user_role por permissão
+        // de banco (migration PartitionAuditLogAndRestrictMutation) — a tabela também é
+        // particionada por occurred_at (ADR-035) nessa mesma migration, editada à mão em SQL cru
+        // porque o EF Core não expressa particionamento nativamente (Docs/Domain/13 §1).
 
         builder.HasKey(a => a.Id);
         builder.Property(a => a.Id).HasColumnName("id").ValueGeneratedNever();
@@ -36,6 +39,8 @@ internal sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
                 v => v == null ? null : v.ToString()));
         builder.Property(a => a.OccurredAt).HasColumnName("occurred_at").HasColumnType("timestamptz").IsRequired(); // ADR-034
         builder.Property(a => a.RecordedAt).HasColumnName("recorded_at").HasColumnType("timestamptz");
+        builder.Property(a => a.TraceId).HasColumnName("trace_id").HasMaxLength(32);
+        builder.Property(a => a.DomainEventId).HasColumnName("domain_event_id");
 
         builder.HasIndex(a => new { a.TenantId, a.OccurredAt })
             .HasDatabaseName("idx_audit_tenant_time")

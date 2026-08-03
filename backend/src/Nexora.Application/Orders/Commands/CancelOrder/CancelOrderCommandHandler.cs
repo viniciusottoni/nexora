@@ -136,22 +136,10 @@ internal sealed class CancelOrderCommandHandler : IRequestHandler<CancelOrderCom
         order.Cancel(request.Reason, actorId, authorizedBy);
         var cancelledAt = order.CancelledAt ?? now;
 
-        _db.AuditLogs.Add(AuditLog.Create(
-            order.TenantId,
-            action: "ORDER_CANCELLED",
-            entity: "order",
-            occurredAt: cancelledAt,
-            storeId: order.StoreId,
-            actorId: actorId == Guid.Empty ? null : actorId,
-            authorizedBy: authorizedBy,
-            deviceId: deviceId,
-            entityId: order.Id,
-            before: JsonSerializer.Serialize(new { status = "PLACED_OR_IN_PRODUCTION", total = order.Total }),
-            after: JsonSerializer.Serialize(new { status = "CANCELLED", total = order.Total, itemsCancelled = itemSnapshots.Count }),
-            reason: request.Reason));
-
         // EVT-016 order.cancelled — payload exigido (US-033 §6): reason, authorizedBy, stage.
-        _db.DomainEvents.Add(DomainEvent.Create(
+        // Criado ANTES do AuditLog para correlacionar (E-09/US-090, "Correlação com o evento") via
+        // AuditLog.DomainEventId — o Id é gerado no cliente (UUIDv7), então já existe antes do Add.
+        var cancelledEvent = DomainEvent.Create(
             order.TenantId,
             type: "order.cancelled",
             aggregateType: "order",
@@ -169,28 +157,31 @@ internal sealed class CancelOrderCommandHandler : IRequestHandler<CancelOrderCom
             storeId: order.StoreId,
             actorId: actorId == Guid.Empty ? null : actorId,
             authorizedBy: authorizedBy,
-            deviceId: deviceId));
+            deviceId: deviceId);
+        _db.DomainEvents.Add(cancelledEvent);
+
+        _db.AuditLogs.Add(AuditLog.Create(
+            order.TenantId,
+            action: "ORDER_CANCELLED",
+            entity: "order",
+            occurredAt: cancelledAt,
+            storeId: order.StoreId,
+            actorId: actorId == Guid.Empty ? null : actorId,
+            authorizedBy: authorizedBy,
+            deviceId: deviceId,
+            entityId: order.Id,
+            before: JsonSerializer.Serialize(new { status = "PLACED_OR_IN_PRODUCTION", total = order.Total }),
+            after: JsonSerializer.Serialize(new { status = "CANCELLED", total = order.Total, itemsCancelled = itemSnapshots.Count }),
+            reason: request.Reason,
+            domainEventId: cancelledEvent.Id));
 
         var itemResponses = new List<CancelledOrderItemResponse>();
 
         foreach (var (item, itemWasStarted, beforeStatus) in itemSnapshots)
         {
-            _db.AuditLogs.Add(AuditLog.Create(
-                item.TenantId,
-                action: "ORDER_ITEM_CANCELLED",
-                entity: "order_item",
-                occurredAt: cancelledAt,
-                storeId: order.StoreId,
-                actorId: actorId == Guid.Empty ? null : actorId,
-                authorizedBy: authorizedBy,
-                deviceId: deviceId,
-                entityId: item.Id,
-                before: JsonSerializer.Serialize(new { status = beforeStatus, totalPrice = item.TotalPrice }),
-                after: JsonSerializer.Serialize(new { status = "CANCELLED", totalPrice = item.TotalPrice, wasStarted = itemWasStarted }),
-                reason: request.Reason));
-
             // EVT-010 order.item.cancelled por item — mesmo payload de CancelOrderItemCommandHandler.
-            _db.DomainEvents.Add(DomainEvent.Create(
+            // Criado antes do AuditLog do item para correlacionar via DomainEventId (US-090).
+            var itemCancelledEvent = DomainEvent.Create(
                 item.TenantId,
                 type: "order.item.cancelled",
                 aggregateType: "order_item",
@@ -209,7 +200,23 @@ internal sealed class CancelOrderCommandHandler : IRequestHandler<CancelOrderCom
                 storeId: order.StoreId,
                 actorId: actorId == Guid.Empty ? null : actorId,
                 authorizedBy: authorizedBy,
-                deviceId: deviceId));
+                deviceId: deviceId);
+            _db.DomainEvents.Add(itemCancelledEvent);
+
+            _db.AuditLogs.Add(AuditLog.Create(
+                item.TenantId,
+                action: "ORDER_ITEM_CANCELLED",
+                entity: "order_item",
+                occurredAt: cancelledAt,
+                storeId: order.StoreId,
+                actorId: actorId == Guid.Empty ? null : actorId,
+                authorizedBy: authorizedBy,
+                deviceId: deviceId,
+                entityId: item.Id,
+                before: JsonSerializer.Serialize(new { status = beforeStatus, totalPrice = item.TotalPrice }),
+                after: JsonSerializer.Serialize(new { status = "CANCELLED", totalPrice = item.TotalPrice, wasStarted = itemWasStarted }),
+                reason: request.Reason,
+                domainEventId: itemCancelledEvent.Id));
 
             if (order.Session is not null)
             {

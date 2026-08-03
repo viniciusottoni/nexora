@@ -3,8 +3,10 @@ using Nexora.Domain.Common;
 namespace Nexora.Domain.Platform;
 
 /// <summary>
-/// Registro de auditoria — append-only (trigger de bloqueio de UPDATE/DELETE, documento 10).
-/// Registro de fato, sem regra de negócio própria além de existir.
+/// Registro de auditoria — append-only (E-09/US-090: <c>UPDATE</c>/<c>DELETE</c> revogados do papel
+/// <c>app_user_role</c> por permissão de banco, não por trigger — ver migration
+/// <c>PartitionAuditLogAndRestrictMutation</c>). Registro de fato, sem regra de negócio própria
+/// além de existir.
 /// </summary>
 public sealed class AuditLog
 {
@@ -35,6 +37,23 @@ public sealed class AuditLog
     public DateTimeOffset OccurredAt { get; private set; }
     public DateTimeOffset RecordedAt { get; private set; }
 
+    /// <summary>
+    /// W3C Trace Context (ADR-022), 32 hex chars — correlaciona o registro ao traço de
+    /// observabilidade da requisição que o originou. Preenchido automaticamente por
+    /// <c>AuditTraceInterceptor</c> a partir de <c>Activity.Current</c> quando o chamador não o
+    /// informa explicitamente (nenhum dos ~50 handlers existentes precisa mudar).
+    /// </summary>
+    public string? TraceId { get; private set; }
+
+    /// <summary>
+    /// Referência ao <see cref="DomainEvent"/> emitido pela mesma ação (US-090, cenário
+    /// "Correlação com o evento") — nulo quando a ação não emite evento de domínio próprio (ex.:
+    /// tentativa de acesso cruzado, que só é auditada). Sem constraint de FK física (mesma
+    /// convenção de <see cref="Before"/>/<see cref="After"/>: registro de fato, sem integridade
+    /// referencial imposta — o evento é append-only e nunca é removido antes do audit_log).
+    /// </summary>
+    public Guid? DomainEventId { get; private set; }
+
     public Tenant Tenant { get; private set; } = null!;
 
     public static AuditLog Create(
@@ -50,7 +69,9 @@ public sealed class AuditLog
         string? before = null,
         string? after = null,
         string? reason = null,
-        string? ip = null)
+        string? ip = null,
+        Guid? domainEventId = null,
+        string? traceId = null)
     {
         if (string.IsNullOrWhiteSpace(action))
             throw new DomainException("A ação auditada é obrigatória.");
@@ -73,6 +94,8 @@ public sealed class AuditLog
             After = after,
             Reason = reason,
             Ip = ip,
+            DomainEventId = domainEventId,
+            TraceId = traceId,
             OccurredAt = occurredAt,
             RecordedAt = DateTimeOffset.UtcNow
         };
