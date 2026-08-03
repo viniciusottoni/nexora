@@ -41,6 +41,7 @@ body {
   gap: 1.5rem;
   min-height: 45vh;
   text-align: left;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 .kds-pulse {
   width: 1.5rem;
@@ -48,6 +49,9 @@ body {
   border: 0.35rem solid var(--brand-secondary);
   border-radius: 50%;
   box-shadow: 0 0 0 0.8rem color-mix(in srgb, var(--brand-secondary) 16%, transparent);
+  /* Ponto "fila em dia" é um indicador vivo, no mesmo espírito do ponto do StatusPill
+     (--live): pulsa para comunicar que a tela está atualizando em tempo real. */
+  animation: nx-pulse-alert 1.6s var(--ease-in-out) infinite;
 }
 .kds-status p {
   margin: 0;
@@ -76,7 +80,14 @@ body {
   justify-content: space-between;
   padding: 1.25rem;
   background: var(--surface-raised);
-  box-shadow: none;
+  /* --shadow-card (sombra de queda) não lê sobre o fundo já escuro da cozinha — troca por um
+     realce interno sutil no topo (--shadow-inset), que sugere o "levantar" do cartão sem
+     depender de contraste de sombra que desapareceria aqui. A borda de --border-subtle já vem
+     do .db-card base (Card as="div") e continua sendo a principal pista de contorno. */
+  box-shadow: var(--shadow-inset);
+  /* Pronta para uma futura contagem viva por WebSocket: se o fundo do card precisar
+     destacar a coluna (ex. "Pronto" com itens acumulando), a troca é suave. */
+  transition: var(--transition-control);
 }
 .kds-columns h2 {
   margin: 0;
@@ -86,6 +97,8 @@ body {
 .kds-columns strong {
   font: var(--type-kds-item) var(--font-mono);
   color: var(--text-primary);
+  /* A contagem muda via realtime (novo pedido, item concluído) — nunca "salta" de cor. */
+  transition: color var(--dur-fast) var(--ease-standard);
 }
 @media (max-width: 42rem) {
   .kds-columns {
@@ -115,4 +128,13 @@ body {
 }
 .kds-device-missing h1 {
   font: 700 2.5rem/1 var(--font-display);
+}
+
+/* Respeita prefers-reduced-motion: --dur-* já zeram, mas .kds-pulse usa uma duração fixa
+   (1.6s, mesmo padrão do ponto vivo do StatusPill em components/feedback.css) e por isso
+   precisa de override explícito aqui. */
+@media (prefers-reduced-motion: reduce) {
+  .kds-pulse {
+    animation: none;
+  }
 }

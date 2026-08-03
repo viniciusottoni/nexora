@@ -92,7 +92,7 @@ export function DeviceManagementPage({
         </Card>
       ) : null}
 
-      <section className="device-grid" aria-label="Lista de dispositivos">
+      <section className="device-grid nx-stagger" aria-label="Lista de dispositivos">
         {devices.map((device) => (
           <Card
             className={`device-card ${device.active ? '' : 'device-card--inactive'}`}

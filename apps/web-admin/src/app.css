@@ -23,8 +23,12 @@
   border-radius: calc(var(--radius-base) * 0.7);
   color: var(--color-danger);
   background: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface-raised));
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 
 .admin-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   color: var(--color-text-muted);
 }

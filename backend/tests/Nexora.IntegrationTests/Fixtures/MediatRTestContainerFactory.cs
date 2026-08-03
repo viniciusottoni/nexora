@@ -3,12 +3,14 @@ using Nexora.Application.Abstractions.Events;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Notifications;
 using Nexora.Application.Abstractions.Persistence;
+using Nexora.Application.Abstractions.Realtime;
 using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Installations.Abstractions;
 using Nexora.Infrastructure.Auth;
 using Nexora.Infrastructure.Devices;
 using Nexora.Infrastructure.Installations;
 using Nexora.Infrastructure.Notifications;
+using Nexora.IntegrationTests.Fakes;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,13 +33,26 @@ internal static class MediatRTestContainerFactory
     private const string TestMfaEncryptionKey = "integration-test-mfa-encryption-key-32-bytes!!";
     private const string TestJwtSecret = "integration-test-jwt-secret-com-pelo-menos-32-bytes";
 
-    public static ServiceProvider Build(IApplicationDbContext db, ICurrentTenantContext tenantContext)
+    public static ServiceProvider Build(
+        IApplicationDbContext db,
+        ICurrentTenantContext tenantContext,
+        IAlertsBroadcaster? alertsBroadcaster = null,
+        ITableMapBroadcaster? tableMapBroadcaster = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton(db);
         services.AddSingleton(tenantContext);
         services.AddSingleton<IEventOriginProvider, EdgeEventOriginProvider>();
+
+        // US-025/US-026: CallWaiterCommand/AcknowledgeWaiterCallCommand/RequestBillCommand/
+        // RequestBillByQrCommand dependem destes dois broadcasters — duplos de gravação por
+        // padrão (o chamador passa a MESMA instância quando quiser inspecionar as chamadas).
+        services.AddSingleton(alertsBroadcaster ?? new RecordingAlertsBroadcaster());
+        services.AddSingleton(tableMapBroadcaster ?? new RecordingTableMapBroadcaster());
+        // AddOrderItemCommand (gap de US-030, reaproveitado pelo cenário "Novo pedido após
+        // solicitar a conta" da US-026) também depende de IOrderConsumptionBroadcaster.
+        services.AddSingleton<IOrderConsumptionBroadcaster>(new RecordingOrderConsumptionBroadcaster());
 
         var authSecrets = Options.Create(new AuthSecretsOptions
         {

@@ -57,7 +57,7 @@ export function PrepTimePage({
       {variants.length === 0 ? (
         <Card className="prep-time-empty">Nenhuma variação cadastrada.</Card>
       ) : (
-        <ul className="prep-time-list" aria-label="Variações de produto">
+        <ul className="prep-time-list nx-stagger" aria-label="Variações de produto">
           {variants.map((row) => (
             <PrepTimeRow
               key={row.variantId}

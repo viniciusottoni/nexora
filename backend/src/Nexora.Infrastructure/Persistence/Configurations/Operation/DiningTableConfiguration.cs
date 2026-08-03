@@ -30,5 +30,13 @@ internal sealed class DiningTableConfiguration : IEntityTypeConfiguration<Dining
 
         builder.HasIndex(t => t.QrToken).IsUnique().HasDatabaseName("uq_dining_table_qr_token");
         builder.HasIndex(t => new { t.StoreId, t.Label }).IsUnique().HasDatabaseName("uq_dining_table_store_label");
+
+        // Docs/Domain/03-Operacao.md: "CREATE INDEX idx_table_store_status ON dining_table
+        // (tenant_id, store_id, status) WHERE deleted_at IS NULL AND is_active" — índice parcial
+        // que sustenta o mapa de salão/contagem de mesas ativas por status (US-020 §11: "mesas
+        // ativas por ambiente"), consultado a cada abertura de mesa/troca de status.
+        builder.HasIndex(t => new { t.TenantId, t.StoreId, t.Status })
+            .HasDatabaseName("idx_table_store_status")
+            .HasFilter("deleted_at IS NULL AND is_active");
     }
 }

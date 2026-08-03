@@ -249,13 +249,48 @@ public static class ResultExtensions
         ApiErrorCodes.RoleCodeAlreadyExists => (StatusCodes.Status409Conflict, true, false),
         ApiErrorCodes.RoleOwnerMustKeepFullAccess => (StatusCodes.Status422UnprocessableEntity, true, false),
 
-        // Stations (praças de produção) — US-017.
-        ApiErrorCodes.StationNotFound => (StatusCodes.Status404NotFound, false, false),
-        ApiErrorCodes.StationCodeAlreadyExists => (StatusCodes.Status409Conflict, true, false),
-        ApiErrorCodes.StationHasLinkedProducts => (StatusCodes.Status422UnprocessableEntity, true, false),
-        ApiErrorCodes.StationStoreContextMissing => (StatusCodes.Status403Forbidden, false, false),
+        // Tenants.
+        ApiErrorCodes.TenantNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.TenantSlugAlreadyTaken => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnerInviteInvalidCredentials => (StatusCodes.Status401Unauthorized, false, false),
 
-        // Catálogo (categorias e produtos) — US-010.
+        // Operação — ambientes e mesas do salão (US-020).
+        ApiErrorCodes.AreaNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.AreaHasActiveTables => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.TableNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.TableLabelAlreadyExists => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.TableHasSessionHistory => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.TablesExportEmpty => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Sessão de mesa (US-021/US-022) — autoridade do dado é o edge (só ele expõe os
+        // controllers de escrita/leitura); mapeado aqui só para manter o catálogo idêntico ao
+        // gêmeo de Nexora.Api.Edge, como a docstring desta classe pede.
+        ApiErrorCodes.TableAlreadyOpen => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.InvalidTableToken => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.TableSessionNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.TableSessionNotOpen => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Consumo da mesa em tempo real (US-024) e repetição de item (US-028) — autoridade do
+        // dado é o edge (só ele expõe os controllers); mapeado aqui só para manter o catálogo
+        // idêntico ao gêmeo de Nexora.Api.Edge, como a docstring desta classe pede.
+        ApiErrorCodes.OrderNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.OrderItemNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ProductUnavailable => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OrderItemVariantPriceNotFound => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Dividir a conta (US-027) — autoridade do dado é o edge (só ele expõe os controllers);
+        // mapeado aqui só para manter o catálogo idêntico ao gêmeo de Nexora.Api.Edge.
+        ApiErrorCodes.BillItemNotAssigned => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.BillItemAssignmentInvalid => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.BillInvalidAmount => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.BillNotRequested => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Catálogo — categorias/produtos/variantes/preço por canal (US-010/US-011). Gap
+        // pré-existente fechado nesta tarefa: os módulos de catálogo já declaravam esses códigos
+        // em Shared/Errors/ApiErrorCodes.Catalog.cs havia tempo, mas nenhum agente anterior tinha
+        // atualizado este switch ainda (cada um evitou "editar em paralelo", ver docstring desta
+        // classe) — Nexora.ApiTests.Catalog.CatalogResultMappingTests já cobria exatamente estes
+        // casos e falhava (404/422/503 caindo no catch-all 500) até esta correção.
         ApiErrorCodes.CategoryNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.ProductNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.ProductCategoryNotFound => (StatusCodes.Status422UnprocessableEntity, true, false),
@@ -264,12 +299,10 @@ public static class ResultExtensions
         ApiErrorCodes.ProductMediaStorageUnavailable => (StatusCodes.Status503ServiceUnavailable, true, false),
         ApiErrorCodes.ProductMediaNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.PublicMenuTenantNotFound => (StatusCodes.Status404NotFound, false, false),
-
-        // Variações e preço (US-011).
         ApiErrorCodes.VariantNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.PriceChannelInvalid => (StatusCodes.Status400BadRequest, true, false),
 
-        // Grupos de modificadores (US-012).
+        // Grupos de modificadores e modificadores (US-012) — mesmo gap, fechado junto.
         ApiErrorCodes.ModifierGroupNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.ModifierNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.ModifierGroupProductNotFound => (StatusCodes.Status404NotFound, false, false),
@@ -277,32 +310,23 @@ public static class ResultExtensions
         ApiErrorCodes.ProductModifierGroupAlreadyLinked => (StatusCodes.Status409Conflict, true, false),
         ApiErrorCodes.ProductModifierGroupNotLinked => (StatusCodes.Status404NotFound, false, false),
 
-        // Preço por canal e reajuste em massa (US-014).
+        // Preço por canal de venda em tabela (US-014) — mesmo gap, fechado junto.
         ApiErrorCodes.PriceTableVariantNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.PriceTableCategoryNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.PriceTableChannelInvalid => (StatusCodes.Status400BadRequest, true, false),
         ApiErrorCodes.PriceTableChannelDuplicated => (StatusCodes.Status400BadRequest, true, false),
         ApiErrorCodes.PriceBulkAdjustNegativeResult => (StatusCodes.Status422UnprocessableEntity, true, false),
 
-        // Precificação de fração — meio a meio (US-013).
-        ApiErrorCodes.FractionVariantNotFound => (StatusCodes.Status404NotFound, false, false),
-        ApiErrorCodes.FractionNotAllowed => (StatusCodes.Status422UnprocessableEntity, true, false),
-        ApiErrorCodes.FractionMaxExceeded => (StatusCodes.Status422UnprocessableEntity, true, false),
-        ApiErrorCodes.FractionMinimumNotMet => (StatusCodes.Status422UnprocessableEntity, true, false),
-        ApiErrorCodes.FractionSizeMismatch => (StatusCodes.Status422UnprocessableEntity, true, false),
-        ApiErrorCodes.FractionGroupMismatch => (StatusCodes.Status422UnprocessableEntity, true, false),
-        ApiErrorCodes.FractionWeightSumInvalid => (StatusCodes.Status422UnprocessableEntity, true, false),
-        ApiErrorCodes.FractionPriceNotFound => (StatusCodes.Status422UnprocessableEntity, true, false),
-
-        // Tempo de preparo e praça (US-016).
+        // Tempo de preparo e praça por produto (US-016) — mesmo gap, fechado junto.
         ApiErrorCodes.PrepTimeVariantNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.PrepTimeProductNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.PrepTimeStationNotFound => (StatusCodes.Status404NotFound, false, false),
 
-        // Tenants.
-        ApiErrorCodes.TenantNotFound => (StatusCodes.Status404NotFound, false, false),
-        ApiErrorCodes.TenantSlugAlreadyTaken => (StatusCodes.Status422UnprocessableEntity, true, false),
-        ApiErrorCodes.OwnerInviteInvalidCredentials => (StatusCodes.Status401Unauthorized, false, false),
+        // Praças de produção (US-017) — mesmo gap, fechado junto.
+        ApiErrorCodes.StationNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.StationCodeAlreadyExists => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.StationHasLinkedProducts => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.StationStoreContextMissing => (StatusCodes.Status403Forbidden, false, false),
 
         // Legados do cloud (placeholders de módulos ainda não portados — mantidos do arquivo
         // anterior a esta tarefa; nenhum handler emite hoje, mas preservam o comportamento

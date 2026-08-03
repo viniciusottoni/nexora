@@ -3,6 +3,7 @@
   margin: 0 auto;
   padding: clamp(2rem, 5vw, 4.5rem) 0;
   color: var(--color-text);
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 
 .roles-header {
@@ -39,6 +40,7 @@
   padding: 0.8rem 1rem;
   border-left: 0.3rem solid var(--color-success);
   background: color-mix(in srgb, var(--color-success) 8%, transparent);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 
 .roles-workbench {
@@ -65,9 +67,16 @@
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
+  box-shadow: var(--shadow-subtle);
+  transition: var(--transition-control), transform var(--dur-fast) var(--ease-standard);
 }
 .role-list__item:hover {
   border-color: var(--color-primary);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
+}
+.role-list__item:active {
+  transform: translateY(0);
 }
 .role-list__item:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--color-secondary) 65%, white);
@@ -94,6 +103,7 @@
   color: var(--color-primary);
   background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   font-weight: 700;
+  transition: var(--transition-control);
 }
 
 .role-editor {
@@ -121,6 +131,7 @@
   background: color-mix(in srgb, var(--color-warning) 10%, transparent);
   font-size: 0.72rem;
   font-weight: 700;
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 .permission-groups {
   display: grid;
@@ -149,6 +160,7 @@
   padding: 0.55rem 0.65rem;
   border-radius: calc(var(--radius-base) * 0.55);
   cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-standard);
 }
 .permission-option:hover {
   background: color-mix(in srgb, var(--color-primary) 5%, transparent);
@@ -176,6 +188,7 @@
   border-left: 0.3rem solid var(--color-warning);
   background: color-mix(in srgb, var(--color-warning) 8%, transparent);
   font-size: 0.82rem;
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 .role-editor__footer {
   display: flex;
@@ -200,6 +213,7 @@
   place-items: center;
   padding: 1rem;
   background: color-mix(in srgb, var(--color-text) 55%, transparent);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 .roles-dialog {
   width: min(31rem, 100%);
@@ -208,7 +222,8 @@
   border-top: 0.35rem solid var(--color-primary);
   border-radius: var(--radius-base);
   background: var(--color-surface-raised);
-  box-shadow: 0 2rem 5rem color-mix(in srgb, var(--color-text) 24%, transparent);
+  box-shadow: var(--shadow-overlay);
+  animation: nx-scale-in var(--dur-base) var(--ease-out) both;
 }
 .roles-dialog h2 {
   margin: 0.4rem 0;

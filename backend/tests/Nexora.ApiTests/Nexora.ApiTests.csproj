@@ -6,8 +6,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!--
+      "Program" de top-level statements vive no namespace global — Api.Edge e Api.Cloud definem
+      cada um o seu, então referenciar os dois assemblies sem alias dá CS0433 (tipo ambíguo) assim
+      que qualquer teste usar WebApplicationFactory<Program> (US-023, TableMapHubTests). Alias só
+      no lado Cloud: Edge continua "Program" puro (é o alvo do WebApplicationFactory desta US);
+      os poucos usos de tipo de Api.Cloud (ex. InstallationAuthenticationHandlerTests) passam a
+      exigir "extern alias ApiCloud;" no topo do arquivo.
+    -->
     <ProjectReference Include="..\..\src\Nexora.Api.Edge\Nexora.Api.Edge.csproj" />
-    <ProjectReference Include="..\..\src\Nexora.Api.Cloud\Nexora.Api.Cloud.csproj" />
+    <ProjectReference Include="..\..\src\Nexora.Api.Cloud\Nexora.Api.Cloud.csproj" Aliases="ApiCloud" />
   </ItemGroup>
 
   <ItemGroup>
@@ -16,6 +24,7 @@
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="Respawn" />
     <PackageReference Include="NSubstitute" />

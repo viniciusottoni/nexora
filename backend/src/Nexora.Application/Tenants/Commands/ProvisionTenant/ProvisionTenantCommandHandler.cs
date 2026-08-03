@@ -207,7 +207,10 @@ internal sealed class ProvisionTenantCommandHandler
             tenant.Id, tenant.Slug, template.Code);
 
         var response = new ProvisionTenantResponse(
-            new ProvisionedTenantResponse(tenant.Id, tenant.Slug, tenant.Status.ToString()),
+            // PROVISIONED descreve o resultado deste endpoint no contrato da plataforma. O estado
+            // persistido Trial pertence ao ciclo comercial do tenant e não deve vazar como "Trial"
+            // para o cliente, que valida os estados operacionais em caixa alta.
+            new ProvisionedTenantResponse(tenant.Id, tenant.Slug, "PROVISIONED"),
             new ProvisionedStoreResponse(store.Id, store.Name),
             installTokenRaw,
             $"./install.sh --tenant={tenant.Id} --token={installTokenRaw}",

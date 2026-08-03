@@ -108,9 +108,16 @@
   padding: 0 var(--gutter-page);
   background: var(--surface-card);
   border-bottom: var(--border-1) solid var(--border-subtle);
+  /* Chrome fixo ganha uma separação sutil do conteúdo que rola por baixo — sem isso a
+     barra fica indistinguível do fundo em telas sem outro contraste (ex.: web-platform). */
+  box-shadow: var(--shadow-subtle);
+  position: relative;
+  z-index: 1;
+  transition: var(--transition-control);
 }
 .db-topbar--sunken {
   background: var(--surface-page);
+  box-shadow: none;
 }
 .db-topbar--brand {
   background: var(--brand-primary);

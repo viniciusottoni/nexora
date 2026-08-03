@@ -37,6 +37,9 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="Konscious.Security.Cryptography.Argon2" />
     <PackageReference Include="BouncyCastle.Cryptography" />
+    <!-- US-020: geração de imagem do QR Code (QRCoder) e montagem do PDF de exportação (QuestPDF). -->
+    <PackageReference Include="QRCoder" />
+    <PackageReference Include="QuestPDF" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Serilog.AspNetCore" />
   </ItemGroup>

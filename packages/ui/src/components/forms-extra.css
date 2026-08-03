@@ -218,17 +218,21 @@
   color: var(--text-primary);
   font: var(--fw-semibold) var(--fs-24)/1 var(--font-mono);
   cursor: pointer;
-  transition: var(--transition-control);
+  transition: var(--transition-control), box-shadow var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: var(--shadow-subtle);
 }
 .db-numeric-keypad button:hover {
   background: var(--surface-sunken);
+  box-shadow: var(--shadow-hover);
 }
 .db-numeric-keypad button:active {
   transform: translateY(1px);
   background: var(--surface-brand-subtle);
+  box-shadow: var(--shadow-subtle);
+  transition-duration: var(--dur-instant);
 }
 .db-numeric-keypad button.db-numeric-keypad__confirm {
   background: var(--nx-success-500);

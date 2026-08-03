@@ -208,13 +208,18 @@
 }
 .db-cloud-login {
   min-height: 100dvh;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
   padding: 1.25rem;
   background: var(--color-surface);
 }
 
-.db-cloud-login__card {
+/* Login e primeiro acesso sao o mesmo cartao: claro, destacado do fundo por sombra. */
+.db-cloud-login__card,
+.db-device-pairing form {
   display: grid;
   gap: 1rem;
   width: min(29rem, 100%);
@@ -222,7 +227,18 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-base);
   background: var(--color-surface-raised);
-  box-shadow: 0 1.5rem 4rem color-mix(in srgb, var(--color-text) 12%, transparent);
+  box-shadow:
+    0 0.15rem 0.4rem color-mix(in srgb, var(--color-text) 6%, transparent),
+    0 1.5rem 4rem color-mix(in srgb, var(--color-text) 16%, transparent);
+}
+
+/* Marca colorida, centralizada no topo do cartao. */
+.db-auth-logo {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+  margin-bottom: 1rem;
 }
 
 .db-cloud-login__card h1,
@@ -236,22 +252,46 @@
   letter-spacing: 0.14em;
 }
 
-.db-device-pairing {
-  min-height: 100dvh;
+.db-dev-otp {
   display: grid;
-  place-items: center;
-  padding: 1.25rem;
-  background: var(--color-surface);
+  gap: 0.2rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 24%, var(--color-border));
+  border-radius: calc(var(--brand-radius) * 0.6);
+  background: color-mix(in srgb, var(--brand-primary) 8%, var(--color-surface-raised));
 }
 
-.db-device-pairing form {
-  display: grid;
+.db-dev-otp__eyebrow {
+  margin: 0;
+  color: var(--brand-primary);
+  font: 700 0.68rem/1 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.db-dev-otp strong {
+  font: 700 1rem/1.25 var(--font-body);
+  color: var(--color-text);
+}
+
+.db-dev-otp small {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.db-device-pairing {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 1rem;
-  width: min(29rem, 100%);
-  padding: clamp(1.5rem, 5vw, 3rem);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
-  background: var(--color-surface-raised);
+  padding: 1.25rem;
+  background: var(--color-surface);
+  /* A tela de pareamento é renderizada fora do shell de cada app (antes dele, no
+     primeiro acesso), então não pode herdar a cor do body: no web-kds o body é
+     --brand-on-primary (branco, para o header de marca) e o texto sumiria no cartão. */
+  color: var(--color-text);
 }
 
 .db-device-pairing h1,

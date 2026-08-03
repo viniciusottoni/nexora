@@ -27,6 +27,8 @@
     <!-- Cache / realtime (Redis mantido; Socket.IO -> SignalR nativo do ASP.NET Core) -->
     <PackageVersion Include="StackExchange.Redis" Version="2.8.24" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="9.0.0" />
+    <!-- Cliente SignalR só em teste (Nexora.ApiTests) — verifica o hub do mapa de mesas (US-023, ADR-011) via WebSocket real sobre TestServer. -->
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0" />
 
     <!-- OpenAPI / Swagger -->
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="7.2.0" />
@@ -51,6 +53,16 @@
       mini-PC do edge) em vez de NSec.Cryptography.
     -->
     <PackageVersion Include="BouncyCastle.Cryptography" Version="2.5.1" />
+
+    <!--
+      US-020: exportação do PDF de QR Codes das mesas ("um código por página"). QRCoder gera a
+      matriz/PNG do QR Code (puro .NET, sem dependência nativa); QuestPDF monta o documento
+      (licença Community — gratuita para times/empresas pequenas, ver QuestPDF.Settings.License
+      em Nexora.Infrastructure.Operation.TableQrCodesPdfRenderer). Só Infrastructure referencia
+      (ADR-039: Application não pode depender de bibliotecas de renderização de imagem/documento).
+    -->
+    <PackageVersion Include="QRCoder" Version="1.6.0" />
+    <PackageVersion Include="QuestPDF" Version="2024.12.3" />
 
     <!-- BackgroundService/IHostedService (SyncOutboxWorker, ADR-037) fora de um SDK Web -->
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />

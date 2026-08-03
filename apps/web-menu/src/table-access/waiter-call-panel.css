@@ -1,0 +1,184 @@
+/*
+ * US-025 §10 ("botão sempre acessível, fixo, sem precisar navegar"): grupo flutuante no canto
+ * inferior direito, ACIMA do rodapé fixo de totais da aba Consumo (consumption-view.css,
+ * 96px de altura) — assim a posição é estável tanto na aba Cardápio (sem rodapé) quanto em
+ * Consumo (com rodapé), sem depender de qual aba está ativa.
+ */
+.waiter-call-bar {
+  position: fixed;
+  right: 16px;
+  bottom: 104px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.waiter-call-bar__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--density-touch-min);
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--nx-blue-600);
+  color: var(--nx-white);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: var(--shadow-raised);
+  transition: var(--transition-control), transform var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+}
+
+.waiter-call-bar__button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
+}
+
+.waiter-call-bar__button:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: var(--dur-instant);
+}
+
+.waiter-call-bar__button--secondary {
+  background: var(--surface-raised);
+  color: var(--nx-blue-600);
+  border: 1px solid var(--nx-blue-600);
+}
+
+/* Aguardando a confirmação do servidor ao chamar o garçom — pulso sutil, nunca "congelado". */
+.waiter-call-bar__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  animation: nx-pulse-alert 1.4s var(--ease-in-out) infinite;
+}
+
+.waiter-call-feedback {
+  display: block;
+  position: fixed;
+  right: 16px;
+  bottom: 190px;
+  z-index: 20;
+  max-width: 240px;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  box-shadow: var(--shadow-raised);
+  animation: nx-toast-in var(--dur-base) var(--ease-out) both;
+}
+
+.waiter-call-feedback--success {
+  background: var(--surface-success-subtle);
+  color: var(--text-success);
+}
+
+.waiter-call-feedback--info {
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+}
+
+.waiter-call-feedback--error {
+  background: var(--surface-danger-subtle);
+  color: var(--text-danger);
+}
+
+.bill-request-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: var(--surface-raised);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  animation: nx-scale-in var(--dur-base) var(--ease-out) both;
+}
+
+.bill-request-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bill-request-panel__head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.bill-request-panel__close {
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--density-touch-min);
+  min-height: var(--density-touch-min);
+  transition: var(--transition-control);
+}
+
+.bill-request-panel__close:hover {
+  background: var(--surface-sunken);
+}
+
+.bill-request-panel__close:active {
+  transform: scale(0.94);
+  transition-duration: var(--dur-instant);
+}
+
+.bill-request-panel__options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bill-request-panel__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--density-touch-min);
+  font-size: 0.95rem;
+}
+
+.bill-request-panel__people {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bill-request-panel__people input[type='number'] {
+  max-width: 96px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  transition: var(--transition-control);
+}
+
+.bill-request-panel__people input[type='number']:focus-visible {
+  outline: none;
+  border-color: var(--nx-blue-600);
+  box-shadow: var(--focus-ring);
+}
+
+.bill-request-panel__preview {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  border-radius: 4px;
+}
+
+/* Aguardando resposta do garçom — pulso contínuo, não deriva de --dur-* (mesma convenção de
+   components/feedback.css), então precisa do override explícito abaixo. */
+@media (prefers-reduced-motion: reduce) {
+  .waiter-call-bar__button:disabled {
+    animation: none;
+  }
+}

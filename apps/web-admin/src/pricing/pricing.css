@@ -5,6 +5,17 @@
   color: var(--color-text);
   display: grid;
   gap: 1.5rem;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+}
+
+.pricing-section-shell {
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+}
+
+.pricing-section-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .pricing-header {
@@ -35,12 +46,14 @@
   padding: 0.8rem 1rem;
   border-left: 0.3rem solid var(--color-danger);
   background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 .pricing-notice {
   margin: 0 0 1rem;
   padding: 0.8rem 1rem;
   border-left: 0.3rem solid var(--color-success);
   background: color-mix(in srgb, var(--color-success) 8%, transparent);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 
 .pricing-channel-table,
@@ -64,6 +77,10 @@
   padding: 0.6rem 0.75rem;
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+.pricing-channel-row:hover td {
+  background: color-mix(in srgb, var(--color-primary) 4%, transparent);
 }
 .pricing-channel-row td:nth-child(2) {
   max-width: 12rem;

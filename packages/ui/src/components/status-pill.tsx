@@ -6,6 +6,9 @@ import type { HTMLAttributes, ReactNode } from 'react';
  */
 export type StatusPillStatus =
   | 'FREE'
+  | 'OCCUPIED'
+  | 'RESERVED'
+  | 'BLOCKED'
   | 'OPEN'
   | 'QUEUED'
   | 'FIRED'
@@ -34,6 +37,9 @@ export interface StatusPillProps extends Omit<HTMLAttributes<HTMLSpanElement>, '
 /** Rótulo e par de cores (texto, fundo) canônicos por estado. Não reatribuir. */
 const STATUS_MAP: Record<StatusPillStatus, readonly [string, string, string]> = {
   FREE: ['Livre', 'var(--text-secondary)', 'var(--surface-sunken)'],
+  OCCUPIED: ['Ocupada', 'var(--nx-blue-600)', 'var(--nx-blue-100)'],
+  RESERVED: ['Reservada', 'var(--nx-navy-700)', 'var(--surface-brand-subtle)'],
+  BLOCKED: ['Bloqueada', 'var(--nx-danger-600)', 'var(--nx-danger-100)'],
   OPEN: ['Ocupada', 'var(--nx-blue-600)', 'var(--nx-blue-100)'],
   QUEUED: ['Na fila', 'var(--text-secondary)', 'var(--surface-sunken)'],
   FIRED: ['Em produção', 'var(--nx-warning-600)', 'var(--nx-warning-100)'],

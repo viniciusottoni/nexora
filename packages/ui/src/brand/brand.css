@@ -1,0 +1,142 @@
+/* Marca Nexora: carregamento padrão e a abertura que ele entrega ao conteúdo.
+   Só consome tokens de tokens/motion.css — nenhuma duração ou easing solto aqui.
+   Com prefers-reduced-motion os --dur-* zeram, o animationend dispara na hora e a
+   tela cai direto no conteúdo, sem quicada nem giro. */
+
+.db-nexora-logo {
+  display: block;
+  max-width: 100%;
+}
+
+/* Versão branca da marca. O branco é literal de propósito: esta é a marca da
+   plataforma, não do tenant — ela não pode virar a cor de branding do cliente. */
+.db-nexora-logo--white {
+  fill: #fff;
+}
+
+/* Silhueta usada para mascarar o brilho — precisa ser sólida (branca), nunca a cor/
+   gradiente real do traço; por isso fica em CSS e não como fill inline no SVG. */
+.db-nexora-logo__mask-shape {
+  fill: #fff;
+}
+
+.db-nexora-logo__shine-stop {
+  stop-color: #fff;
+}
+
+/* Faixa clara que atravessa o logo uma vez. Parada fora do desenho por padrão (mask
+   já confina a faixa à silhueta das letras; a posição de repouso evita reaparecer
+   entre uma abertura de cartão e outra). Só toca quando um `.is-open` ancestral
+   aparece — ver `.db-nexora-splash__content.is-open` abaixo e brand/nexora-logo.tsx. */
+.db-nexora-logo__shine {
+  transform: translateX(calc(var(--nx-logo-shine-w) * -1));
+  pointer-events: none;
+}
+
+.db-nexora-loader {
+  --db-loader-size: 5.5rem;
+  --db-loader-bounces: infinite;
+  --db-loader-cycle: calc(var(--dur-slower) + var(--dur-slow));
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-5);
+}
+
+.db-nexora-loader__stage {
+  position: relative;
+  display: grid;
+  place-items: end center;
+  width: var(--db-loader-size);
+  height: calc(var(--db-loader-size) * 1.4);
+}
+
+.db-nexora-loader__shadow {
+  position: absolute;
+  bottom: 0;
+  left: 14%;
+  width: 72%;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--nx-navy-900) 24%, transparent);
+  filter: blur(2px);
+  animation: nx-brand-bounce-shadow var(--db-loader-cycle) linear var(--db-loader-bounces) both;
+}
+
+.db-nexora-loader__coin {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--db-loader-size);
+  height: var(--db-loader-size);
+  margin-bottom: 0.55rem;
+  border-radius: 50%;
+  background: var(--surface-card);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--brand-primary) 18%, transparent),
+    0 0.75rem 1.6rem -0.9rem color-mix(in srgb, var(--nx-navy-900) 65%, transparent);
+  transform-origin: 50% 100%;
+  perspective: 32rem;
+  animation: nx-brand-bounce var(--db-loader-cycle) linear var(--db-loader-bounces) both;
+}
+
+.db-nexora-loader__flip {
+  display: grid;
+  place-items: center;
+  transform-style: preserve-3d;
+  animation: nx-brand-flip var(--db-loader-cycle) linear var(--db-loader-bounces) both;
+}
+
+.db-nexora-loader__label {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Sobre navy/azul da marca: moeda clara continua legível, texto vira branco esmaecido. */
+.db-nexora-loader--inverse .db-nexora-loader__label {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* Splash: a marca quica sobre o mesmo ponto onde o cartão vai abrir. Os dois ficam na
+   mesma célula do grid, então a saída da marca e a abertura do cartão se sobrepõem. */
+.db-nexora-splash {
+  display: grid;
+  width: 100%;
+  justify-items: center;
+}
+
+.db-nexora-splash > * {
+  grid-area: 1 / 1;
+}
+
+.db-nexora-splash__intro {
+  display: grid;
+  place-items: center;
+  align-self: center;
+}
+
+.db-nexora-splash__intro.is-leaving {
+  pointer-events: none;
+  animation: nx-brand-exit var(--dur-slow) var(--ease-in-out) both;
+}
+
+.db-nexora-splash__content {
+  align-self: center;
+  width: 100%;
+  display: grid;
+  justify-items: center;
+}
+
+/* Enquanto a marca quica o cartão ainda não existe para o usuário nem para leitores de
+   tela. É classe, não style inline, de propósito: sem CSS (jsdom, e-mail, fallback) o
+   conteúdo aparece normalmente em vez de ficar preso atrás da animação. */
+.db-nexora-splash__content.is-waiting {
+  visibility: hidden;
+}
+
+/* Depois que o cartão termina de abrir (nx-anim-open-x chega ao fim), o logo dentro
+   dele — se renderizado com `shine` — brilha uma vez da esquerda para a direita. */
+.db-nexora-splash__content.is-open .db-nexora-logo__shine {
+  animation: nx-logo-shine calc(var(--dur-slower) + var(--dur-base)) var(--ease-in-out) 1 both;
+}

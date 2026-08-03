@@ -185,7 +185,14 @@ function PriceTableLoader({
     };
   }, [variantId, pricingApi]);
 
-  if (!channels) return <Card className="pricing-section-empty">Carregando tabela de preços…</Card>;
+  if (!channels) {
+    return (
+      <Card className="pricing-section-empty" role="status">
+        <span className="nx-spinner" aria-hidden="true" />
+        Carregando tabela de preços…
+      </Card>
+    );
+  }
 
   return (
     <PriceTablePage

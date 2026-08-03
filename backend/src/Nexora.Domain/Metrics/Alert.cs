@@ -37,7 +37,11 @@ public sealed class Alert
         AlertSeverity severity = AlertSeverity.Warning,
         Guid? storeId = null,
         IReadOnlyList<string>? targetRoles = null,
-        string? payload = null)
+        string? payload = null,
+        string? entityType = null,
+        Guid? entityId = null,
+        Guid? targetUserId = null,
+        string? groupKey = null)
     {
         if (string.IsNullOrWhiteSpace(type))
             throw new DomainException("O tipo do alerta é obrigatório.");
@@ -52,11 +56,27 @@ public sealed class Alert
             StoreId = storeId,
             Type = type,
             Severity = severity,
+            EntityType = entityType,
+            EntityId = entityId,
             TargetRoles = targetRoles ?? Array.Empty<string>(),
+            TargetUserId = targetUserId,
             Message = message,
             Payload = payload ?? "{}",
-            RaisedAt = DateTimeOffset.UtcNow
+            RaisedAt = DateTimeOffset.UtcNow,
+            GroupKey = groupKey
         };
+    }
+
+    /// <summary>
+    /// Altera o conjunto de papéis-alvo do alerta (US-025 §4, cenário "Escalonamento por falta de
+    /// atendimento": "o alerta deve escalar para os demais garçons do ambiente") — chamado pelo
+    /// worker de escalonamento (<c>WaiterCallEscalationWorker</c>) sobre um alerta já existente, em
+    /// vez de criar um segundo alerta para a MESMA chamada (que quebraria a garantia de "chamada
+    /// repetida não duplica").
+    /// </summary>
+    public void Escalate(IReadOnlyList<string> targetRoles)
+    {
+        TargetRoles = targetRoles;
     }
 
     public void Acknowledge(Guid acknowledgedBy)

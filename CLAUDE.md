@@ -100,6 +100,15 @@ Ao decidir onde uma demanda de cliente se encaixa: diferença de negócio que o 
 
 O DDL em `Docs/Domain/` está na ordem exata de execução (00 extensões → 01 plataforma → … → 12 seeds) e vira **migrations do EF Core** (`dotnet ef migrations add`) na mesma sequência — ver [13-Mapeamento-EFCore.md](Docs/Domain/13-Mapeamento-EFCore.md).
 
+## Motion e microinterações no frontend
+
+Nenhuma tela nasce "seca". Toda página, card, lista, diálogo, toggle, badge ou notificação nova nos 5 apps (`web-admin`, `web-kds`, `web-menu`, `web-pos`, `web-platform`) entra com animação de montagem, responde a hover/press e transiciona qualquer mudança de estado (inclusive as que chegam por WebSocket/SignalR) — nunca "pula" de um valor para outro. Ver [RNF-USA-13](Docs/08-Requisitos-Nao-Funcionais.md#6-usabilidade-e-acessibilidade--rnf-usa).
+
+- **Fonte única dos tokens**: `packages/ui/src/tokens/motion.css` (`--dur-instant/fast/base/slow/slower`, `--ease-standard/out/in-out`, `--transition-control`) e os utilitários já prontos em `packages/ui/src/components/motion.css` (`.nx-anim-in` entrada padrão, `.nx-anim-scale-in` diálogos, `.nx-anim-toast-in` toasts/alertas, `.nx-anim-flash` destaque de atualização realtime, `.nx-stagger` entrada em cascata de listas, `.nx-skeleton`/`.nx-spinner` carregamento). Os componentes base de `packages/ui/src/components/*.css` (`db-button`, `db-card`, `db-table-card`, `db-order-ticket`, `db-menu-item-card` etc.) já os usam — component novo herda de graça; component customizado por app reusa os mesmos tokens, nunca inventa duração/easing "solto".
+- **Proibido** `transition: all 0.3s` ou qualquer `ms`/`cubic-bezier` fora dos tokens acima, e proibida biblioteca externa de animação (framer-motion, GSAP): é tudo CSS nativo — motion pesado em JS custaria CPU/memória no mini-PC do edge server e concorreria com o orçamento de latência pedido→KDS (< 2 s).
+- `prefers-reduced-motion: reduce` já é tratado nos tokens (zera os `--dur-*`); um `@keyframes` novo com duração fixa (não derivada de `--dur-*`, como `nx-shimmer`/`nx-spin`) precisa de override explícito nesse media query, como já feito em `components/feedback.css` e `components/motion.css`.
+- Antes de criar uma animação nova, verifique se `motion.css` já cobre o caso — consistência entre os 5 apps importa mais que criatividade pontual por tela.
+
 ## Build, lint e testes
 
 A solution existe em `Git/backend/Nexora.slnx` (SDK .NET 10, `global.json` pino `10.0.100`/`rollForward: latestFeature`) e o monorepo frontend em `Git/` (pnpm + turbo). Comandos reais, verificados:

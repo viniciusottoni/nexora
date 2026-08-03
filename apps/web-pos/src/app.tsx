@@ -3,6 +3,7 @@ import {
   Button,
   Card,
   createNeutralBrandingResponse,
+  CreatedByFooter,
   DevicePairingScreen,
   OperatorBar,
   OperationalAuthClient,
@@ -13,6 +14,9 @@ import {
   useRuntimeBranding,
   type OperationalSession,
 } from '@nexora/ui';
+import { BillingPage } from './billing/billing-page.js';
+import { OpenTablePage } from './tables/open-table-page.js';
+import { TableMapPage } from './table-map/table-map-page.js';
 import './styles.css';
 
 export interface PosHomeProps {
@@ -53,6 +57,12 @@ function BrandedPos() {
   const [error, setError] = useState<string>();
   const [retryAfterSeconds, setRetryAfterSeconds] = useState<number>();
   const [intentionId, setIntentionId] = useState(() => crypto.randomUUID());
+  // US-023: o mapa de mesas é a tela inicial do garçom; "abrir mesa" (US-022) é uma ação disparada
+  // ao tocar numa mesa livre no mapa, não mais uma tela própria de entrada.
+  const [openingTableId, setOpeningTableId] = useState<string>();
+  // US-027 §10: sessão cuja conta está sendo dividida — acionada a partir do card de mesa com
+  // `billRequested=true` no mapa, mesmo padrão de `openingTableId` acima.
+  const [billingSessionId, setBillingSessionId] = useState<string>();
   useEffect(() => {
     void readRegisteredDeviceIdentity()
       .then(setDevice)
@@ -112,7 +122,29 @@ function BrandedPos() {
           setIntentionId(crypto.randomUUID());
         }}
       />
-      <PosHome tenantName={tenant.name} {...(logo ? { logo } : {})} />
+      {/* US-023: o mapa de mesas é a tela inicial do garçom/caixa, não um menu (§10) — substitui o
+          placeholder estático de PosHome (ainda exportado/testado à parte) assim que autenticado.
+          US-022 ("abrir mesa") passa a ser uma ação disparada ao tocar numa mesa livre no mapa. */}
+      {openingTableId ? (
+        <OpenTablePage
+          identity={{ accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret }}
+          preselectedTableId={openingTableId}
+          onExit={() => setOpeningTableId(undefined)}
+        />
+      ) : billingSessionId ? (
+        <BillingPage
+          identity={{ accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret }}
+          sessionId={billingSessionId}
+          onExit={() => setBillingSessionId(undefined)}
+        />
+      ) : (
+        <TableMapPage
+          identity={{ accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret }}
+          onSelectTable={setOpeningTableId}
+          onOpenBilling={setBillingSessionId}
+        />
+      )}
+      <CreatedByFooter />
     </div>
   );
 }

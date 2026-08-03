@@ -51,6 +51,15 @@ body {
   border-radius: 50%;
   background: var(--color-success);
   box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--color-success) 16%, transparent);
+  transition: var(--transition-control);
+  /* Ponto vivo de "caixa pronto" — mesmo padrão de respiração do ponto do StatusPill
+     (--dur-pulse-status, tokens/motion.css): sinaliza estado ativo sem ser alarme. */
+  animation: nx-pulse-alert var(--dur-pulse-status) var(--ease-in-out) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pos-state span {
+    animation: none;
+  }
 }
 .pos-panel {
   align-self: center;
@@ -85,6 +94,9 @@ body {
   top: 0.65rem;
   right: 1rem;
   width: min(24rem, calc(100% - 2rem));
+  /* OperatorBar (packages/ui) não tem animação própria — entra deslizando ao autenticar, mesma
+     assinatura de entrada do resto do app (nunca duração/easing "solto"). */
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 .pos-device-missing,
 .pos-loading {
@@ -95,6 +107,7 @@ body {
   text-align: center;
   background: var(--brand-surface);
   color: var(--color-text);
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 .pos-device-missing h1 {
   font: 700 2.5rem/1 var(--font-display);

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CloudLoginScreen, hasCloudSession, ThemeProvider } from '@nexora/ui';
+import { CloudLoginScreen, CreatedByFooter, hasCloudSession, ThemeProvider } from '@nexora/ui';
 
 import { ProvisionTenantPage } from './features/tenants/provision-tenant-page.js';
 
@@ -8,7 +8,10 @@ export function App() {
   return (
     <ThemeProvider>
       {authenticated ? (
-        <ProvisionTenantPage />
+        <>
+          <ProvisionTenantPage />
+          <CreatedByFooter />
+        </>
       ) : (
         <CloudLoginScreen onAuthenticated={() => setAuthenticated(true)} />
       )}

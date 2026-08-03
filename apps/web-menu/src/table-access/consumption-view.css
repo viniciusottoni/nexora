@@ -1,0 +1,121 @@
+.consumption-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  padding-bottom: 96px; /* espaço para o rodapé fixo de totais (US-024 §10) */
+}
+
+.consumption-view__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.consumption-view__head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.consumption-view__feedback {
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  animation: nx-toast-in var(--dur-base) var(--ease-out) both;
+}
+
+.consumption-view__feedback--success {
+  background: var(--surface-success-subtle);
+  color: var(--text-success);
+}
+
+.consumption-view__feedback--error {
+  background: var(--surface-danger-subtle);
+  color: var(--text-danger);
+}
+
+.consumption-view__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.consumption-view__repeat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: var(--density-touch-min);
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--nx-blue-600);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: var(--transition-control), transform var(--dur-fast) var(--ease-standard);
+}
+
+.consumption-view__repeat:hover:not(:disabled) {
+  background: var(--surface-sunken);
+}
+
+.consumption-view__repeat:active:not(:disabled) {
+  transform: scale(0.96);
+  transition-duration: var(--dur-instant);
+}
+
+.consumption-view__repeat:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.consumption-view__totals {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border-subtle);
+  padding: 12px 16px;
+  box-shadow: 0 -2px 8px color-mix(in srgb, var(--nx-gray-900) 6%, transparent);
+}
+
+.consumption-view__totals-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  padding: 2px 0;
+}
+
+/* Valor que chega/atualiza via realtime (SignalR/polling, ADR-011) — nunca "pula" sem aviso. */
+.consumption-view__totals-value {
+  border-radius: 4px;
+}
+
+.consumption-view__totals-row--fee span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.consumption-view__fee-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.consumption-view__totals-row--total {
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 4px;
+  padding-top: 6px;
+}

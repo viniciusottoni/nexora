@@ -1,0 +1,5 @@
+D:\OneDrive\ReplayStudio\Clientes\004_DonaBetinha\Git\tmp\build\cloud-obj\Debug\net10.0\Nexora.Shared.GeneratedMSBuildEditorConfig.editorconfig
+D:\OneDrive\ReplayStudio\Clientes\004_DonaBetinha\Git\tmp\build\cloud-obj\Debug\net10.0\Nexora.Shared.AssemblyInfoInputs.cache
+D:\OneDrive\ReplayStudio\Clientes\004_DonaBetinha\Git\tmp\build\cloud-obj\Debug\net10.0\Nexora.Shared.AssemblyInfo.cs
+D:\OneDrive\ReplayStudio\Clientes\004_DonaBetinha\Git\tmp\build\cloud-obj\Debug\net10.0\Nexora.Shared.csproj.CoreCompileInputs.cache
+D:\OneDrive\ReplayStudio\Clientes\004_DonaBetinha\Git\tmp\build\cloud-obj\Debug\net10.0\Nexora.Shared.sourcelink.json

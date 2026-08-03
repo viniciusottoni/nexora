@@ -1,0 +1,134 @@
+.menu-access-shell {
+  padding: 1rem;
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+/* Tela principal de acesso via QR (US-021) — entrada suave, nunca "pop" abrupto. */
+.table-access-tabs {
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+}
+
+.menu-access-hero {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.menu-access-category {
+  margin-bottom: 1.5rem;
+}
+
+.menu-access-items {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.menu-access-error {
+  padding: 2rem 1rem;
+  max-width: 28rem;
+  margin: 0 auto;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+}
+
+/* Esqueleto de conteúdo (US-021 §10) — nunca um giro indefinido. */
+.menu-skeleton {
+  padding: 1rem;
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.menu-skeleton__hero,
+.menu-skeleton__photo,
+.menu-skeleton__line {
+  background-image: linear-gradient(90deg, var(--surface-sunken) 25%, var(--surface-card) 50%, var(--surface-sunken) 75%);
+  background-size: 200% 100%;
+  animation: nx-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+.menu-skeleton__hero {
+  height: 3rem;
+  width: 60%;
+  margin: 0 auto 2rem;
+}
+
+.menu-skeleton__row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.menu-skeleton__photo {
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-shrink: 0;
+}
+
+.menu-skeleton__lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.menu-skeleton__line {
+  height: 0.75rem;
+}
+
+.menu-skeleton__line--title {
+  width: 50%;
+  height: 1rem;
+}
+
+.menu-skeleton__line--short {
+  width: 30%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-skeleton__hero,
+  .menu-skeleton__photo,
+  .menu-skeleton__line {
+    animation: none;
+    background-image: none;
+    background-color: var(--surface-sunken);
+  }
+}
+
+/* US-024: abas "Cardápio"/"Consumo" da tela de acesso do cliente. */
+.table-access-tabs__bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+  background: var(--surface-raised);
+}
+
+.table-access-tabs__tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--density-touch-min);
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: var(--transition-control), border-bottom-color var(--dur-fast) var(--ease-standard);
+}
+
+.table-access-tabs__tab:hover:not(.table-access-tabs__tab--active) {
+  color: var(--text-primary);
+}
+
+.table-access-tabs__tab--active {
+  color: var(--nx-blue-600);
+  border-bottom-color: var(--nx-blue-600);
+  font-weight: 600;
+}

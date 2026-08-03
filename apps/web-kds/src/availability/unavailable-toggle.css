@@ -5,6 +5,37 @@
   padding: 0.75rem 1rem;
   border-radius: var(--radius-md, 12px);
   background: var(--surface-sunken, #f4f4f5);
+  /* Sem o fundo "card" claro do modo padrão, este chip precisa de uma borda própria para não
+     se perder visualmente no fundo escuro da cozinha — --border-subtle já é o tom certo em
+     qualquer superfície (claro OU escuro), então não precisa de sombra: uma sombra de queda
+     não apareceria sobre o fundo já escuro. */
+  border: var(--border-1) solid var(--border-subtle);
+  /* O fundo pode ser retocado por um modificador de estado (ex. indisponível) — a
+     troca nunca é instantânea. */
+  transition: var(--transition-control);
+}
+
+/* Lista de produtos indisponíveis (UnavailablePanel) — entrada em cascata sutil.
+   A disponibilidade muda algumas vezes por turno, não a cada segundo como a fila de
+   tickets, então o stagger aqui não compete com nada urgente de ler. */
+.kds-unavailable-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+}
+
+/* Agrupa nome + selo de "Em falta" para poder destacá-los juntos (nx-anim-flash) quando
+   OUTRO dispositivo muda a disponibilidade deste produto, sem remontar o toggle inteiro
+   (preserva foco/estado local de diálogo e erro). */
+.kds-availability-toggle__info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.25rem 0.5rem;
+  margin: -0.25rem -0.5rem;
+  border-radius: var(--radius-md, 12px);
 }
 
 .kds-availability-toggle__name {
@@ -12,9 +43,43 @@
   font-weight: 600;
 }
 
+/* Selo "Em falta" some/aparece com a disponibilidade — entra suave em vez de "pipocar". */
+.kds-availability-toggle__info .db-status-pill {
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
+}
+
+/* .nx-anim-flash (packages/ui/src/components/motion.css) mistura --brand-primary — um navy
+   escuro — sobre o fundo, praticamente some no tema escuro da cozinha, onde o fundo já é
+   escuro (RF de legibilidade a 1,5 m). Reaproveita a MESMA duração/easing do utilitário (só o
+   nome da animação muda) trocando a cor pelo --text-primary do tema em uso: em qualquer
+   superfície esse token já é o tom de maior contraste contra o fundo, então o realce
+   continua visível sem precisar de uma cor nova/hardcoded. */
+.kds-availability-toggle__info.nx-anim-flash {
+  animation-name: kds-availability-flash;
+}
+@keyframes kds-availability-flash {
+  from {
+    background-color: color-mix(in srgb, var(--text-primary) 24%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
 .kds-availability-toggle__error {
   color: var(--nx-danger-600, #dc2626);
   font-size: 0.875rem;
+}
+
+/* Fade simples do fundo do diálogo — duração ligada a --dur-fast, então já some sob
+   prefers-reduced-motion (o token zera) sem precisar de override explícito. */
+@keyframes kds-availability-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .kds-availability-dialog {
@@ -24,11 +89,21 @@
   display: grid;
   place-items: center;
   padding: var(--space-4, 1rem);
-  background: rgb(0 0 0 / 55%);
+  /* --surface-overlay já é o token de véu de modal do design system (mesmo valor de opacidade,
+     55%, só com o tom de marca em vez de preto puro) — evita repetir um rgb() solto aqui. */
+  background: var(--surface-overlay);
+  animation: kds-availability-backdrop-in var(--dur-fast) var(--ease-out) both;
 }
 
 .kds-availability-dialog__card {
   width: min(32rem, 100%);
+}
+
+/* .db-card já tem sua própria entrada (nx-slide-in) com a MESMA especificidade de
+   .nx-anim-scale-in — sem essa combinação de duas classes, o slide-in do card base
+   venceria e o diálogo nunca ganharia a entrada "scale" convencional para modais. */
+.kds-availability-dialog__card.nx-anim-scale-in {
+  animation: nx-scale-in var(--dur-base) var(--ease-out) both;
 }
 
 .kds-availability-dialog__card h2,

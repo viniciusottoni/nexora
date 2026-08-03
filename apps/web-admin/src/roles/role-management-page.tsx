@@ -109,7 +109,7 @@ export function RoleManagementPage({
       ) : null}
 
       <div className="roles-workbench">
-        <nav className="role-list" aria-label="Papéis cadastrados">
+        <nav className="role-list nx-stagger" aria-label="Papéis cadastrados">
           {roles.map((role) => (
             <button
               type="button"
@@ -150,7 +150,7 @@ export function RoleManagementPage({
               />
             </Field>
 
-            <div className="permission-groups">
+            <div className="permission-groups nx-stagger">
               {groups.map(([resource, items]) => (
                 <fieldset className="permission-group" key={resource}>
                   <legend>{resource}</legend>

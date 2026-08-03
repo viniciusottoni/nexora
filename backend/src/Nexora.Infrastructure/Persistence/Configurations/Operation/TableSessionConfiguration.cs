@@ -22,11 +22,20 @@ internal sealed class TableSessionConfiguration : IEntityTypeConfiguration<Table
 
         builder.Property(s => s.Status).HasColumnName("status").HasDefaultValue(TableSessionStatus.Open);
         builder.Property(s => s.GuestCount).HasColumnName("guest_count").HasColumnType("smallint").HasDefaultValue((short)1);
+
+        // US-021/US-022: falso só quando aberta por QR — contagem pendente de confirmação do garçom.
+        builder.Property(s => s.GuestCountConfirmed).HasColumnName("guest_count_confirmed").HasDefaultValue(true);
+
         builder.Property(s => s.WaiterId).HasColumnName("waiter_id");
         builder.Property(s => s.OpenedBy).HasColumnName("opened_by");
         builder.Property(s => s.OpenedSource).HasColumnName("opened_source").HasMaxLength(16).HasDefaultValue("WAITER");
         builder.Property(s => s.OpenedAt).HasColumnName("opened_at").HasColumnType("timestamptz");
         builder.Property(s => s.BillRequestedAt).HasColumnName("bill_requested_at").HasColumnType("timestamptz");
+
+        // US-026 §8: preferência de divisão registrada na solicitação da conta — ver docstring de
+        // TableSession.SplitMode/SplitPeople.
+        builder.Property(s => s.SplitMode).HasColumnName("split_mode").HasMaxLength(16);
+        builder.Property(s => s.SplitPeople).HasColumnName("split_people").HasColumnType("smallint");
         builder.Property(s => s.ClosedAt).HasColumnName("closed_at").HasColumnType("timestamptz");
         builder.Property(s => s.ReleasedAt).HasColumnName("released_at").HasColumnType("timestamptz");
 

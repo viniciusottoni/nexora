@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Card,
   createNeutralBrandingResponse,
+  CreatedByFooter,
   DevicePairingScreen,
   OperatorBar,
   OperationalAuthClient,
@@ -39,7 +40,10 @@ export function KdsHome({ tenantName, logo }: Readonly<KdsHomeProps>) {
           <span>Novos pedidos aparecem automaticamente.</span>
         </div>
       </section>
-      <section className="kds-columns" aria-label="Fluxo da cozinha">
+      {/* nx-stagger é seguro aqui: são só 3 colunas de resumo que montam uma vez por
+          sessão (login), não a fila de tickets em si — nunca atrasa a leitura de um
+          pedido urgente. */}
+      <section className="kds-columns nx-stagger" aria-label="Fluxo da cozinha">
         {['A fazer', 'Preparando', 'Pronto'].map((label) => (
           <Card as="div" key={label} className="kds-column">
             <h2>{label}</h2>
@@ -130,6 +134,7 @@ function BrandedKds() {
           <UnavailablePanel api={availabilityApi} accessToken={session.accessToken} />
         </section>
       ) : null}
+      <CreatedByFooter />
     </div>
   );
 }

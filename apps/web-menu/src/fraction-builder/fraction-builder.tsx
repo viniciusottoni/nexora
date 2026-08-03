@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
   PreviewFractionPricingRequest,
   PreviewFractionPricingResponse,
@@ -76,6 +76,10 @@ export function FractionBuilder({
   const [pricing, setPricing] = useState<PreviewFractionPricingResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Destaque breve (nx-anim-flash) quando o preço recalculado chega com um valor DIFERENTE do
+  // anterior — nunca no primeiro cálculo, e nunca quando o preview repete o mesmo valor.
+  const previousUnitPriceRef = useRef<number | null>(null);
+  const [priceFlashKey, setPriceFlashKey] = useState(0);
 
   useEffect(() => {
     if (selectedSize !== undefined && sizes.includes(selectedSize)) return;
@@ -176,6 +180,17 @@ export function FractionBuilder({
     };
   }, [api, channel, onPriced, selectedVariantIds]);
 
+  useEffect(() => {
+    if (!pricing) return;
+    if (
+      previousUnitPriceRef.current !== null &&
+      previousUnitPriceRef.current !== pricing.unitPrice
+    ) {
+      setPriceFlashKey((key) => key + 1);
+    }
+    previousUnitPriceRef.current = pricing.unitPrice;
+  }, [pricing]);
+
   return (
     <Card
       className="fraction-builder"
@@ -198,7 +213,11 @@ export function FractionBuilder({
           <span className="fraction-builder__step-label">
             2. Sabores ({selectedVariantIds.length}/{maxFractions})
           </span>
-          <div className="fraction-builder__flavors" role="group" aria-label="Escolha os sabores">
+          <div
+            className="fraction-builder__flavors nx-stagger"
+            role="group"
+            aria-label="Escolha os sabores"
+          >
             {flavorsForSize.map((flavor) => {
               const reason = blockReason(flavor);
               const selected = selectedVariantIds.includes(flavor.variantId);
@@ -237,7 +256,12 @@ export function FractionBuilder({
         {!loading && error ? <span className="fraction-builder__price-error">{error}</span> : null}
         {!loading && !error && pricing ? (
           <>
-            <span className="fraction-builder__price-value">{formatPrice(pricing.unitPrice)}</span>
+            <span
+              key={priceFlashKey}
+              className="fraction-builder__price-value nx-anim-flash"
+            >
+              {formatPrice(pricing.unitPrice)}
+            </span>
             <Badge tone="brand">{pricing.priceRule}</Badge>
             <span className="fraction-builder__price-description">{pricing.description}</span>
           </>

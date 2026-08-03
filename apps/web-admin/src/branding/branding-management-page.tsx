@@ -146,7 +146,7 @@ export function BrandingManagementPage({
       ) : null}
 
       <div className="branding-workbench">
-        <div className="branding-fields">
+        <div className="branding-fields nx-stagger">
           <Card className="branding-card">
             <h2>Cores</h2>
             <ContrastAdvisor

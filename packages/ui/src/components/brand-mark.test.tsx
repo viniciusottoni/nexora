@@ -20,9 +20,16 @@ describe('BrandMark', () => {
     expect(screen.getByText('Pizzaria')).toHaveClass('db-brand-mark__sub');
   });
 
-  it('sem tenantName nem logoSrc, cai no wordmark padrão NEXORA', () => {
+  it('sem tenantName nem logoSrc, desenha a marca Nexora colorida', () => {
     render(<BrandMark />);
 
-    expect(screen.getByText('NEXORA')).toHaveClass('db-brand-mark__word');
+    expect(screen.getByRole('img', { name: 'Nexora' }).tagName.toLowerCase()).toBe('svg');
+    expect(screen.getByRole('img', { name: 'Nexora' })).not.toHaveClass('db-nexora-logo--white');
+  });
+
+  it('inverse troca a marca Nexora pela versão branca', () => {
+    render(<BrandMark inverse />);
+
+    expect(screen.getByRole('img', { name: 'Nexora' })).toHaveClass('db-nexora-logo--white');
   });
 });

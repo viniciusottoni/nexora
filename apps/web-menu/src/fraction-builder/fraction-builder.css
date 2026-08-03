@@ -32,12 +32,20 @@
   font: var(--type-body);
   cursor: pointer;
   text-align: left;
-  transition: var(--transition-control);
+  transition: var(--transition-control), transform var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
 }
 
 .fraction-builder__flavor:hover:not(:disabled) {
   border-color: var(--border-brand);
   background: var(--surface-sunken);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
+}
+
+.fraction-builder__flavor:active:not(:disabled) {
+  transform: scale(0.98);
+  transition-duration: var(--dur-instant);
 }
 
 .fraction-builder__flavor:focus-visible {
@@ -45,15 +53,18 @@
   box-shadow: var(--focus-ring);
 }
 
+/* Troca de metade escolhida — pop sutil, nunca "pulando" (US-013 §10). */
 .fraction-builder__flavor--selected {
   border-color: var(--brand-primary);
   background: var(--surface-brand-subtle);
+  animation: nx-scale-in var(--dur-fast) var(--ease-out);
 }
 
 .fraction-builder__flavor--blocked {
   opacity: 0.5;
   cursor: not-allowed;
   background: var(--surface-sunken);
+  transform: none;
 }
 
 .fraction-builder__flavor-name {
@@ -78,17 +89,21 @@
 .fraction-builder__price-value {
   font: var(--type-h3);
   color: var(--text-primary);
+  border-radius: var(--radius-sm);
 }
 
 .fraction-builder__price-description {
   color: var(--text-secondary);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 
 .fraction-builder__price-loading,
 .fraction-builder__price-hint {
   color: var(--text-muted);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 
 .fraction-builder__price-error {
   color: var(--text-danger);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }

@@ -1,5 +1,6 @@
-using Nexora.Api.Cloud.Controllers;
-using Nexora.Api.Cloud.Infrastructure;
+extern alias ApiCloud;
+using ApiCloud::Nexora.Api.Cloud.Controllers;
+using ApiCloud::Nexora.Api.Cloud.Infrastructure;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Catalog.PrepTime.Commands.ReassignProductStation;
 using Nexora.Application.Catalog.PrepTime.Commands.UpdateVariantPrepTimeThresholds;

@@ -49,6 +49,37 @@ public sealed class JwtTokenIssuer : ITokenIssuer
         return Task.FromResult(Sign(payload, ttlSeconds, "authorization", subject ?? "authorization"));
     }
 
+    public Task<string> IssueTableSessionTokenAsync(
+        Guid sessionId, Guid tenantId, Guid tableId, int ttlSeconds, CancellationToken cancellationToken = default)
+    {
+        var payload = new JwtPayload
+        {
+            ["sub"] = sessionId.ToString(),
+            ["tid"] = tenantId.ToString(),
+            ["ses"] = sessionId.ToString(),
+            ["tbl"] = tableId.ToString(),
+        };
+
+        return Task.FromResult(Sign(payload, ttlSeconds, "table_session", sessionId.ToString()));
+    }
+
+    public Task<TableSessionTokenClaims> ValidateTableSessionTokenAsync(string token, CancellationToken cancellationToken = default)
+    {
+        var jwtToken = ValidateSignature(token);
+
+        if (!jwtToken.Payload.TryGetValue("tokenUse", out var tokenUse) || tokenUse as string != "table_session")
+        {
+            throw new SecurityTokenException("Token não é um token de sessão de mesa.");
+        }
+
+        var claims = new TableSessionTokenClaims(
+            SessionId: RequireGuidClaim(jwtToken, "ses"),
+            TenantId: RequireGuidClaim(jwtToken, "tid"),
+            TableId: RequireGuidClaim(jwtToken, "tbl"));
+
+        return Task.FromResult(claims);
+    }
+
     public Task<RefreshTokenClaims> ValidateRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
         var jwtToken = ValidateSignature(refreshToken);
@@ -101,6 +132,14 @@ public sealed class JwtTokenIssuer : ITokenIssuer
             ["roles"] = claims.Roles,
             ["perms"] = claims.Permissions,
         };
+
+        // Administração da plataforma é separada do RBAC do tenant. O papel especial existe
+        // apenas para identidades de equipe Nexora e vira a claim dedicada exigida pela policy
+        // PlatformAdmin das rotas /v1/platform/*.
+        if (claims.Roles.Contains("PLATFORM_ADMIN", StringComparer.OrdinalIgnoreCase))
+        {
+            payload["plt"] = "admin";
+        }
 
         if (claims.DeviceId is { } deviceId)
         {

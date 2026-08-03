@@ -175,17 +175,25 @@ public sealed class IdempotencyMiddleware
         }
 
         var responseBytes = buffer.ToArray();
-        await originalBody.WriteAsync(responseBytes, cancellationToken);
+        var responseText = responseBytes.Length == 0 ? null : System.Text.Encoding.UTF8.GetString(responseBytes);
 
+        // Finaliza a reserva antes de enviar a resposta ao cliente. Se o navegador fechar a
+        // conexÃ£o durante o WriteAsync, o efeito de negÃ³cio jÃ¡ executado nÃ£o pode deixar a chave
+        // presa como IN_PROGRESS por 24 horas.
         if (context.Response.StatusCode >= 500)
         {
             await store.DiscardAsync(key, CancellationToken.None);
-            return;
+        }
+        else
+        {
+            await store.CompleteAsync(key, context.Response.StatusCode, responseText, CancellationToken.None);
         }
 
+        // Cabeçalhos precisam ser definidos antes do primeiro byte do corpo ser enviado.
+        // Definir Idempotent-Replay depois de WriteAsync fazia o Kestrel abortar a conexão,
+        // embora o comando e o commit no banco já tivessem sido concluídos.
         context.Response.Headers[ReplayHeaderName] = "false";
-        var responseText = responseBytes.Length == 0 ? null : System.Text.Encoding.UTF8.GetString(responseBytes);
-        await store.CompleteAsync(key, context.Response.StatusCode, responseText, CancellationToken.None);
+        await originalBody.WriteAsync(responseBytes, cancellationToken);
     }
 
     private static async Task ReplayAsync(HttpContext context, int statusCode, string? responseBody)

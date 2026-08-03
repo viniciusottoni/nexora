@@ -8,6 +8,7 @@ export const permissionCodes = [
   'table:transfer',
   'table:close_request',
   'table:close',
+  'table:manage',
   'order:*',
   'order:create',
   'order:read',

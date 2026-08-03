@@ -3,6 +3,7 @@
   margin: 0 auto;
   padding: clamp(2rem, 5vw, 4.5rem) 0;
   color: var(--color-text);
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 
 .prep-time-header {
@@ -86,6 +87,7 @@
   width: 0.65rem;
   height: 0.65rem;
   border-radius: 50%;
+  transition: background-color var(--dur-fast) var(--ease-standard);
 }
 
 .prep-time-card__fields {
@@ -107,6 +109,16 @@
   margin: 0.75rem 0 0;
   color: var(--color-danger);
   font-size: 0.85rem;
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
+}
+
+.prep-time-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  color: var(--color-text-muted);
 }
 
 .prep-time-analysis {
@@ -117,6 +129,7 @@
   border: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--color-primary) 6%, transparent);
   border-radius: var(--radius-base);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) both;
 }
 
 .prep-time-analysis__row {

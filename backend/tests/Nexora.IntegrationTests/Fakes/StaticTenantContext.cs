@@ -23,13 +23,15 @@ public sealed class StaticTenantContext : ICurrentTenantContext
         Guid? storeId = null,
         Guid? userId = null,
         Guid? deviceId = null,
-        IReadOnlyList<string>? permissions = null)
+        IReadOnlyList<string>? permissions = null,
+        Guid? sessionId = null)
     {
         TenantId = tenantId;
         StoreId = storeId;
         UserId = userId;
         DeviceId = deviceId;
         Permissions = permissions ?? Array.Empty<string>();
+        SessionId = sessionId;
     }
 
     public Guid? TenantId { get; }
@@ -38,5 +40,11 @@ public sealed class StaticTenantContext : ICurrentTenantContext
     public IReadOnlyList<string> Roles { get; } = Array.Empty<string>();
     public IReadOnlyList<string> Permissions { get; }
     public Guid? DeviceId { get; }
-    public Guid? SessionId => null;
+
+    /// <summary>
+    /// US-024: simula a claim <c>ses</c> do token de sessão de mesa (<c>TableSessionScheme</c>) —
+    /// aditivo (default <c>null</c>) para não quebrar nenhuma chamada posicional já existente,
+    /// mesmo espírito do restante desta classe.
+    /// </summary>
+    public Guid? SessionId { get; }
 }
