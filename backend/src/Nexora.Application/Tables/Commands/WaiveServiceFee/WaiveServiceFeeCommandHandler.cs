@@ -4,6 +4,7 @@ using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Tables.Billing;
 using Nexora.Application.Tables.Sessions;
+using Nexora.Application.Tables.Support;
 using Nexora.Contracts.Operation;
 using Nexora.Domain.Operation;
 using Nexora.Domain.Platform;
@@ -69,6 +70,7 @@ internal sealed class WaiveServiceFeeCommandHandler : IRequestHandler<WaiveServi
         var itemResponses = items.Select(i => new BillItemResponse(
             i.Id, BillQueryCoordinator.ItemName(i), i.TotalPrice, BillQueryCoordinator.IsStillCooking(i), AssignedPerson: null)).ToList();
         var pendingItems = BillQueryCoordinator.BuildPendingItems(items);
+        var pendingItemsMode = await PendingItemsClosePolicy.ResolveModeAsync(_db, session.TenantId, cancellationToken);
 
         var response = new BillResponse(
             itemResponses,
@@ -81,7 +83,8 @@ internal sealed class WaiveServiceFeeCommandHandler : IRequestHandler<WaiveServi
             pendingItems.Count > 0,
             AmountPaid: null,
             RemainingAmount: null,
-            UnassignedItemIds: Array.Empty<Guid>());
+            UnassignedItemIds: Array.Empty<Guid>(),
+            PendingItemsMode: pendingItemsMode);
 
         return Result<BillResponse>.Success(response);
     }

@@ -38,6 +38,14 @@ export const billSplitPartSchema = z.object({
 });
 
 /**
+ * US-035 (Bloquear fechamento com item pendente) — modo configurado pelo tenant para
+ * `pendingItems`/`hasPendingItems` acima: `BLOCK` desabilita o fechamento até autorizar ou os
+ * itens serem resolvidos, `WARN` só avisa (comportamento anterior a esta história), `IGNORE` nem
+ * mostra o aviso.
+ */
+export const pendingItemsModeSchema = z.enum(['BLOCK', 'WARN', 'IGNORE']);
+
+/**
  * Porta de `GET /v1/sessions/{id}/bill` (staff) e `GET /v1/public/sessions/current/bill`
  * (cliente, pré-visualização) — mesmo formato para as duas audiências (US-027 §10).
  */
@@ -53,6 +61,9 @@ export const billResponseSchema = z.object({
   amountPaid: moneyStringSchema.nullable(),
   remainingAmount: moneyStringSchema.nullable(),
   unassignedItemIds: z.array(z.string().uuid()),
+  // Opcional (sem `.default()`) para não exigir o campo em fixtures/mocks anteriores a esta
+  // história — ausente é tratado como `'WARN'` pelo consumidor (mesmo default do backend).
+  pendingItemsMode: pendingItemsModeSchema.optional(),
 });
 
 export const billItemAssignmentRequestSchema = z.object({
@@ -86,22 +97,32 @@ export const waiveServiceFeeRequestSchema = z.object({
 
 const paymentMethodSchema = z.enum(['CASH', 'CREDIT', 'DEBIT', 'PIX', 'ONLINE', 'VOUCHER', 'OTHER']);
 
-/** Porta de `POST /v1/sessions/{id}/bill/partial-payment` (US-027 §4, cenário "Divisão por valor"). */
+/**
+ * Porta de `POST /v1/sessions/{id}/bill/partial-payment` (US-027 §4, cenário "Divisão por valor").
+ * `reason` (US-035 §10) só é relevante ao reenviar esta mesma chamada com `X-Authorization-Token`
+ * depois de um 422 `PENDING_ITEMS` — motivo registrado no `AuditLog` junto do autorizador.
+ */
 export const registerPartialPaymentRequestSchema = z.object({
   amount: z.number().positive(),
   method: paymentMethodSchema,
+  reason: z.string().nullable().optional(),
 });
 
-/** `remainingAmount` é o saldo que continua em aberto — a sessão permanece em `BILLREQUESTED`. */
+/**
+ * `remainingAmount` é o saldo que continua em aberto — a sessão permanece em `BILLREQUESTED`.
+ * `pendingItems` (US-035) só vem preenchido no modo `WARN` com item pendente.
+ */
 export const partialPaymentResponseSchema = z.object({
   paymentId: z.string().uuid(),
   amountPaid: moneyStringSchema,
   remainingAmount: moneyStringSchema,
   total: moneyStringSchema,
   sessionStatus: z.string(),
+  pendingItems: z.array(billPendingItemSchema).nullable().optional(),
 });
 
 export type BillSplitModeWithAmount = z.infer<typeof billSplitModeWithAmountSchema>;
+export type PendingItemsMode = z.infer<typeof pendingItemsModeSchema>;
 export type BillItemDto = z.infer<typeof billItemSchema>;
 export type BillPendingItemDto = z.infer<typeof billPendingItemSchema>;
 export type BillSplitPartDto = z.infer<typeof billSplitPartSchema>;

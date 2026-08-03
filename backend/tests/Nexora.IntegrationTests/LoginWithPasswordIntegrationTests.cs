@@ -7,6 +7,7 @@ using Nexora.Shared.Errors;
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using System.IdentityModel.Tokens.Jwt;
 using Xunit;
 
 namespace Nexora.IntegrationTests;
@@ -74,6 +75,17 @@ public sealed class LoginWithPasswordIntegrationTests
         var events = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
             assertDb.DomainEvents.Where(e => e.Type == "user.authenticated"));
         events.Should().ContainSingle();
+
+        var tokenSessionId = Guid.Parse(
+            new JwtSecurityTokenHandler()
+                .ReadJwtToken(result.Value.AccessToken)
+                .Claims.Single(claim => claim.Type == "ses")
+                .Value);
+        var persistedSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(
+            assertDb.AuthSessions.Where(session => session.UserId == user.Id));
+        persistedSession.Id.Should().Be(
+            tokenSessionId,
+            "a sessão referenciada pelo JWT precisa ser exatamente a sessão salva no banco");
     }
 
     [Fact]

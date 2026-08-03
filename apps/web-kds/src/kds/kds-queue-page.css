@@ -1,0 +1,58 @@
+.kds-queue {
+  min-height: 100vh;
+  padding: 1rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  background: var(--brand-surface-dark, #14181f);
+  color: var(--text-inverse, #fff);
+}
+.kds-queue__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0 1.25rem;
+  position: sticky;
+  top: 0;
+  background: inherit;
+  z-index: 5;
+}
+.kds-queue__header h1 {
+  margin: 0;
+  font: 700 clamp(1.4rem, 3vw, 1.9rem)/1.1 var(--brand-font-display, inherit);
+}
+.kds-queue__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+/* Critério de aceite (US-031 §4, "Pedido de delivery"): borda de acento distingue o canal a
+   distância, na bancada, sem precisar ler o texto do rodapé do ticket — reforço visual sobre o
+   ícone/rótulo que db-order-ticket já traz. */
+.kds-queue__grid > [data-channel='Delivery'],
+.kds-queue__grid > [data-channel='Marketplace'] {
+  border-left: 0.35rem solid var(--nx-cyan-600, #0891b2);
+}
+.kds-queue__grid > [data-channel='Takeout'] {
+  border-left: 0.35rem solid var(--nx-warning-600, #b45309);
+}
+.kds-queue__grid > [data-channel='DineIn'] {
+  border-left: 0.35rem solid var(--nx-blue-600, #1d4ed8);
+}
+
+.kds-queue__empty,
+.kds-queue__loading,
+.kds-queue__no-station {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--text-inverse-muted, #9aa3b2);
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+}
+.kds-queue__error {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, var(--color-danger, #dc2626) 20%, transparent);
+  color: var(--color-danger, #fca5a5);
+  font-weight: 600;
+}

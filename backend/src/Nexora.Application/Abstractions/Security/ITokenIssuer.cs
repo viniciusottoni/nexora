@@ -1,6 +1,17 @@
 namespace Nexora.Application.Abstractions.Security;
 
 /// <summary>Claims de acesso — mesmo formato usado no access/refresh token (edge e cloud).</summary>
+/// <param name="StationId">
+/// US-031 (Roteamento simultâneo para cozinha e caixa, ADR-011) — praça (<c>Station</c>) do
+/// dispositivo autenticado (<see cref="Nexora.Domain.Platform.Device.StationId"/>), quando o
+/// dispositivo está associado a uma. Vira a claim <c>stn</c> no JWT (<c>JwtTokenIssuer</c>) e é
+/// usada por <c>KdsHub.OnConnectedAsync</c> para inscrever a conexão na sala <c>station:{id}</c>
+/// (ADR-011: "a inscrição é derivada dos claims do token, não solicitada pelo cliente") — nunca
+/// preenchida a partir de um valor que o próprio cliente informa. Só <c>LoginWithPinCommandHandler</c>
+/// preenche hoje (dispositivo físico pareado, ex.: terminal do KDS/forno); login por senha
+/// (<c>LoginWithPasswordCommandHandler</c>, web-admin/cloud) não tem dispositivo físico associado e
+/// por isso nunca preenche esta claim.
+/// </param>
 public sealed record AccessClaims(
     Guid Subject,
     Guid TenantId,
@@ -9,7 +20,8 @@ public sealed record AccessClaims(
     IReadOnlyList<string> Permissions,
     Guid? DeviceId = null,
     Guid? SessionId = null,
-    bool Mfa = false);
+    bool Mfa = false,
+    Guid? StationId = null);
 
 /// <summary>Emissão de JWT (implementado em Infrastructure com System.IdentityModel.Tokens.Jwt).</summary>
 public interface ITokenIssuer

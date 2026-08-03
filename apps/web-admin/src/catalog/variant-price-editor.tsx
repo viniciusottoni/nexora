@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react';
-import { Badge, Button, Field, Input } from '@nexora/ui';
+import { AlertBanner, Badge, Button, Field, Input } from '@nexora/ui';
 import type {
   CreateVariantRequest,
   PriceDto,
@@ -101,85 +101,84 @@ export function VariantPriceEditor({
         </Button>
       </div>
 
-      {error ? (
-        <p className="catalog-error" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <AlertBanner tone="danger">{error}</AlertBanner> : null}
 
       {loading ? (
-        <p className="catalog-lead" role="status">
+        <p className="db-loading" role="status">
           <span className="nx-spinner" aria-hidden="true" />
-          {' '}Carregando variações…
+          Carregando variações…
         </p>
       ) : variants.length === 0 && !adding ? (
-        <p className="catalog-lead">Nenhuma variação cadastrada ainda.</p>
+        <p className="db-hint">Nenhuma variação cadastrada ainda.</p>
       ) : (
-        <table className="catalog-variant-table">
-          <thead>
-            <tr>
-              <th scope="col">Nome</th>
-              <th scope="col">Tamanho</th>
-              <th scope="col">Preço</th>
-              <th scope="col">Padrão</th>
-              <th scope="col">Situação</th>
-              <th scope="col" />
-            </tr>
-          </thead>
-          <tbody>
-            {variants.map((variant) => (
-              <VariantRow
-                key={variant.id}
-                variant={variant}
-                busy={busyId === variant.id}
-                duplicateSizeCode={Boolean(
-                  variant.sizeCode && duplicateSizeCodes.has(variant.sizeCode.trim().toUpperCase()),
-                )}
-                onSave={async (input, priceCents) => {
-                  setError(undefined);
-                  setBusyId(variant.id);
-                  try {
-                    await onUpdate(variant.id, input);
-                    const nextPrice = centsToDecimalString(priceCents);
-                    if (nextPrice !== variant.currentPrice) {
-                      await onSetPrice(variant.id, { amount: nextPrice });
+        <div className="db-table-wrap">
+          <table className="db-table db-table--compact">
+            <thead>
+              <tr>
+                <th scope="col">Nome</th>
+                <th scope="col">Tamanho</th>
+                <th scope="col">Preço</th>
+                <th scope="col">Padrão</th>
+                <th scope="col">Situação</th>
+                <th scope="col" />
+              </tr>
+            </thead>
+            <tbody>
+              {variants.map((variant) => (
+                <VariantRow
+                  key={variant.id}
+                  variant={variant}
+                  busy={busyId === variant.id}
+                  duplicateSizeCode={Boolean(
+                    variant.sizeCode &&
+                    duplicateSizeCodes.has(variant.sizeCode.trim().toUpperCase()),
+                  )}
+                  onSave={async (input, priceCents) => {
+                    setError(undefined);
+                    setBusyId(variant.id);
+                    try {
+                      await onUpdate(variant.id, input);
+                      const nextPrice = centsToDecimalString(priceCents);
+                      if (nextPrice !== variant.currentPrice) {
+                        await onSetPrice(variant.id, { amount: nextPrice });
+                      }
+                    } catch (reason) {
+                      setError(toMessage(reason));
+                    } finally {
+                      setBusyId(undefined);
                     }
-                  } catch (reason) {
-                    setError(toMessage(reason));
-                  } finally {
-                    setBusyId(undefined);
-                  }
-                }}
-                onToggleActive={async () => {
-                  setError(undefined);
-                  setBusyId(variant.id);
-                  try {
-                    if (variant.isActive) {
-                      await onDeactivate(variant.id);
-                    } else {
-                      await onActivate(variant.id);
+                  }}
+                  onToggleActive={async () => {
+                    setError(undefined);
+                    setBusyId(variant.id);
+                    try {
+                      if (variant.isActive) {
+                        await onDeactivate(variant.id);
+                      } else {
+                        await onActivate(variant.id);
+                      }
+                    } catch (reason) {
+                      setError(toMessage(reason));
+                    } finally {
+                      setBusyId(undefined);
                     }
-                  } catch (reason) {
-                    setError(toMessage(reason));
-                  } finally {
-                    setBusyId(undefined);
-                  }
-                }}
-                onMarkDefault={async () => {
-                  setError(undefined);
-                  setBusyId(variant.id);
-                  try {
-                    await onMarkDefault(variant.id);
-                  } catch (reason) {
-                    setError(toMessage(reason));
-                  } finally {
-                    setBusyId(undefined);
-                  }
-                }}
-              />
-            ))}
-          </tbody>
-        </table>
+                  }}
+                  onMarkDefault={async () => {
+                    setError(undefined);
+                    setBusyId(variant.id);
+                    try {
+                      await onMarkDefault(variant.id);
+                    } catch (reason) {
+                      setError(toMessage(reason));
+                    } finally {
+                      setBusyId(undefined);
+                    }
+                  }}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {adding ? (

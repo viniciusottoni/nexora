@@ -21,6 +21,14 @@ export interface DataTableProps<T> extends HTMLAttributes<HTMLDivElement> {
   readonly rowKey?: string;
 }
 
+/** Alinhamento da célula: `numeric` já vem alinhado à direita pela classe `db-table__numeric`. */
+function cellAlign<T>(column: DataTableColumn<T>): 'right' | 'center' | undefined {
+  if (column.numeric) return undefined;
+  if (column.align === 'right') return 'right';
+  if (column.align === 'center') return 'center';
+  return undefined;
+}
+
 export function DataTable<T = Record<string, unknown>>({
   columns,
   rows,
@@ -47,7 +55,12 @@ export function DataTable<T = Record<string, unknown>>({
               <th
                 key={column.key}
                 style={{
-                  textAlign: column.align === 'right' ? 'right' : column.align === 'center' ? 'center' : 'left',
+                  textAlign:
+                    column.align === 'right'
+                      ? 'right'
+                      : column.align === 'center'
+                        ? 'center'
+                        : 'left',
                   width: column.width,
                 }}
               >
@@ -66,7 +79,10 @@ export function DataTable<T = Record<string, unknown>>({
                   <td
                     key={column.key}
                     className={column.numeric ? 'db-table__numeric' : undefined}
-                    style={{ textAlign: column.align === 'center' ? 'center' : undefined }}
+                    /* O `align` da coluna precisa valer na célula também, não só no cabeçalho:
+                       com só o `th` alinhado, o rótulo ia para a direita e o valor ficava na
+                       esquerda — a coluna deixava de ler como coluna. */
+                    style={{ textAlign: cellAlign(column) }}
                   >
                     {column.render ? column.render(row) : (record[column.key] as ReactNode)}
                   </td>

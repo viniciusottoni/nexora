@@ -1,20 +1,27 @@
 /* Motion — utilitários compartilhados de entrada, carregamento e feedback em tempo real.
    Consomem só os tokens de tokens/motion.css (--dur-*, --ease-*, @keyframes nx-*).
-   Nunca declare duração/easing "solto" fora daqui — todo novo componente reusa isto. */
+   Nunca declare duração/easing "solto" fora daqui — todo novo componente reusa isto.
+
+   Por que `backwards` e não `both` nas entradas: toda animação daqui termina no estado
+   natural do elemento (opacity 1, transform none), então preencher o depois não muda nada
+   visualmente — mas mantém uma animação de `transform` "em vigor" para sempre, e um
+   elemento nessa condição vira bloco contentor de descendentes `position: fixed`. Era isso
+   que recortava o véu de modal dentro do cartão/seção que o abriu, em vez de cobrir a tela
+   inteira. `backwards` cobre o atraso (o que o `.nx-stagger` precisa) e não deixa resíduo. */
 
 /* Entrada de elementos recém-montados (cards, painéis, linhas de lista, seções) */
 .nx-anim-in {
-  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) backwards;
 }
 
 /* Entrada de diálogos, modais e popovers */
 .nx-anim-scale-in {
-  animation: nx-scale-in var(--dur-base) var(--ease-out) both;
+  animation: nx-scale-in var(--dur-base) var(--ease-out) backwards;
 }
 
 /* Entrada de toasts/alertas flutuantes */
 .nx-anim-toast-in {
-  animation: nx-toast-in var(--dur-base) var(--ease-out) both;
+  animation: nx-toast-in var(--dur-base) var(--ease-out) backwards;
 }
 
 /* Destaque breve quando um valor chega por realtime (WebSocket/SignalR) sem remontar o nó */
@@ -25,20 +32,44 @@
 /* Entrada escalonada de listas/grades — aplique na lista, não nos itens.
    Cada filho herda nx-slide-in com um atraso incremental; itens além do 12º entram juntos. */
 .nx-stagger > * {
-  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) backwards;
 }
-.nx-stagger > *:nth-child(1) { animation-delay: calc(var(--dur-instant) * 0); }
-.nx-stagger > *:nth-child(2) { animation-delay: calc(var(--dur-instant) * 1); }
-.nx-stagger > *:nth-child(3) { animation-delay: calc(var(--dur-instant) * 2); }
-.nx-stagger > *:nth-child(4) { animation-delay: calc(var(--dur-instant) * 3); }
-.nx-stagger > *:nth-child(5) { animation-delay: calc(var(--dur-instant) * 4); }
-.nx-stagger > *:nth-child(6) { animation-delay: calc(var(--dur-instant) * 5); }
-.nx-stagger > *:nth-child(7) { animation-delay: calc(var(--dur-instant) * 6); }
-.nx-stagger > *:nth-child(8) { animation-delay: calc(var(--dur-instant) * 7); }
-.nx-stagger > *:nth-child(9) { animation-delay: calc(var(--dur-instant) * 8); }
-.nx-stagger > *:nth-child(10) { animation-delay: calc(var(--dur-instant) * 9); }
-.nx-stagger > *:nth-child(11) { animation-delay: calc(var(--dur-instant) * 10); }
-.nx-stagger > *:nth-child(n+12) { animation-delay: calc(var(--dur-instant) * 11); }
+.nx-stagger > *:nth-child(1) {
+  animation-delay: calc(var(--dur-instant) * 0);
+}
+.nx-stagger > *:nth-child(2) {
+  animation-delay: calc(var(--dur-instant) * 1);
+}
+.nx-stagger > *:nth-child(3) {
+  animation-delay: calc(var(--dur-instant) * 2);
+}
+.nx-stagger > *:nth-child(4) {
+  animation-delay: calc(var(--dur-instant) * 3);
+}
+.nx-stagger > *:nth-child(5) {
+  animation-delay: calc(var(--dur-instant) * 4);
+}
+.nx-stagger > *:nth-child(6) {
+  animation-delay: calc(var(--dur-instant) * 5);
+}
+.nx-stagger > *:nth-child(7) {
+  animation-delay: calc(var(--dur-instant) * 6);
+}
+.nx-stagger > *:nth-child(8) {
+  animation-delay: calc(var(--dur-instant) * 7);
+}
+.nx-stagger > *:nth-child(9) {
+  animation-delay: calc(var(--dur-instant) * 8);
+}
+.nx-stagger > *:nth-child(10) {
+  animation-delay: calc(var(--dur-instant) * 9);
+}
+.nx-stagger > *:nth-child(11) {
+  animation-delay: calc(var(--dur-instant) * 10);
+}
+.nx-stagger > *:nth-child(n + 12) {
+  animation-delay: calc(var(--dur-instant) * 11);
+}
 
 /* Placeholder de carregamento (substitui "Carregando..." estático) */
 .nx-skeleton {
@@ -69,7 +100,7 @@
    quando um cartão substitui a marca de carregamento — ver brand/nexora-loader.tsx. */
 .nx-anim-open-x {
   transform-origin: center center;
-  animation: nx-open-x var(--dur-slower) var(--ease-out) both;
+  animation: nx-open-x var(--dur-slow) var(--ease-out) backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -5,8 +5,10 @@ using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Devices.Abstractions;
 using Nexora.Application.Devices.Commands.CreatePairingCode;
+using Nexora.Application.Devices.Commands.DeleteDevice;
 using Nexora.Application.Devices.Commands.PairDevice;
 using Nexora.Application.Devices.Commands.RevokeDevice;
+using Nexora.Application.Devices.Queries.ListDevices;
 using Nexora.Domain.Platform;
 using Nexora.Infrastructure.Devices;
 using Nexora.IntegrationTests.Fakes;
@@ -79,6 +81,80 @@ public sealed class DevicesIntegrationTests
 
         var domainEvent = await db.DomainEvents.SingleAsync(e => e.TenantId == tenantId && e.Type == "device.registered");
         domainEvent.AggregateId.Should().Be(device.Id);
+    }
+
+    [Fact]
+    public async Task Pareamento_De_Fingerprint_Existente_Reautoriza_Sem_Criar_Duplicata()
+    {
+        var (tenantId, storeId) = await SeedTenantAndStoreAsync();
+        var managerId = Guid.NewGuid();
+        const string fingerprint = "fingerprint-instalacao-recuperada";
+
+        Guid existingDeviceId;
+        Guid existingSessionId;
+        await using (var seedDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId, storeId, managerId)))
+        {
+            var user = AppUser.Create(
+                tenantId,
+                "Gestor local",
+                email: null,
+                passwordHash: null,
+                pinHash: "hash-pin-irrelevante");
+            seedDb.Users.Add(user);
+
+            var existingDevice = Device.Create(
+                tenantId,
+                storeId,
+                "Cozinha antiga",
+                DeviceType.Kds,
+                fingerprint);
+            existingDevice.SetSecret("segredo-antigo");
+            existingDevice.Deactivate();
+            seedDb.Devices.Add(existingDevice);
+            existingDeviceId = existingDevice.Id;
+
+            var existingSession = AuthSession.Create(
+                tenantId,
+                user.Id,
+                existingDevice.Id,
+                refreshHash: null,
+                expiresAt: DateTimeOffset.UtcNow.AddHours(1));
+            seedDb.AuthSessions.Add(existingSession);
+            existingSessionId = existingSession.Id;
+
+            await seedDb.SaveChangesAsync();
+        }
+
+        await using var db = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId, storeId, managerId));
+        await using var provider = BuildMediatRContainer(db, new StaticTenantContext(tenantId, storeId, managerId));
+        var sender = provider.GetRequiredService<ISender>();
+
+        var codeResult = await sender.Send(new CreatePairingCodeCommand());
+        var pairResult = await sender.Send(new PairDeviceCommand(
+            codeResult.Value!.Code,
+            "Gestão local",
+            "SUPPORT_TABLET",
+            fingerprint));
+
+        pairResult.IsSuccess.Should().BeTrue();
+        pairResult.Value!.Device.Id.Should().Be(existingDeviceId);
+        (await db.Devices.CountAsync(device => device.TenantId == tenantId)).Should().Be(1);
+
+        var repairedDevice = await db.Devices.SingleAsync(device => device.Id == existingDeviceId);
+        repairedDevice.Label.Should().Be("Gestão local");
+        repairedDevice.Type.Should().Be(DeviceType.Tablet);
+        repairedDevice.IsActive.Should().BeTrue();
+        repairedDevice.SecretHash.Should().NotBe("segredo-antigo");
+
+        var oldSession = await db.AuthSessions.SingleAsync(session => session.Id == existingSessionId);
+        oldSession.IsRevoked.Should().BeTrue("rotacionar o segredo deve encerrar sessões anteriores");
+
+        var pairingCode = await db.PairingCodes.SingleAsync(code => code.TenantId == tenantId);
+        pairingCode.IsConsumed.Should().BeTrue();
+        (await db.AuditLogs.SingleAsync(entry => entry.Action == "DEVICE_REAUTHORIZED"))
+            .EntityId.Should().Be(existingDeviceId);
+        (await db.DomainEvents.SingleAsync(entry => entry.Type == "device.reauthorized"))
+            .AggregateId.Should().Be(existingDeviceId);
     }
 
     /// <summary>Cenário Gherkin "Código expirado" — recusado com o código de erro certo, sem consumir nem registrar dispositivo.</summary>
@@ -167,6 +243,119 @@ public sealed class DevicesIntegrationTests
         var auditEntry = await db.AuditLogs.SingleAsync(a => a.TenantId == tenantId && a.Action == "DEVICE_REVOKED");
         auditEntry.EntityId.Should().Be(deviceId);
         auditEntry.ActorId.Should().Be(managerId);
+    }
+
+    /// <summary>
+    /// Soft delete de dispositivo já revogado: sai da listagem (<see cref="ListDevicesQuery"/>),
+    /// mas o registro permanece no banco (<c>deleted_at</c> preenchido, nunca <c>DELETE</c>
+    /// físico — CLAUDE.md "Soft delete sempre") e o histórico de auditoria é preservado.
+    /// </summary>
+    [Fact]
+    public async Task Exclusao_De_Dispositivo_Revogado_Marca_Deleted_At_E_Some_Da_Listagem()
+    {
+        var (tenantId, storeId) = await SeedTenantAndStoreAsync();
+        var managerId = Guid.NewGuid();
+        Guid deviceId;
+
+        await using (var seedDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId, storeId, managerId)))
+        {
+            var seedDevice = Device.Create(tenantId, storeId, "Caixa antiga", DeviceType.Pos, "fingerprint-caixa-antiga");
+            seedDevice.SetSecret("hash-irrelevante-para-o-teste");
+            seedDevice.Deactivate();
+            seedDb.Devices.Add(seedDevice);
+            deviceId = seedDevice.Id;
+            await seedDb.SaveChangesAsync();
+        }
+
+        await using var db = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId, storeId, managerId));
+        await using var provider = BuildMediatRContainer(db, new StaticTenantContext(tenantId, storeId, managerId));
+        var sender = provider.GetRequiredService<ISender>();
+
+        var result = await sender.Send(new DeleteDeviceCommand(deviceId));
+
+        result.IsSuccess.Should().BeTrue();
+
+        var device = await db.Devices.SingleAsync(d => d.Id == deviceId);
+        device.DeletedAt.Should().NotBeNull("exclusão é soft delete — o registro permanece para auditoria");
+
+        var listResult = await sender.Send(new ListDevicesQuery());
+        listResult.Value!.Items.Should().NotContain(item => item.Id == deviceId, "dispositivo excluído não deve mais aparecer na listagem");
+
+        var auditEntry = await db.AuditLogs.SingleAsync(a => a.TenantId == tenantId && a.Action == "DEVICE_DELETED");
+        auditEntry.EntityId.Should().Be(deviceId);
+        auditEntry.ActorId.Should().Be(managerId);
+    }
+
+    /// <summary>Exclusão recusada enquanto o dispositivo ainda estiver ativo — precisa ser revogado primeiro.</summary>
+    [Fact]
+    public async Task Exclusao_De_Dispositivo_Ainda_Ativo_E_Recusada()
+    {
+        var (tenantId, storeId) = await SeedTenantAndStoreAsync();
+        var managerId = Guid.NewGuid();
+        Guid deviceId;
+
+        await using (var seedDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId, storeId, managerId)))
+        {
+            var seedDevice = Device.Create(tenantId, storeId, "Caixa 1", DeviceType.Pos, "fingerprint-caixa-1");
+            seedDevice.SetSecret("hash-irrelevante-para-o-teste");
+            seedDb.Devices.Add(seedDevice);
+            deviceId = seedDevice.Id;
+            await seedDb.SaveChangesAsync();
+        }
+
+        await using var db = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId, storeId, managerId));
+        await using var provider = BuildMediatRContainer(db, new StaticTenantContext(tenantId, storeId, managerId));
+        var sender = provider.GetRequiredService<ISender>();
+
+        var result = await sender.Send(new DeleteDeviceCommand(deviceId));
+
+        result.IsSuccess.Should().BeFalse();
+        result.Code.Should().Be(ApiErrorCodes.DeviceMustBeRevokedBeforeDelete);
+
+        var device = await db.Devices.SingleAsync(d => d.Id == deviceId);
+        device.DeletedAt.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Re-pareamento de uma instalação física cujo registro antigo já tinha sido excluído: o
+    /// mesmo fingerprint reserva a linha (uq_device_fingerprint), então posse de um código de
+    /// pareamento válido deve reviver o registro soft-deleted em vez de travar na exclusão.
+    /// </summary>
+    [Fact]
+    public async Task Pareamento_De_Fingerprint_Excluido_Revive_O_Registro()
+    {
+        var (tenantId, storeId) = await SeedTenantAndStoreAsync();
+        var managerId = Guid.NewGuid();
+        const string fingerprint = "fingerprint-tablet-descartado";
+        Guid deviceId;
+
+        await using (var seedDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId, storeId, managerId)))
+        {
+            var seedDevice = Device.Create(tenantId, storeId, "Tablet antigo", DeviceType.Tablet, fingerprint);
+            seedDevice.SetSecret("hash-irrelevante-para-o-teste");
+            seedDevice.Deactivate();
+            seedDevice.SoftDelete();
+            seedDb.Devices.Add(seedDevice);
+            deviceId = seedDevice.Id;
+            await seedDb.SaveChangesAsync();
+        }
+
+        await using var db = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId, storeId, managerId));
+        await using var provider = BuildMediatRContainer(db, new StaticTenantContext(tenantId, storeId, managerId));
+        var sender = provider.GetRequiredService<ISender>();
+
+        var codeResult = await sender.Send(new CreatePairingCodeCommand());
+        var pairResult = await sender.Send(new PairDeviceCommand(codeResult.Value!.Code, "Gestão local", "SUPPORT_TABLET", fingerprint));
+
+        pairResult.IsSuccess.Should().BeTrue();
+        pairResult.Value!.Device.Id.Should().Be(deviceId, "o mesmo fingerprint deve reviver o registro existente, nunca criar outro");
+
+        var revivedDevice = await db.Devices.SingleAsync(d => d.Id == deviceId);
+        revivedDevice.DeletedAt.Should().BeNull("reautorizar um dispositivo excluído deve reviver o registro");
+        revivedDevice.IsActive.Should().BeTrue();
+
+        var listResult = await sender.Send(new ListDevicesQuery());
+        listResult.Value!.Items.Should().Contain(item => item.Id == deviceId, "dispositivo revivido deve voltar a aparecer na listagem");
     }
 
     /// <summary>

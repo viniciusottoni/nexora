@@ -24,6 +24,7 @@ internal sealed class DeviceConfiguration : IEntityTypeConfiguration<Device>
         builder.Property(d => d.LastSeenAt).HasColumnName("last_seen_at").HasColumnType("timestamptz");
         builder.Property(d => d.CreatedAt).HasColumnName("created_at").HasColumnType("timestamptz");
         builder.Property(d => d.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamptz");
+        builder.Property(d => d.DeletedAt).HasColumnName("deleted_at").HasColumnType("timestamptz");
 
         builder.HasIndex(d => new { d.TenantId, d.Fingerprint }).IsUnique().HasDatabaseName("uq_device_fingerprint");
         builder.HasIndex(d => d.TenantId).HasDatabaseName("idx_device_tenant");

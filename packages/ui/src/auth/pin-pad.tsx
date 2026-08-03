@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export interface PinPadProps {
   readonly onSubmit: (pin: string) => void | Promise<void>;
@@ -22,6 +22,16 @@ export function PinPad({
   const submit = () => {
     if (pin.length >= 4 && !disabled) void onSubmit(pin);
   };
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (disabled) return;
+      if (/^\d$/.test(event.key)) add(event.key);
+      else if (event.key === 'Backspace') remove();
+      else if (event.key === 'Enter') submit();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  });
   return (
     <div className="db-pin-pad">
       <div

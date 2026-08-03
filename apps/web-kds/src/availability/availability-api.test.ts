@@ -65,6 +65,27 @@ describe('AvailabilityApi', () => {
     expect(fetcher.mock.calls[0]?.[0]).toBe('/api/v1/kds/products/unavailable');
   });
 
+  it('preserva o receiver do fetch nativo quando nenhum fetcher e injetado', async () => {
+    const originalFetch = globalThis.fetch;
+    const guardedFetch = vi.fn(function (this: unknown) {
+      if (this !== globalThis) throw new TypeError('Illegal invocation');
+      return Promise.resolve(
+        new Response(JSON.stringify({ items: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    }) as unknown as typeof fetch;
+    globalThis.fetch = guardedFetch;
+
+    try {
+      await expect(new AvailabilityApi().listUnavailable()).resolves.toEqual({ items: [] });
+      expect(guardedFetch).toHaveBeenCalledTimes(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it('envia o token operacional nas chamadas HTTP do KDS', async () => {
     const fetcher = vi.fn(
       async (_input: RequestInfo | URL, _init?: RequestInit) =>

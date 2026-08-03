@@ -1,0 +1,382 @@
+/*
+ * Console de gestão — a casca e a página das ferramentas de mesa de trabalho (web-admin,
+ * web-platform e, quando existirem, as telas de gestão do caixa). Nasceu como camada local do
+ * web-admin e subiu para cá quando o segundo painel precisou exatamente do mesmo desenho:
+ * dois painéis do mesmo produto não podem divergir de layout (Design System/readme.md).
+ *
+ * O que este arquivo materializa:
+ * - chrome fixo: navegação lateral de 248px + barra superior de 56px, e só isso — o conteúdo
+ *   tem scroll próprio, com gutter de 24px e coluna limitada a `--content-max`;
+ * - densidade de gestão: 36px de controle, 40px de linha, gap de 16/20px;
+ * - título de página em `--type-h1` (28px Inter). Montserrat é marca, capa e número-herói;
+ * - overline em 11px Inter caps — mono é reservado a dinheiro, tempo, peso, quantidade e código;
+ * - hierarquia pela borda, não pela sombra; nada de barra colorida à esquerda como decoração;
+ * - selecionado = `--surface-brand-subtle` + peso 600; foco = anel de 3px, sempre.
+ */
+
+/* ---------- Casca ---------- */
+
+.db-console {
+  display: flex;
+  align-items: stretch;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--surface-page);
+}
+
+.db-console__main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Só o conteúdo rola — a nav e a barra ficam. */
+.db-console__content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--gutter-page);
+}
+
+.db-console__column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-card);
+  width: min(var(--content-max), 100%);
+  margin: 0 auto;
+  min-width: 0;
+}
+
+/* Trilha de contexto na barra superior. O título da seção vive na página (28px); aqui ele
+   aparece só como localização, em 13px — sem repetir o mesmo peso duas vezes na tela. */
+.db-crumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  font: var(--type-label);
+  color: var(--text-muted);
+}
+.db-crumbs__current {
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Rodapé da navegação lateral (assinatura do produto). */
+.db-sidenav__foot-note {
+  font: var(--type-caption);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ---------- Página ---------- */
+
+.db-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-7);
+  min-width: 0;
+  color: var(--text-primary);
+}
+
+.db-page__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-8);
+  padding-bottom: var(--sp-6);
+  border-bottom: var(--border-1) solid var(--border-subtle);
+}
+
+.db-page__heading {
+  min-width: 0;
+}
+
+.db-page__eyebrow {
+  margin: 0;
+  font: var(--type-overline);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.db-page__title {
+  margin: var(--sp-2) 0 0;
+  font: var(--type-h1);
+  letter-spacing: var(--ls-tight);
+  color: var(--text-primary);
+}
+
+.db-page__lead {
+  max-width: 68ch;
+  margin: var(--sp-3) 0 0;
+  font: var(--type-body);
+  color: var(--text-secondary);
+}
+
+.db-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-4);
+  flex: 0 0 auto;
+}
+/* Nota no lugar do botão (ex.: pareamento só no painel local): quebra em duas linhas em vez
+   de esticar até a borda da página. */
+.db-page__actions .db-hint {
+  max-width: 22rem;
+  text-align: right;
+}
+
+/* Bancada: lista de itens à esquerda, editor do item selecionado à direita. */
+.db-workbench {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  gap: var(--gap-card);
+  align-items: start;
+}
+
+/* Variante com a tabela como assunto principal e o editor em trilho lateral. */
+.db-workbench--rail {
+  grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 22rem);
+}
+
+.db-rail,
+.db-stack {
+  display: grid;
+  gap: var(--gap-card);
+  align-content: start;
+  min-width: 0;
+}
+
+/* Lista selecionável (papéis, ambientes, grupos de modificadores). */
+.db-list {
+  display: grid;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.db-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  width: 100%;
+  min-height: var(--density-desk-row);
+  padding: var(--sp-5) var(--sp-6);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow-subtle);
+  transition:
+    var(--transition-control),
+    transform var(--dur-fast) var(--ease-standard);
+}
+.db-list__item:hover {
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
+}
+.db-list__item:active {
+  transform: translateY(1px);
+  transition-duration: var(--dur-instant);
+}
+.db-list__item--on {
+  border-color: var(--border-brand);
+  background: var(--surface-brand-subtle);
+  font-weight: var(--fw-semibold);
+}
+.db-list__item--off {
+  opacity: 0.65;
+}
+
+.db-list__text {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+.db-list__name {
+  font: var(--type-h3);
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+.db-list__item--on .db-list__name {
+  color: var(--nx-navy-800);
+}
+.db-list__meta {
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+.db-list__count {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 var(--sp-3);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  color: var(--nx-navy-700);
+  background: var(--surface-brand-subtle);
+  font: var(--fw-semibold) var(--fs-12) / 1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  transition: var(--transition-control);
+}
+.db-list__item--on .db-list__count {
+  background: var(--surface-card);
+}
+
+/* Código do domínio (OWNER, SKU, id) — mono por regra: código, dinheiro, tempo e peso. */
+.db-code {
+  font: var(--fw-medium) var(--fs-12) / var(--lh-snug) var(--font-mono);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.db-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-5);
+}
+
+.db-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-6);
+}
+
+.db-fields {
+  display: grid;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+
+/* Cartão de formulário: o corpo do Card é um bloco simples, então campos empilhados ficariam
+   colados. Aqui ele vira pilha com o gap padrão de formulário. */
+.db-form-card > .db-card__body {
+  display: grid;
+  gap: var(--sp-6);
+  align-content: start;
+  min-width: 0;
+}
+
+/* Rodapé de editor: consequência da ação à esquerda, ação primária à direita. */
+.db-editor__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-5);
+  margin-top: var(--sp-7);
+  padding-top: var(--sp-6);
+  border-top: var(--border-1) solid var(--border-subtle);
+}
+.db-editor__footer p {
+  margin: 0;
+}
+
+.db-hint {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+.db-hint--warning {
+  color: var(--text-warning);
+  font-weight: var(--fw-semibold);
+}
+.db-hint--danger {
+  color: var(--text-danger);
+  font-weight: var(--fw-semibold);
+}
+
+.db-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-8);
+  color: var(--text-muted);
+  font: var(--type-body);
+}
+
+/* Envio de arquivo (logo do tenant, foto do produto): o controle nativo entrava sem nenhum
+   estilo — "Choose File" em fonte do sistema no meio de campos do Design System. O botão do
+   seletor recebe o desenho do botão secundário; o texto do arquivo, a tipografia de corpo. */
+.db-page input[type='file'],
+.db-modal input[type='file'] {
+  font: var(--type-body);
+  color: var(--text-secondary);
+}
+.db-page input[type='file']::file-selector-button,
+.db-modal input[type='file']::file-selector-button {
+  height: var(--density-desk-control);
+  margin-right: var(--sp-5);
+  padding: 0 var(--sp-6);
+  border: var(--border-1) solid var(--border-default);
+  border-radius: var(--brand-radius);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font: var(--type-label);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  box-shadow: var(--shadow-subtle);
+  transition: var(--transition-control);
+}
+.db-page input[type='file']::file-selector-button:hover,
+.db-modal input[type='file']::file-selector-button:hover {
+  background: var(--surface-sunken);
+  border-color: var(--border-strong);
+}
+
+.db-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  border: var(--border-1) solid var(--border-subtle);
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+
+@media (max-width: 60rem) {
+  .db-workbench,
+  .db-workbench--rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 48rem) {
+  .db-console {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    flex-direction: column;
+  }
+  .db-console > .db-sidenav {
+    width: 100%;
+  }
+  .db-console__content {
+    padding: var(--gutter-page-mobile);
+  }
+  .db-page__header,
+  .db-editor__footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .db-form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .db-list {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: var(--sp-2);
+  }
+  .db-list__item {
+    min-width: 15rem;
+  }
+}

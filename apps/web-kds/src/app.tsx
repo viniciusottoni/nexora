@@ -7,6 +7,7 @@ import {
   OperatorBar,
   OperationalAuthClient,
   OperationalAuthError,
+  operationalAuthenticatedFetch,
   PinScreen,
   readRegisteredDeviceIdentity,
   RuntimeBrandingProvider,
@@ -16,6 +17,7 @@ import {
 import './styles.css';
 import { AvailabilityApi } from './availability/availability-api.js';
 import { UnavailablePanel } from './availability/unavailable-panel.js';
+import { KdsQueuePage } from './kds/kds-queue-page.js';
 
 export interface KdsHomeProps {
   readonly tenantName: string;
@@ -75,8 +77,17 @@ function BrandedKds() {
     [device],
   );
   const availabilityApi = useMemo(
-    () => (session ? new AvailabilityApi('', fetch, session.accessToken) : undefined),
-    [session],
+    () =>
+      session && device
+        ? new AvailabilityApi('', (input, init) =>
+            operationalAuthenticatedFetch(input, init, {
+              accessToken: session.accessToken,
+              deviceId: device.deviceId,
+              deviceSecret: device.deviceSecret,
+            }),
+          )
+        : undefined,
+    [device, session],
   );
   const submit = async (pin: string) => {
     if (!client) return;
@@ -128,7 +139,13 @@ function BrandedKds() {
           setIntentionId(crypto.randomUUID());
         }}
       />
-      <KdsHome tenantName={tenant.name} {...(logo ? { logo } : {})} />
+      <KdsQueuePage
+        identity={{
+          accessToken: session.accessToken,
+          deviceId: device.deviceId,
+          deviceSecret: device.deviceSecret,
+        }}
+      />
       {availabilityApi ? (
         <section className="kds-operational-tools" aria-label="Disponibilidade do cardápio">
           <UnavailablePanel api={availabilityApi} accessToken={session.accessToken} />

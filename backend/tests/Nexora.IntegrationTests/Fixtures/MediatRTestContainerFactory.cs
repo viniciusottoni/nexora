@@ -5,11 +5,13 @@ using Nexora.Application.Abstractions.Notifications;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Realtime;
 using Nexora.Application.Abstractions.Security;
+using Nexora.Application.Auth.Shared;
 using Nexora.Application.Installations.Abstractions;
 using Nexora.Infrastructure.Auth;
 using Nexora.Infrastructure.Devices;
 using Nexora.Infrastructure.Installations;
 using Nexora.Infrastructure.Notifications;
+using Nexora.Infrastructure.Persistence;
 using Nexora.IntegrationTests.Fakes;
 using FluentValidation;
 using MediatR;
@@ -37,7 +39,8 @@ internal static class MediatRTestContainerFactory
         IApplicationDbContext db,
         ICurrentTenantContext tenantContext,
         IAlertsBroadcaster? alertsBroadcaster = null,
-        ITableMapBroadcaster? tableMapBroadcaster = null)
+        ITableMapBroadcaster? tableMapBroadcaster = null,
+        IStationBroadcaster? stationBroadcaster = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -53,10 +56,21 @@ internal static class MediatRTestContainerFactory
         // AddOrderItemCommand (gap de US-030, reaproveitado pelo cenário "Novo pedido após
         // solicitar a conta" da US-026) também depende de IOrderConsumptionBroadcaster.
         services.AddSingleton<IOrderConsumptionBroadcaster>(new RecordingOrderConsumptionBroadcaster());
+        // US-031 (Roteamento simultâneo para cozinha e caixa): CreateOrderCommand/AddOrderItemCommand/
+        // AdvanceOrderItemStatusCommand também dependem de IStationBroadcaster — sem este registro,
+        // TODO teste que despacha esses três comandos por este factory quebraria a resolução de DI.
+        services.AddSingleton(stationBroadcaster ?? new RecordingStationBroadcaster());
+        // US-030 §8: geração real de short_code (AddOrderItemCommand/CreateOrderCommand) — precisa
+        // do AppDbContext concreto (Npgsql cru, ADR-039), nunca só a porta IApplicationDbContext.
+        if (db is AppDbContext appDbContext)
+        {
+            services.AddSingleton<IOrderShortCodeAllocator>(new OrderShortCodeAllocator(appDbContext));
+        }
 
         var authSecrets = Options.Create(new AuthSecretsOptions
         {
             SecretPepper = TestSecretPepper,
+            PinLookupPepper = TestSecretPepper,
             MfaEncryptionKey = TestMfaEncryptionKey,
         });
         services.AddSingleton<ISecretDigester>(new HmacSecretDigester(authSecrets));
@@ -74,6 +88,10 @@ internal static class MediatRTestContainerFactory
         services.AddSingleton<IPinLookupDigester, HmacPinLookupDigester>();
         services.AddSingleton(Options.Create(new JwtOptions { Secret = TestJwtSecret }));
         services.AddSingleton<ITokenIssuer, JwtTokenIssuer>();
+        // US-035: RequestBillCommand/RequestBillByQrCommand/RegisterPartialPaymentCommand
+        // consomem IAuthorizationTokenValidator diretamente (elevação pontual, ADR-023) para a
+        // checagem BLOCK/WARN/IGNORE de item pendente — mesmo registro de Program.cs (Api.Edge/Cloud).
+        services.AddSingleton<IAuthorizationTokenValidator, AuthorizationTokenValidator>();
 
         services.AddMediatR(cfg =>
         {

@@ -44,14 +44,13 @@ describe('BrandingManagementPage', () => {
 
     fireEvent.change(screen.getByLabelText('Primária'), { target: { value: '#F8F4EC' } });
 
-    expect(
-      screen.getByText('Cor com contraste WCAG AA insuficiente.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Cor com contraste WCAG AA insuficiente.')).toBeInTheDocument();
   });
 
   it('salva as alterações e mostra aviso de propagação sem novo build', async () => {
     const onSave = vi.fn(
-      async (patch: UpdateBrandingRequest): Promise<Branding> => ({ ...branding, ...patch }) as Branding,
+      async (patch: UpdateBrandingRequest): Promise<Branding> =>
+        ({ ...branding, ...patch }) as Branding,
     );
 
     render(
@@ -71,9 +70,13 @@ describe('BrandingManagementPage', () => {
   });
 
   it('envia a logo escolhida e a inclui no próximo salvamento', async () => {
-    const onUploadLogo = vi.fn(async () => ({ assetId: 'a', publicUrl: 'https://cdn.example/logo-dark.svg' }));
+    const onUploadLogo = vi.fn(async () => ({
+      assetId: 'a',
+      publicUrl: 'https://cdn.example/logo-dark.svg',
+    }));
     const onSave = vi.fn(
-      async (patch: UpdateBrandingRequest): Promise<Branding> => ({ ...branding, ...patch }) as Branding,
+      async (patch: UpdateBrandingRequest): Promise<Branding> =>
+        ({ ...branding, ...patch }) as Branding,
     );
 
     render(
@@ -94,7 +97,9 @@ describe('BrandingManagementPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Salvar identidade visual' }));
     await waitFor(() =>
       expect(onSave).toHaveBeenCalledWith(
-        expect.objectContaining({ logo: expect.objectContaining({ dark: 'https://cdn.example/logo-dark.svg' }) }),
+        expect.objectContaining({
+          logo: expect.objectContaining({ dark: 'https://cdn.example/logo-dark.svg' }),
+        }),
       ),
     );
   });

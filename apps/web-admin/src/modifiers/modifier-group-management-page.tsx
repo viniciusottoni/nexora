@@ -1,5 +1,16 @@
 import { useEffect, useId, useMemo, useState } from 'react';
-import { Badge, Button, Card, Checkbox, Field, Input, Switch } from '@nexora/ui';
+import {
+  AlertBanner,
+  Badge,
+  Button,
+  Card,
+  Checkbox,
+  EmptyState,
+  Field,
+  Input,
+  Modal,
+  Switch,
+} from '@nexora/ui';
 import {
   validateModifierSelection,
   type CreateModifierGroupRequest,
@@ -78,102 +89,111 @@ export function ModifierGroupManagementPage({
   }, [groups, selectedId]);
 
   return (
-    <main className="modifiers-shell" aria-labelledby="modifiers-title">
-      <header className="modifiers-header">
-        <div>
-          <p className="modifiers-eyebrow">CARDÁPIO</p>
-          <h1 id="modifiers-title">Grupos de modificadores</h1>
-          <p className="modifiers-lead">
+    <main className="db-page nx-anim-in" aria-labelledby="modifiers-title">
+      <header className="db-page__header">
+        <div className="db-page__heading">
+          <p className="db-page__eyebrow">Cardápio</p>
+          <h1 className="db-page__title" id="modifiers-title">
+            Grupos de modificadores
+          </h1>
+          <p className="db-page__lead">
             Defina adicionais, remoções e opções obrigatórias reutilizáveis entre produtos.
           </p>
         </div>
-        <Button type="button" onClick={() => setCreating(true)}>
-          Novo grupo
-        </Button>
+        <div className="db-page__actions">
+          <Button type="button" onClick={() => setCreating(true)}>
+            Novo grupo
+          </Button>
+        </div>
       </header>
 
       {notice ? (
-        <p className="modifiers-notice" role="status">
+        <AlertBanner tone="success" title="Grupos atualizados">
           {notice}
-        </p>
+        </AlertBanner>
       ) : null}
 
-      <div className="modifiers-workbench">
-        <nav className="modifier-group-list nx-stagger" aria-label="Grupos de modificadores cadastrados">
-          {groups.map((group) => (
-            <button
-              type="button"
-              key={group.id}
-              className={`modifier-group-list__item ${group.id === selected?.id ? 'modifier-group-list__item--active' : ''}`}
-              onClick={() => setSelectedId(group.id)}
-            >
-              <span>
-                <strong>{group.name}</strong>
-                <small>
-                  {group.minSelect}–{group.maxSelect} seleções · {group.productIds.length}{' '}
-                  {group.productIds.length === 1 ? 'produto' : 'produtos'}
-                </small>
-              </span>
-              {group.isRequired ? (
-                <Badge tone="warning" size="sm">
-                  Obrigatório
-                </Badge>
-              ) : (
-                <Badge tone="neutral" size="sm">
-                  Opcional
-                </Badge>
-              )}
-            </button>
-          ))}
-          {groups.length === 0 ? (
-            <p className="modifier-empty">Nenhum grupo cadastrado ainda.</p>
+      {groups.length === 0 ? (
+        <Card padding="none">
+          <EmptyState icon="tune" title="Nenhum grupo cadastrado">
+            Grupo de modificadores é o que carrega borda, adicional e remoção — um grupo serve
+            vários produtos. Comece em "Novo grupo", acima.
+          </EmptyState>
+        </Card>
+      ) : (
+        <div className="db-workbench">
+          <nav className="db-list nx-stagger" aria-label="Grupos de modificadores cadastrados">
+            {groups.map((group) => (
+              <button
+                type="button"
+                key={group.id}
+                className={`db-list__item ${group.id === selected?.id ? 'db-list__item--on' : ''}`}
+                onClick={() => setSelectedId(group.id)}
+              >
+                <span className="db-list__text">
+                  <span className="db-list__name">{group.name}</span>
+                  <span className="db-list__meta">
+                    {group.minSelect}–{group.maxSelect} seleções · {group.productIds.length}{' '}
+                    {group.productIds.length === 1 ? 'produto' : 'produtos'}
+                  </span>
+                </span>
+                {group.isRequired ? (
+                  <Badge tone="warning" size="sm">
+                    Obrigatório
+                  </Badge>
+                ) : (
+                  <Badge tone="neutral" size="sm">
+                    Opcional
+                  </Badge>
+                )}
+              </button>
+            ))}
+          </nav>
+
+          {selected ? (
+            <GroupEditor
+              key={selected.id}
+              group={selected}
+              busy={busy}
+              setBusy={setBusy}
+              setNotice={setNotice}
+              onUpdateGroup={onUpdateGroup}
+              onDeleteGroup={onDeleteGroup}
+              onCreateModifier={onCreateModifier}
+              onUpdateModifierPrice={onUpdateModifierPrice}
+              onSetModifierAvailability={onSetModifierAvailability}
+              onLinkToProduct={onLinkToProduct}
+              onUnlinkFromProduct={onUnlinkFromProduct}
+            />
           ) : null}
-        </nav>
+        </div>
+      )}
 
-        {selected ? (
-          <GroupEditor
-            key={selected.id}
-            group={selected}
-            busy={busy}
-            setBusy={setBusy}
-            setNotice={setNotice}
-            onUpdateGroup={onUpdateGroup}
-            onDeleteGroup={onDeleteGroup}
-            onCreateModifier={onCreateModifier}
-            onUpdateModifierPrice={onUpdateModifierPrice}
-            onSetModifierAvailability={onSetModifierAvailability}
-            onLinkToProduct={onLinkToProduct}
-            onUnlinkFromProduct={onUnlinkFromProduct}
-          />
-        ) : (
-          <Card className="modifier-editor modifier-editor--empty">Nenhum grupo selecionado.</Card>
-        )}
-      </div>
-
-      {creating ? (
-        <CreateGroupDialog
-          onCancel={() => setCreating(false)}
-          onCreate={async (input) => {
-            setBusy(true);
-            try {
-              const created = await onCreateGroup(input);
-              setSelectedId(created.id);
-              setCreating(false);
-              setNotice('Grupo criado. Vincule-o a um ou mais produtos para começar a usar.');
-            } finally {
-              setBusy(false);
-            }
-          }}
-        />
-      ) : null}
+      <CreateGroupDialog
+        open={creating}
+        onCancel={() => setCreating(false)}
+        onCreate={async (input) => {
+          setBusy(true);
+          try {
+            const created = await onCreateGroup(input);
+            setSelectedId(created.id);
+            setCreating(false);
+            setNotice('Grupo criado. Vincule-o a um ou mais produtos para começar a usar.');
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
     </main>
   );
 }
 
 function CreateGroupDialog({
+  open,
   onCancel,
   onCreate,
 }: Readonly<{
+  open: boolean;
   onCancel: () => void;
   onCreate: (input: CreateModifierGroupRequest) => Promise<void>;
 }>) {
@@ -187,63 +207,22 @@ function CreateGroupDialog({
   const [busy, setBusy] = useState(false);
   const invalid = maxSelect < minSelect;
 
+  useEffect(() => {
+    if (!open) return;
+    setName('');
+    setMinSelect(0);
+    setMaxSelect(1);
+    setIsRequired(false);
+  }, [open]);
+
   return (
-    <div className="modifiers-dialog-backdrop">
-      <section
-        className="modifiers-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="create-group-title"
-      >
-        <p className="modifiers-eyebrow">NOVO GRUPO</p>
-        <h2 id="create-group-title">Criar grupo de modificadores</h2>
-        <div className="modifiers-dialog__fields">
-          <Field
-            label="Nome"
-            htmlFor={nameId}
-            hint='Ex.: "Tamanho", "Adicionais", "Ponto da massa"'
-          >
-            <Input id={nameId} value={name} onChange={(event) => setName(event.target.value)} />
-          </Field>
-          <div className="modifiers-dialog__row">
-            <Field label="Mínimo de seleções" htmlFor={minId}>
-              <Input
-                id={minId}
-                type="number"
-                min={0}
-                value={minSelect}
-                onChange={(event) => setMinSelect(Number(event.target.value))}
-              />
-            </Field>
-            <Field
-              label="Máximo de seleções"
-              htmlFor={maxId}
-              error={invalid ? 'Máximo não pode ser menor que o mínimo' : undefined}
-            >
-              <Input
-                id={maxId}
-                type="number"
-                min={0}
-                value={maxSelect}
-                onChange={(event) => setMaxSelect(Number(event.target.value))}
-              />
-            </Field>
-          </div>
-          <Switch
-            checked={isRequired}
-            onChange={(event) => {
-              const required = event.target.checked;
-              setIsRequired(required);
-              if (required) {
-                setMinSelect((current) => Math.max(1, current));
-                setMaxSelect((current) => Math.max(1, current));
-              }
-            }}
-            label="Obrigatório"
-            description="O cliente precisa escolher antes de adicionar o item ao pedido"
-          />
-        </div>
-        <div className="modifiers-dialog__actions">
+    <Modal
+      open={open}
+      onClose={onCancel}
+      eyebrow="Novo grupo"
+      title="Criar grupo de modificadores"
+      actions={
+        <>
           <Button type="button" variant="ghost" onClick={onCancel}>
             Cancelar
           </Button>
@@ -270,9 +249,50 @@ function CreateGroupDialog({
           >
             Criar grupo
           </Button>
-        </div>
-      </section>
-    </div>
+        </>
+      }
+    >
+      <Field label="Nome" htmlFor={nameId} hint='Ex.: "Tamanho", "Adicionais", "Ponto da massa"'>
+        <Input id={nameId} value={name} onChange={(event) => setName(event.target.value)} />
+      </Field>
+      <div className="modifiers-rule-row">
+        <Field label="Mínimo de seleções" htmlFor={minId}>
+          <Input
+            id={minId}
+            type="number"
+            min={0}
+            value={minSelect}
+            onChange={(event) => setMinSelect(Number(event.target.value))}
+          />
+        </Field>
+        <Field
+          label="Máximo de seleções"
+          htmlFor={maxId}
+          error={invalid ? 'Máximo não pode ser menor que o mínimo' : undefined}
+        >
+          <Input
+            id={maxId}
+            type="number"
+            min={0}
+            value={maxSelect}
+            onChange={(event) => setMaxSelect(Number(event.target.value))}
+          />
+        </Field>
+      </div>
+      <Switch
+        checked={isRequired}
+        onChange={(event) => {
+          const required = event.target.checked;
+          setIsRequired(required);
+          if (required) {
+            setMinSelect((current) => Math.max(1, current));
+            setMaxSelect((current) => Math.max(1, current));
+          }
+        }}
+        label="Obrigatório"
+        description="O cliente precisa escolher antes de adicionar o item ao pedido"
+      />
+    </Modal>
   );
 }
 
@@ -322,89 +342,96 @@ function GroupEditor({
   const rangeInvalid = maxSelect < minSelect;
 
   return (
-    <Card className="modifier-editor">
-      <div className="modifier-editor__heading">
-        <div>
-          <p className="modifiers-eyebrow">
-            {group.isRequired ? 'GRUPO OBRIGATÓRIO' : 'GRUPO OPCIONAL'}
-          </p>
-          <h2>{group.name}</h2>
-          <p className="modifier-editor__hint">
-            Renomear ou alternar obrigatoriedade exige recriar o grupo hoje — ver relatório da
-            tarefa (limitação de <code>Nexora.Domain.Catalog.ModifierGroup</code>, fora do escopo
-            desta US).
-          </p>
+    <div className="db-stack">
+      <Card
+        className="db-form-card"
+        title={group.name}
+        subtitle={group.isRequired ? 'Grupo obrigatório' : 'Grupo opcional'}
+        actions={
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            busy={busy}
+            onClick={() => {
+              void (async () => {
+                setBusy(true);
+                try {
+                  await onDeleteGroup(group.id);
+                  setNotice(
+                    'Grupo removido. Modificadores e vínculos com produtos foram desfeitos.',
+                  );
+                } finally {
+                  setBusy(false);
+                }
+              })();
+            }}
+          >
+            Remover grupo
+          </Button>
+        }
+      >
+        <p className="db-hint">
+          Renomear ou alternar obrigatoriedade exige recriar o grupo hoje — ver relatório da tarefa
+          (limitação de <span className="db-code">Nexora.Domain.Catalog.ModifierGroup</span>, fora
+          do escopo desta US).
+        </p>
+
+        <div className="modifiers-rule-row">
+          <Field label="Mínimo de seleções" htmlFor={minId}>
+            <Input
+              id={minId}
+              type="number"
+              min={0}
+              value={minSelect}
+              onChange={(event) => setMinSelect(Number(event.target.value))}
+            />
+          </Field>
+          <Field
+            label="Máximo de seleções"
+            htmlFor={maxId}
+            error={rangeInvalid ? 'Máximo não pode ser menor que o mínimo' : undefined}
+          >
+            <Input
+              id={maxId}
+              type="number"
+              min={0}
+              value={maxSelect}
+              onChange={(event) => setMaxSelect(Number(event.target.value))}
+            />
+          </Field>
+          <Button
+            type="button"
+            busy={busy}
+            disabled={!rangeChanged || rangeInvalid}
+            onClick={() => {
+              void (async () => {
+                setBusy(true);
+                try {
+                  await onUpdateGroup(group.id, minSelect, maxSelect);
+                  setNotice(
+                    'Regra de seleção atualizada — vale para todos os produtos que reusam este grupo.',
+                  );
+                } finally {
+                  setBusy(false);
+                }
+              })();
+            }}
+          >
+            Salvar regra
+          </Button>
         </div>
-        <Button
-          type="button"
-          variant="danger"
-          size="sm"
-          busy={busy}
-          onClick={() => {
-            void (async () => {
-              setBusy(true);
-              try {
-                await onDeleteGroup(group.id);
-                setNotice('Grupo removido. Modificadores e vínculos com produtos foram desfeitos.');
-              } finally {
-                setBusy(false);
-              }
-            })();
-          }}
-        >
-          Remover grupo
-        </Button>
-      </div>
+      </Card>
 
-      <div className="modifiers-dialog__row">
-        <Field label="Mínimo de seleções" htmlFor={minId}>
-          <Input
-            id={minId}
-            type="number"
-            min={0}
-            value={minSelect}
-            onChange={(event) => setMinSelect(Number(event.target.value))}
-          />
-        </Field>
-        <Field
-          label="Máximo de seleções"
-          htmlFor={maxId}
-          error={rangeInvalid ? 'Máximo não pode ser menor que o mínimo' : undefined}
-        >
-          <Input
-            id={maxId}
-            type="number"
-            min={0}
-            value={maxSelect}
-            onChange={(event) => setMaxSelect(Number(event.target.value))}
-          />
-        </Field>
-        <Button
-          type="button"
-          busy={busy}
-          disabled={!rangeChanged || rangeInvalid}
-          onClick={() => {
-            void (async () => {
-              setBusy(true);
-              try {
-                await onUpdateGroup(group.id, minSelect, maxSelect);
-                setNotice(
-                  'Regra de seleção atualizada — vale para todos os produtos que reusam este grupo.',
-                );
-              } finally {
-                setBusy(false);
-              }
-            })();
-          }}
-        >
-          Salvar regra
-        </Button>
-      </div>
-
-      <section aria-label="Modificadores do grupo" className="modifier-list">
-        <h3>Modificadores</h3>
+      <Card
+        as="section"
+        aria-label="Modificadores do grupo"
+        className="modifier-list"
+        title="Modificadores"
+        subtitle="Adicional entra com preço; remoção entra com zero e aparece em destaque no KDS."
+      >
         {group.modifiers.length === 0 ? (
-          <p className="modifier-empty">Nenhum modificador cadastrado.</p>
+          <p className="db-hint">Nenhum modificador cadastrado.</p>
         ) : null}
         <ul className="nx-stagger">
           {group.modifiers.map((modifier) => (
@@ -418,7 +445,7 @@ function GroupEditor({
           ))}
         </ul>
 
-        <div className="modifiers-dialog__row modifier-add-form">
+        <div className="modifiers-rule-row modifier-add-form">
           <Field label="Nome do modificador">
             <Input
               value={modifierName}
@@ -456,14 +483,15 @@ function GroupEditor({
             Adicionar modificador
           </Button>
         </div>
-      </section>
+      </Card>
 
-      <section aria-label="Produtos vinculados" className="modifier-link-section">
-        <h3>Produtos vinculados ({group.productIds.length})</h3>
-        <p className="modifier-editor__hint">
-          Reuso: alterar a regra acima já vale para todos os produtos listados aqui, sem precisar
-          editar cada um.
-        </p>
+      <Card
+        as="section"
+        aria-label="Produtos vinculados"
+        className="modifier-link-section"
+        title={`Produtos vinculados (${group.productIds.length})`}
+        subtitle="Reuso: alterar a regra acima já vale para todos os produtos listados aqui, sem precisar editar cada um."
+      >
         <ul className="modifier-product-list nx-stagger">
           {group.productIds.map((id) => (
             <li key={id}>
@@ -481,7 +509,7 @@ function GroupEditor({
             </li>
           ))}
         </ul>
-        <div className="modifiers-dialog__row">
+        <div className="modifiers-rule-row">
           <Field
             label="ID do produto"
             hint="Tela de produto ainda não existe neste worktree (US-010/011) — vínculo manual por ID"
@@ -505,10 +533,10 @@ function GroupEditor({
             Vincular produto
           </Button>
         </div>
-      </section>
+      </Card>
 
       <ModifierSelectionPreview group={group} />
-    </Card>
+    </div>
   );
 }
 
@@ -622,23 +650,24 @@ function ModifierSelectionPreview({ group }: Readonly<{ group: ModifierGroup }>)
   }
 
   return (
-    <section aria-label="Preview do item (cardápio/KDS)" className="modifier-preview">
-      <h3>Preview do item</h3>
+    <Card
+      as="section"
+      aria-label="Preview do item (cardápio/KDS)"
+      className="modifier-preview db-form-card"
+      title="Preview do item"
+      subtitle="Como o cliente vê a escolha na mesa e como ela chega ao KDS."
+    >
       {group.isRequired && !validation.meetsMinimum ? (
-        <p className="modifier-preview__required-banner" role="alert">
+        <AlertBanner tone="warning">
           Escolha pendente: este grupo é obrigatório — selecione ao menos {group.minSelect}.
-        </p>
+        </AlertBanner>
       ) : null}
       <p className="modifier-preview__counter">
         Escolha até {group.maxSelect} · {selected.length} selecionado
         {selected.length === 1 ? '' : 's'} · {validation.remaining} restante
         {validation.remaining === 1 ? '' : 's'}
       </p>
-      {blockedNotice ? (
-        <p className="modifier-preview__blocked" role="alert">
-          {blockedNotice}
-        </p>
-      ) : null}
+      {blockedNotice ? <AlertBanner tone="warning">{blockedNotice}</AlertBanner> : null}
 
       <Field label="Preço base do item (R$)" htmlFor={basePriceId}>
         <Input
@@ -691,6 +720,6 @@ function ModifierSelectionPreview({ group }: Readonly<{ group: ModifierGroup }>)
             })}
         </ul>
       </div>
-    </section>
+    </Card>
   );
 }

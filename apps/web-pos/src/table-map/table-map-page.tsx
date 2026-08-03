@@ -17,6 +17,8 @@ export interface TableMapPageProps {
   readonly onSelectTable?: (tableId: string) => void;
   /** US-027 §10 — abre a tela de divisão da conta a partir do card de uma mesa com `billRequested=true`. */
   readonly onOpenBilling?: (sessionId: string) => void;
+  /** US-030 §7, cenário "Pedido pelo celular do garçom" — abre a composição de pedido a partir do card de uma mesa já ocupada. */
+  readonly onComposeOrder?: (sessionId: string) => void;
 }
 
 const SORT_OPTIONS = [
@@ -29,7 +31,13 @@ const SORT_OPTIONS = [
  * `GET /v1/tables`, reage ao `TableMapHub` via WebSocket com fallback de polling a cada 5 s
  * (ADR-011) e agrupa por ambiente com grade de cartões grandes.
  */
-export function TableMapPage({ baseUrl = '', identity, onSelectTable, onOpenBilling }: Readonly<TableMapPageProps>) {
+export function TableMapPage({
+  baseUrl = '',
+  identity,
+  onSelectTable,
+  onOpenBilling,
+  onComposeOrder,
+}: Readonly<TableMapPageProps>) {
   const [entries, setEntries] = useState<readonly TableMapEntry[] | null>(null);
   const [error, setError] = useState<string>();
   const [mineOnly, setMineOnly] = useState(false);
@@ -249,6 +257,7 @@ export function TableMapPage({ baseUrl = '', identity, onSelectTable, onOpenBill
                   onAcknowledgeCall={handleAcknowledgeCall}
                   onRequestBill={handleRequestBill}
                   {...(onOpenBilling ? { onOpenBilling } : {})}
+                  {...(onComposeOrder ? { onComposeOrder } : {})}
                   {...(onSelectTable && entry.status === 'FREE' ? { onSelect: onSelectTable } : {})}
                 />
               ))}

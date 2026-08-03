@@ -96,17 +96,27 @@ export class BillingApi {
     return billResponseSchema.parse(await response.json());
   }
 
-  /** US-027 §4, cenário "Divisão por valor" — a sessão permanece em BILL_REQUESTED depois de registrado. */
+  /**
+   * US-027 §4, cenário "Divisão por valor" — a sessão permanece em BILL_REQUESTED depois de
+   * registrado. <paramref name="authorizationToken"/> (US-035 §10) só é enviado quando o caixa
+   * autorizou o fechamento com item pendente (modo BLOCK) — token emitido por
+   * `authorizeCloseWithPending`, vinculado à ação `CLOSE_WITH_PENDING` (ADR-023).
+   */
   async registerPartialPayment(
     identity: Readonly<OperationalRequestIdentity>,
     sessionId: string,
     input: RegisterPartialPaymentRequest,
+    authorizationToken?: string,
   ): Promise<PartialPaymentResponse> {
     const response = await operationalAuthenticatedFetch(
       `${this.baseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/bill/partial-payment`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': crypto.randomUUID(),
+          ...(authorizationToken ? { 'X-Authorization-Token': authorizationToken } : {}),
+        },
         body: JSON.stringify(registerPartialPaymentRequestSchema.parse(input)),
       },
       identity,
@@ -115,6 +125,41 @@ export class BillingApi {
     await requireSuccess(response);
     return partialPaymentResponseSchema.parse(await response.json());
   }
+
+  /**
+   * US-035 §10 ("Autorização no mesmo dispositivo, sem trocar de sessão") — elevação pontual
+   * (ADR-023) para a ação `CLOSE_WITH_PENDING`: o gerente informa o próprio PIN no MESMO terminal
+   * em que o caixa está, sem precisar trocar de sessão. O token devolvido é enviado como
+   * `X-Authorization-Token` na próxima chamada a `registerPartialPayment`.
+   */
+  async authorizeCloseWithPending(
+    identity: Readonly<OperationalRequestIdentity>,
+    input: { readonly sessionId: string; readonly pin: string; readonly reason?: string | undefined },
+  ): Promise<AuthorizeCloseWithPendingResponse> {
+    const response = await operationalAuthenticatedFetch(
+      `${this.baseUrl}/v1/auth/authorize`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'CLOSE_WITH_PENDING',
+          pin: input.pin,
+          context: { sessionId: input.sessionId, reason: input.reason ?? null },
+        }),
+      },
+      identity,
+      this.fetcher,
+    );
+    await requireSuccess(response);
+    return response.json() as Promise<AuthorizeCloseWithPendingResponse>;
+  }
+}
+
+/** Porta de <c>AuthorizeSensitiveActionResponse</c> (backend) — só o suficiente para esta tela. */
+export interface AuthorizeCloseWithPendingResponse {
+  readonly authorizationToken: string;
+  readonly expiresIn: number;
+  readonly authorizedBy: { readonly id: string; readonly name: string };
 }
 
 async function requireSuccess(response: Response): Promise<void> {

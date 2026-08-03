@@ -3,6 +3,7 @@ using Nexora.Application.Abstractions.Events;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Realtime;
+using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Orders.Support;
 using Nexora.Contracts.Operation;
 using Nexora.Domain.Catalog;
@@ -36,18 +37,27 @@ internal sealed class AddOrderItemCommandHandler : IRequestHandler<AddOrderItemC
     private readonly IApplicationDbContext _db;
     private readonly IEventOriginProvider _eventOrigin;
     private readonly IOrderConsumptionBroadcaster _broadcaster;
+    private readonly IStationBroadcaster _stationBroadcaster;
     private readonly IAlertsBroadcaster _alertsBroadcaster;
+    private readonly ICurrentTenantContext _tenantContext;
+    private readonly IOrderShortCodeAllocator _shortCodeAllocator;
 
     public AddOrderItemCommandHandler(
         IApplicationDbContext db,
         IEventOriginProvider eventOrigin,
         IOrderConsumptionBroadcaster broadcaster,
-        IAlertsBroadcaster alertsBroadcaster)
+        IStationBroadcaster stationBroadcaster,
+        IAlertsBroadcaster alertsBroadcaster,
+        ICurrentTenantContext tenantContext,
+        IOrderShortCodeAllocator shortCodeAllocator)
     {
         _db = db;
         _eventOrigin = eventOrigin;
         _broadcaster = broadcaster;
+        _stationBroadcaster = stationBroadcaster;
         _alertsBroadcaster = alertsBroadcaster;
+        _tenantContext = tenantContext;
+        _shortCodeAllocator = shortCodeAllocator;
     }
 
     public async Task<Result<OrderItemResponse>> Handle(AddOrderItemCommand request, CancellationToken cancellationToken)
@@ -90,23 +100,62 @@ internal sealed class AddOrderItemCommandHandler : IRequestHandler<AddOrderItemC
                 ApiErrorCodes.ProductUnavailable);
         }
 
-        var unitPriceResult = await ResolveCurrentPriceAsync(variant.Id, session.TenantId, cancellationToken);
-        if (unitPriceResult is null)
+        // US-030 §5, RN "grupo respeita mínimo/máximo/obrigatório de seleção" — mesma validação
+        // usada por CreateOrderCommand/AddItemToOrderCommand (Nexora.Application.Orders.Support.ModifierGroupValidator).
+        var groupSpecs = await _db.ProductModifierGroups
+            .Where(pmg => pmg.ProductId == product.Id && pmg.TenantId == session.TenantId)
+            .Select(pmg => new ModifierGroupValidator.GroupSpec(
+                pmg.Group.Id,
+                pmg.Group.Name,
+                pmg.Group.MinSelect,
+                pmg.Group.MaxSelect,
+                pmg.Group.IsRequired,
+                pmg.Group.Modifiers.Where(m => m.DeletedAt == null).Select(m => m.Id).ToList()))
+            .ToListAsync(cancellationToken);
+
+        var selectedModifierIds = (request.Modifiers ?? Array.Empty<AddOrderItemModifierInput>())
+            .Select(m => m.ModifierId).ToList();
+
+        var groupViolation = ModifierGroupValidator.ValidateAll(groupSpecs, selectedModifierIds);
+        if (groupViolation is not null)
         {
-            return Result<OrderItemResponse>.Failure("Este item não tem preço vigente cadastrado.", ApiErrorCodes.OrderItemVariantPriceNotFound);
+            return Result<OrderItemResponse>.Failure(
+                "Escolha pendente em um grupo de modificadores.",
+                groupViolation.Code,
+                new Dictionary<string, string[]>
+                {
+                    ["groupId"] = new[] { groupViolation.GroupId.ToString() },
+                    ["groupName"] = new[] { groupViolation.GroupName },
+                });
         }
 
+        // US-030 §4, cenário "Preço aplicado por canal" — resolve pelo canal REAL do pedido (a
+        // sessão de mesa é sempre DineIn, mas o cálculo já reaproveita a mesma herança de canal do
+        // resto da solution, em vez de fixar Channel.DineIn direto na query).
         var order = await FindOrCreateOpenOrderAsync(session, cancellationToken);
+
+        var tenantConfig = await _db.TenantConfigs.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.TenantId == session.TenantId, cancellationToken);
+
+        // US-013/US-030: item com fração usa o preço calculado pela regra do tenant, nunca o
+        // preço da variante "molde" enviada em variantId — ver OrderItemFractionPricing.
+        var pricing = await OrderItemFractionPricing.ResolveAsync(
+            _db, session.TenantId, order.Channel, variant.Id, request.Fractions, tenantConfig?.Operation, cancellationToken);
+        if (pricing.IsFailure)
+        {
+            return Result<OrderItemResponse>.Failure(pricing.Error!, pricing.Code, pricing.Errors);
+        }
 
         var quantity = request.Quantity < 1 ? (short)1 : request.Quantity;
         var item = OrderItem.Create(
             session.TenantId,
             order.Id,
             variant.Id,
-            unitPriceResult.Value,
+            pricing.Value!.UnitPrice,
             quantity,
             stationId: product.StationId,
-            notes: request.Notes);
+            notes: request.Notes,
+            deviceId: _tenantContext.DeviceId);
 
         foreach (var modifierInput in request.Modifiers ?? Array.Empty<AddOrderItemModifierInput>())
         {
@@ -121,22 +170,9 @@ internal sealed class AddOrderItemCommandHandler : IRequestHandler<AddOrderItemC
                 session.TenantId, item.Id, modifier.Id, modifier.Name, modifier.PriceDelta, modifierInput.Quantity < 1 ? (short)1 : modifierInput.Quantity));
         }
 
-        foreach (var fractionInput in request.Fractions ?? Array.Empty<AddOrderItemFractionInput>())
+        foreach (var fraction in pricing.Value.Fractions)
         {
-            var fractionVariant = await _db.ProductVariants
-                .SingleOrDefaultAsync(v => v.Id == fractionInput.VariantId && v.TenantId == session.TenantId && v.DeletedAt == null, cancellationToken);
-            if (fractionVariant is null)
-            {
-                return Result<OrderItemResponse>.Failure("Variante da fração não encontrada.", ApiErrorCodes.VariantNotFound);
-            }
-
-            var fractionPrice = await ResolveCurrentPriceAsync(fractionVariant.Id, session.TenantId, cancellationToken);
-            if (fractionPrice is null)
-            {
-                return Result<OrderItemResponse>.Failure("Fração sem preço vigente cadastrado.", ApiErrorCodes.OrderItemVariantPriceNotFound);
-            }
-
-            item.AddFraction(OrderItemFraction.Create(session.TenantId, item.Id, fractionVariant.Id, fractionInput.Weight, fractionPrice.Value));
+            item.AddFraction(OrderItemFraction.Create(session.TenantId, item.Id, fraction.Variant.Id, fraction.Weight, fraction.UnitPrice));
         }
 
         order.AddItem(item);
@@ -203,26 +239,31 @@ internal sealed class AddOrderItemCommandHandler : IRequestHandler<AddOrderItemC
         // Broadcast síncrono, aguardado dentro do handler (mesmo padrão de MarkProductUnavailableCommandHandler/IAvailabilityBroadcaster).
         await _broadcaster.ItemAdded(session.TenantId, session.TableId, item.Id, productName, repeatedFromItemId: null, cancellationToken);
 
+        // US-031 (Roteamento simultâneo para cozinha e caixa) — item lançado depois do pedido já
+        // criado (comanda em aberto) nasce QUEUED e precisa do MESMO roteamento por praça de
+        // CreateOrderCommandHandler, só que para um item isolado (EVT-004 order.item.queued).
+        await _stationBroadcaster.ItemQueued(
+            session.TenantId,
+            order.Id,
+            order.ShortCode,
+            session.TableId,
+            session.Table.Label,
+            order.Channel.ToString(),
+            new StationBroadcastItem(
+                item.Id, productName, item.StationId, item.Quantity, item.Modifiers.Select(m => m.NameSnapshot).ToArray(), item.Notes),
+            now,
+            cancellationToken);
+
         return Result<OrderItemResponse>.Success(OrderItemMapper.Map(item, productName));
-    }
-
-    private async Task<decimal?> ResolveCurrentPriceAsync(Guid variantId, Guid tenantId, CancellationToken cancellationToken)
-    {
-        var price = await _db.Prices
-            .Where(p => p.VariantId == variantId && p.TenantId == tenantId && p.Channel == Channel.DineIn && p.ValidTo == null)
-            .OrderByDescending(p => p.ValidFrom)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return price?.Amount;
     }
 
     /// <summary>
     /// Reaproveita um pedido ainda aberto da sessão (nem fechado, nem cancelado) em vez de criar um
     /// novo a cada item — mais próximo do comportamento real de "uma comanda acumula pedidos, cada
-    /// pedido acumula itens" (Docs/Domain/03-Operacao.md, ERD). Gera um <c>short_code</c> simples
-    /// (ADR-016 pede curto e único por loja+dia operacional; a geração "de verdade", com retentativa
-    /// em colisão e formato amigável ao garçom, é responsabilidade de US-030 — aqui um sufixo
-    /// hexadecimal de <see cref="Guid.CreateVersion7"/> já cobre a unicidade prática desta wave).
+    /// pedido acumula itens" (Docs/Domain/03-Operacao.md, ERD). <c>short_code</c> gerado por
+    /// <see cref="IOrderShortCodeAllocator"/> (US-030 §8/ADR-016: formato <c>{letra}{sequência}</c>
+    /// único por loja+dia operacional, com lock consultivo do Postgres — não mais o sufixo
+    /// hexadecimal provisório de <see cref="Guid.CreateVersion7"/> desta wave anterior).
     /// </summary>
     private async Task<Order> FindOrCreateOpenOrderAsync(TableSession session, CancellationToken cancellationToken)
     {
@@ -236,7 +277,7 @@ internal sealed class AddOrderItemCommandHandler : IRequestHandler<AddOrderItemC
             return order;
         }
 
-        var shortCode = Guid.CreateVersion7().ToString("N")[..8].ToUpperInvariant();
+        var shortCode = await _shortCodeAllocator.AllocateAsync(session.StoreId, session.BusinessDay, cancellationToken);
         order = Order.Create(
             session.TenantId,
             session.StoreId,

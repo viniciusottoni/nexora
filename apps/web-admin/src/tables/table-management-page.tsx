@@ -1,5 +1,17 @@
 import { useId, useMemo, useState } from 'react';
-import { Button, DataTable, EmptyState, Field, Input, Select, StatusPill } from '@nexora/ui';
+import {
+  AlertBanner,
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  Field,
+  Input,
+  Modal,
+  Select,
+  StatusPill,
+} from '@nexora/ui';
 import type { AreaDto, TableDto } from '@nexora/contracts';
 import './tables.css';
 
@@ -10,7 +22,11 @@ export interface TableManagementPageProps {
   readonly onDeactivateArea: (id: string) => Promise<void>;
   readonly onActivateArea: (id: string) => Promise<void>;
   readonly onDeleteArea: (id: string) => Promise<void>;
-  readonly onCreateTable: (input: { areaId: string; label: string; seats: number }) => Promise<void>;
+  readonly onCreateTable: (input: {
+    areaId: string;
+    label: string;
+    seats: number;
+  }) => Promise<void>;
   readonly onCreateTablesBulk: (input: {
     areaId: string;
     from: number;
@@ -72,6 +88,7 @@ export function TableManagementPage({
   const [error, setError] = useState<string>();
 
   const activeAreas = useMemo(() => areas.filter((area) => area.active), [areas]);
+  const selectedArea = areas.find((area) => area.id === selectedAreaId);
   const visibleTables = useMemo(
     () => (selectedAreaId ? tables.filter((table) => table.areaId === selectedAreaId) : tables),
     [tables, selectedAreaId],
@@ -148,13 +165,16 @@ export function TableManagementPage({
   }
 
   function renderAreaToolbarActions() {
-    if (!selectedAreaId) return null;
-    const selectedArea = areas.find((area) => area.id === selectedAreaId);
-    if (!selectedArea) return null;
+    if (!selectedAreaId || !selectedArea) return null;
 
     if (selectedArea.active) {
       return (
-        <Button type="button" variant="ghost" onClick={() => void guarded(() => onDeactivateArea(selectedAreaId))}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => void guarded(() => onDeactivateArea(selectedAreaId))}
+        >
           Desativar ambiente
         </Button>
       );
@@ -162,10 +182,20 @@ export function TableManagementPage({
 
     return (
       <>
-        <Button type="button" variant="ghost" onClick={() => void guarded(() => onActivateArea(selectedAreaId))}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => void guarded(() => onActivateArea(selectedAreaId))}
+        >
           Reativar ambiente
         </Button>
-        <Button type="button" variant="danger" onClick={() => void guarded(() => onDeleteArea(selectedAreaId))}>
+        <Button
+          type="button"
+          variant="danger"
+          size="sm"
+          onClick={() => void guarded(() => onDeleteArea(selectedAreaId))}
+        >
           Excluir ambiente
         </Button>
       </>
@@ -173,16 +203,18 @@ export function TableManagementPage({
   }
 
   return (
-    <main className="tables-shell" aria-labelledby="tables-title">
-      <header className="tables-header">
-        <div>
-          <p className="tables-eyebrow">SALÃO</p>
-          <h1 id="tables-title">Ambientes e mesas</h1>
-          <p className="tables-lead">
+    <main className="db-page nx-anim-in" aria-labelledby="tables-title">
+      <header className="db-page__header">
+        <div className="db-page__heading">
+          <p className="db-page__eyebrow">Salão</p>
+          <h1 className="db-page__title" id="tables-title">
+            Ambientes e mesas
+          </h1>
+          <p className="db-page__lead">
             Cadastre os ambientes do salão, crie mesas em lote e exporte os QR Codes para impressão.
           </p>
         </div>
-        <div className="tables-header__actions">
+        <div className="db-page__actions">
           <Button type="button" variant="ghost" onClick={() => setCreatingArea(true)}>
             Novo ambiente
           </Button>
@@ -199,53 +231,67 @@ export function TableManagementPage({
       </header>
 
       {notice ? (
-        <p className="tables-notice" role="status">
+        <AlertBanner tone="success" title="Salão atualizado">
           {notice}
-        </p>
+        </AlertBanner>
       ) : null}
-      {error ? (
-        <p className="tables-error" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <AlertBanner tone="danger">{error}</AlertBanner> : null}
 
-      <div className="tables-workbench">
-        <nav className="area-list nx-stagger" aria-label="Ambientes cadastrados">
+      <div className="db-workbench">
+        <nav className="db-list nx-stagger" aria-label="Ambientes cadastrados">
           <button
             type="button"
-            className={`area-list__item ${selectedAreaId === undefined ? 'area-list__item--active' : ''}`}
+            className={`db-list__item ${selectedAreaId === undefined ? 'db-list__item--on' : ''}`}
             onClick={() => setSelectedAreaId(undefined)}
           >
-            <strong>Todos os ambientes</strong>
-            <span className="area-list__count">{tables.length}</span>
+            <span className="db-list__name">Todos os ambientes</span>
+            <span className="db-list__count">{tables.length}</span>
           </button>
           {areas.map((area) => (
             <button
               type="button"
               key={area.id}
-              className={`area-list__item ${area.id === selectedAreaId ? 'area-list__item--active' : ''} ${area.active ? '' : 'area-list__item--inactive'}`}
+              className={`db-list__item ${area.id === selectedAreaId ? 'db-list__item--on' : ''} ${area.active ? '' : 'db-list__item--off'}`}
               onClick={() => setSelectedAreaId(area.id)}
             >
-              <span>
-                <strong>{area.name}</strong>
-                {area.active ? null : <small>Desativado</small>}
+              <span className="db-list__text">
+                <span className="db-list__name">{area.name}</span>
+                {area.active ? null : <span className="db-list__meta">Desativado</span>}
               </span>
-              <span className="area-list__count">{area.tableCount}</span>
+              <span className="db-list__count">{area.tableCount}</span>
             </button>
           ))}
         </nav>
 
-        <section aria-label="Mesas do ambiente selecionado">
-          <div className="tables-toolbar">
-            <Button type="button" onClick={openCreateTable} disabled={activeAreas.length === 0}>
-              Nova mesa
-            </Button>
-            <Button type="button" variant="accent" onClick={openBulkCreate} disabled={activeAreas.length === 0}>
-              Criar mesas em lote
-            </Button>
-            {renderAreaToolbarActions()}
-          </div>
-
+        <Card
+          as="section"
+          aria-label="Mesas do ambiente selecionado"
+          padding="none"
+          title={selectedArea ? `Mesas · ${selectedArea.name}` : 'Mesas'}
+          subtitle="Cada mesa tem um QR Code próprio; rotacionar o token invalida o impresso anterior."
+          actions={
+            <>
+              <Button
+                type="button"
+                size="sm"
+                onClick={openCreateTable}
+                disabled={activeAreas.length === 0}
+              >
+                Nova mesa
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={openBulkCreate}
+                disabled={activeAreas.length === 0}
+              >
+                Criar mesas em lote
+              </Button>
+              {renderAreaToolbarActions()}
+            </>
+          }
+        >
           {visibleTables.length === 0 ? (
             <EmptyState icon="table_restaurant" title="Nenhuma mesa cadastrada">
               Cadastre mesas uma a uma ou crie um lote inteiro (ex.: mesas 1 a 20) de uma vez.
@@ -265,14 +311,24 @@ export function TableManagementPage({
                 {
                   key: 'active',
                   header: 'Ativa',
-                  render: (row) => (row.active ? 'Sim' : 'Não'),
+                  render: (row) => (
+                    <Badge tone={row.active ? 'success' : 'neutral'} size="sm">
+                      {row.active ? 'Ativa' : 'Inativa'}
+                    </Badge>
+                  ),
                 },
                 {
                   key: 'actions',
                   header: 'Ações',
+                  align: 'right',
                   render: (row) => (
                     <div className="table-row-actions">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setRotating(row)}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setRotating(row)}
+                      >
                         Rotacionar token
                       </Button>
                       {row.active ? (
@@ -294,7 +350,12 @@ export function TableManagementPage({
                           Ativar
                         </Button>
                       )}
-                      <Button type="button" variant="danger" size="sm" onClick={() => setDeletingTable(row)}>
+                      <Button
+                        type="button"
+                        variant="danger"
+                        size="sm"
+                        onClick={() => setDeletingTable(row)}
+                      >
                         Excluir
                       </Button>
                     </div>
@@ -304,164 +365,177 @@ export function TableManagementPage({
               rows={visibleTables}
             />
           )}
-        </section>
+        </Card>
       </div>
 
-      {creatingArea ? (
-        <div className="tables-dialog-backdrop">
-          <section className="tables-dialog" role="dialog" aria-modal="true" aria-labelledby="create-area-title">
-            <h2 id="create-area-title">Novo ambiente</h2>
-            <Field label="Nome do ambiente" htmlFor={areaNameFieldId} hint="Ex.: Salão, Varanda, Mezanino">
-              <Input id={areaNameFieldId} value={newAreaName} onChange={(event) => setNewAreaName(event.target.value)} />
-            </Field>
-            <div className="tables-dialog__actions">
-              <Button type="button" variant="ghost" onClick={() => setCreatingArea(false)}>
-                Cancelar
-              </Button>
-              <Button type="button" busy={busy} onClick={() => void createArea()}>
-                Criar ambiente
-              </Button>
-            </div>
-          </section>
-        </div>
-      ) : null}
+      <Modal
+        open={creatingArea}
+        onClose={() => setCreatingArea(false)}
+        title="Novo ambiente"
+        actions={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setCreatingArea(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" busy={busy} onClick={() => void createArea()}>
+              Criar ambiente
+            </Button>
+          </>
+        }
+      >
+        <Field
+          label="Nome do ambiente"
+          htmlFor={areaNameFieldId}
+          hint="Ex.: Salão, Varanda, Mezanino"
+        >
+          <Input
+            id={areaNameFieldId}
+            value={newAreaName}
+            onChange={(event) => setNewAreaName(event.target.value)}
+          />
+        </Field>
+      </Modal>
 
-      {creatingTable ? (
-        <div className="tables-dialog-backdrop">
-          <section className="tables-dialog" role="dialog" aria-modal="true" aria-labelledby="create-table-title">
-            <h2 id="create-table-title">Nova mesa</h2>
-            <Field label="Ambiente" htmlFor={tableAreaFieldId}>
-              <Select
-                id={tableAreaFieldId}
-                value={targetAreaId ?? ''}
-                onChange={(event) => setTargetAreaId(event.target.value)}
-                options={activeAreas.map((area) => ({ value: area.id, label: area.name }))}
-              />
-            </Field>
-            <Field label="Rótulo da mesa" htmlFor={tableLabelFieldId} hint='Ex.: "12" ou "V3"'>
-              <Input
-                id={tableLabelFieldId}
-                value={newTableLabel}
-                onChange={(event) => setNewTableLabel(event.target.value)}
-              />
-            </Field>
-            <Field label="Assentos" htmlFor={tableSeatsFieldId}>
-              <Input
-                id={tableSeatsFieldId}
-                type="number"
-                min={1}
-                value={newTableSeats}
-                onChange={(event) => setNewTableSeats(Number(event.target.value))}
-              />
-            </Field>
-            <div className="tables-dialog__actions">
-              <Button type="button" variant="ghost" onClick={() => setCreatingTable(false)}>
-                Cancelar
-              </Button>
-              <Button type="button" busy={busy} onClick={() => void createTable()}>
-                Criar mesa
-              </Button>
-            </div>
-          </section>
-        </div>
-      ) : null}
+      <Modal
+        open={creatingTable}
+        onClose={() => setCreatingTable(false)}
+        title="Nova mesa"
+        actions={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setCreatingTable(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" busy={busy} onClick={() => void createTable()}>
+              Criar mesa
+            </Button>
+          </>
+        }
+      >
+        <Field label="Ambiente" htmlFor={tableAreaFieldId}>
+          <Select
+            id={tableAreaFieldId}
+            value={targetAreaId ?? ''}
+            onChange={(event) => setTargetAreaId(event.target.value)}
+            options={activeAreas.map((area) => ({ value: area.id, label: area.name }))}
+          />
+        </Field>
+        <Field label="Rótulo da mesa" htmlFor={tableLabelFieldId} hint='Ex.: "12" ou "V3"'>
+          <Input
+            id={tableLabelFieldId}
+            value={newTableLabel}
+            onChange={(event) => setNewTableLabel(event.target.value)}
+          />
+        </Field>
+        <Field label="Assentos" htmlFor={tableSeatsFieldId}>
+          <Input
+            id={tableSeatsFieldId}
+            type="number"
+            min={1}
+            value={newTableSeats}
+            onChange={(event) => setNewTableSeats(Number(event.target.value))}
+          />
+        </Field>
+      </Modal>
 
-      {bulkCreating ? (
-        <div className="tables-dialog-backdrop">
-          <section className="tables-dialog" role="dialog" aria-modal="true" aria-labelledby="bulk-create-title">
-            <p className="tables-eyebrow">CRIAÇÃO EM LOTE</p>
-            <h2 id="bulk-create-title">Criar mesas em lote</h2>
-            <p>Cadastre um intervalo inteiro de mesas de uma vez — ideal para o onboarding do salão.</p>
-            <div className="tables-dialog__fields">
-              <Field label="Ambiente" htmlFor={bulkAreaFieldId}>
-                <Select
-                  id={bulkAreaFieldId}
-                  value={bulkAreaId ?? ''}
-                  onChange={(event) => setBulkAreaId(event.target.value)}
-                  options={activeAreas.map((area) => ({ value: area.id, label: area.name }))}
-                />
-              </Field>
-              <Field label="De" htmlFor={bulkFromFieldId}>
-                <Input
-                  id={bulkFromFieldId}
-                  type="number"
-                  min={1}
-                  value={bulkFrom}
-                  onChange={(event) => setBulkFrom(Number(event.target.value))}
-                />
-              </Field>
-              <Field label="Até" htmlFor={bulkToFieldId}>
-                <Input
-                  id={bulkToFieldId}
-                  type="number"
-                  min={bulkFrom}
-                  value={bulkTo}
-                  onChange={(event) => setBulkTo(Number(event.target.value))}
-                />
-              </Field>
-              <Field label="Assentos por mesa" htmlFor={bulkSeatsFieldId}>
-                <Input
-                  id={bulkSeatsFieldId}
-                  type="number"
-                  min={1}
-                  value={bulkSeats}
-                  onChange={(event) => setBulkSeats(Number(event.target.value))}
-                />
-              </Field>
-            </div>
-            <div className="tables-dialog__actions">
-              <Button type="button" variant="ghost" onClick={() => setBulkCreating(false)}>
-                Cancelar
-              </Button>
-              <Button type="button" busy={busy} onClick={() => void createBulk()}>
-                Criar mesas {bulkFrom} a {bulkTo}
-              </Button>
-            </div>
-          </section>
-        </div>
-      ) : null}
+      <Modal
+        open={bulkCreating}
+        onClose={() => setBulkCreating(false)}
+        eyebrow="Criação em lote"
+        title="Criar mesas em lote"
+        actions={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setBulkCreating(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" busy={busy} onClick={() => void createBulk()}>
+              Criar mesas {bulkFrom} a {bulkTo}
+            </Button>
+          </>
+        }
+      >
+        <p>Cadastre um intervalo inteiro de mesas de uma vez — ideal para o onboarding do salão.</p>
+        <Field label="Ambiente" htmlFor={bulkAreaFieldId}>
+          <Select
+            id={bulkAreaFieldId}
+            value={bulkAreaId ?? ''}
+            onChange={(event) => setBulkAreaId(event.target.value)}
+            options={activeAreas.map((area) => ({ value: area.id, label: area.name }))}
+          />
+        </Field>
+        <Field label="De" htmlFor={bulkFromFieldId}>
+          <Input
+            id={bulkFromFieldId}
+            type="number"
+            min={1}
+            value={bulkFrom}
+            onChange={(event) => setBulkFrom(Number(event.target.value))}
+          />
+        </Field>
+        <Field label="Até" htmlFor={bulkToFieldId}>
+          <Input
+            id={bulkToFieldId}
+            type="number"
+            min={bulkFrom}
+            value={bulkTo}
+            onChange={(event) => setBulkTo(Number(event.target.value))}
+          />
+        </Field>
+        <Field label="Assentos por mesa" htmlFor={bulkSeatsFieldId}>
+          <Input
+            id={bulkSeatsFieldId}
+            type="number"
+            min={1}
+            value={bulkSeats}
+            onChange={(event) => setBulkSeats(Number(event.target.value))}
+          />
+        </Field>
+      </Modal>
 
-      {rotating ? (
-        <div className="tables-dialog-backdrop">
-          <section className="tables-dialog tables-dialog--danger" role="dialog" aria-modal="true" aria-labelledby="rotate-title">
-            <p className="tables-eyebrow">AÇÃO IMEDIATA</p>
-            <h2 id="rotate-title">Rotacionar token da mesa {rotating.label}?</h2>
-            <p>
-              O QR Code impresso hoje deixará de funcionar imediatamente. Você precisará exportar o PDF novamente e
-              substituir o código colado na mesa.
-            </p>
-            <div className="tables-dialog__actions">
-              <Button type="button" variant="ghost" onClick={() => setRotating(undefined)}>
-                Cancelar
-              </Button>
-              <Button type="button" variant="danger" busy={busy} onClick={() => void confirmRotate()}>
-                Sim, rotacionar token
-              </Button>
-            </div>
-          </section>
-        </div>
-      ) : null}
+      <Modal
+        open={rotating !== undefined}
+        onClose={() => setRotating(undefined)}
+        tone="danger"
+        eyebrow="Ação imediata"
+        title={`Rotacionar token da mesa ${rotating?.label}?`}
+        actions={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setRotating(undefined)}>
+              Cancelar
+            </Button>
+            <Button type="button" variant="danger" busy={busy} onClick={() => void confirmRotate()}>
+              Sim, rotacionar token
+            </Button>
+          </>
+        }
+      >
+        <p>
+          O QR Code impresso hoje deixará de funcionar imediatamente. Você precisará exportar o PDF
+          novamente e substituir o código colado na mesa.
+        </p>
+      </Modal>
 
-      {deletingTable ? (
-        <div className="tables-dialog-backdrop">
-          <section className="tables-dialog tables-dialog--danger" role="dialog" aria-modal="true" aria-labelledby="delete-title">
-            <p className="tables-eyebrow">AÇÃO IMEDIATA</p>
-            <h2 id="delete-title">Excluir mesa {deletingTable.label}?</h2>
-            <p>
-              Se esta mesa já tiver sessões no histórico, a exclusão será recusada — desative-a em vez de excluir
-              para manter o histórico.
-            </p>
-            <div className="tables-dialog__actions">
-              <Button type="button" variant="ghost" onClick={() => setDeletingTable(undefined)}>
-                Cancelar
-              </Button>
-              <Button type="button" variant="danger" busy={busy} onClick={() => void confirmDelete()}>
-                Sim, excluir mesa
-              </Button>
-            </div>
-          </section>
-        </div>
-      ) : null}
+      <Modal
+        open={deletingTable !== undefined}
+        onClose={() => setDeletingTable(undefined)}
+        tone="danger"
+        eyebrow="Ação imediata"
+        title={`Excluir mesa ${deletingTable?.label}?`}
+        actions={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setDeletingTable(undefined)}>
+              Cancelar
+            </Button>
+            <Button type="button" variant="danger" busy={busy} onClick={() => void confirmDelete()}>
+              Sim, excluir mesa
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Se esta mesa já tiver sessões no histórico, a exclusão será recusada — desative-a em vez
+          de excluir para manter o histórico.
+        </p>
+      </Modal>
     </main>
   );
 }

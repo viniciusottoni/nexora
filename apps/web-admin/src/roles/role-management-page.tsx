@@ -1,5 +1,15 @@
 import { useEffect, useId, useMemo, useState } from 'react';
-import { Button, Card, Field, Input } from '@nexora/ui';
+import {
+  AlertBanner,
+  Badge,
+  Button,
+  Card,
+  Checkbox,
+  EmptyState,
+  Field,
+  Input,
+  Modal,
+} from '@nexora/ui';
 import type {
   CreateRoleRequest,
   PermissionCatalogItem,
@@ -88,156 +98,166 @@ export function RoleManagementPage({
   }
 
   return (
-    <main className="roles-shell" aria-labelledby="roles-title">
-      <header className="roles-header">
-        <div>
-          <p className="roles-eyebrow">EQUIPE E ACESSOS</p>
-          <h1 id="roles-title">Papéis e permissões</h1>
-          <p className="roles-lead">
+    <main className="db-page nx-anim-in" aria-labelledby="roles-title">
+      <header className="db-page__header">
+        <div className="db-page__heading">
+          <p className="db-page__eyebrow">Equipe e acessos</p>
+          <h1 className="db-page__title" id="roles-title">
+            Papéis e permissões
+          </h1>
+          <p className="db-page__lead">
             Defina o que cada função pode fazer. Acesso não marcado permanece bloqueado.
           </p>
         </div>
-        <Button type="button" onClick={() => setCreating(true)}>
-          Novo papel
-        </Button>
+        <div className="db-page__actions">
+          <Button type="button" onClick={() => setCreating(true)}>
+            Novo papel
+          </Button>
+        </div>
       </header>
 
       {notice ? (
-        <p className="roles-notice" role="status">
+        <AlertBanner tone="success" title="Permissões atualizadas">
           {notice}
-        </p>
+        </AlertBanner>
       ) : null}
 
-      <div className="roles-workbench">
-        <nav className="role-list nx-stagger" aria-label="Papéis cadastrados">
-          {roles.map((role) => (
-            <button
-              type="button"
-              className={`role-list__item ${role.id === selected?.id ? 'role-list__item--active' : ''}`}
-              key={role.id}
-              onClick={() => setSelectedId(role.id)}
-            >
-              <span>
-                <strong>{role.name}</strong>
-                <small>
-                  {role.code} · {role.userCount} {role.userCount === 1 ? 'pessoa' : 'pessoas'}
-                </small>
-              </span>
-              <span className="role-list__count">{role.permissions.length}</span>
-            </button>
-          ))}
-        </nav>
+      {roles.length === 0 ? (
+        <Card padding="none">
+          <EmptyState icon="shield_person" title="Nenhum papel cadastrado">
+            Papel é o que define o que cada função da equipe pode fazer no sistema. Comece em "Novo
+            papel", acima.
+          </EmptyState>
+        </Card>
+      ) : (
+        <div className="db-workbench">
+          <nav className="db-list nx-stagger" aria-label="Papéis cadastrados">
+            {roles.map((role) => (
+              <button
+                type="button"
+                className={`db-list__item ${role.id === selected?.id ? 'db-list__item--on' : ''}`}
+                key={role.id}
+                onClick={() => setSelectedId(role.id)}
+              >
+                <span className="db-list__text">
+                  <span className="db-list__name">{role.name}</span>
+                  <span className="db-list__meta">
+                    <span className="db-code">{role.code}</span> · {role.userCount}{' '}
+                    {role.userCount === 1 ? 'pessoa' : 'pessoas'}
+                  </span>
+                </span>
+                <span className="db-list__count">{role.permissions.length}</span>
+              </button>
+            ))}
+          </nav>
 
-        {selected ? (
-          <Card className="role-editor">
-            <div className="role-editor__heading">
-              <div>
-                <p className="roles-eyebrow">
-                  {selected.system ? 'MODELO DO SISTEMA' : 'PAPEL PERSONALIZADO'}
-                </p>
-                <h2>{selected.name}</h2>
+          {selected ? (
+            <Card>
+              <div className="role-editor__heading">
+                <div>
+                  <p className="db-page__eyebrow">
+                    {selected.system ? 'Modelo do sistema' : 'Papel personalizado'}
+                  </p>
+                  <h2>{selected.name}</h2>
+                </div>
+                {permissions.length === 0 ? (
+                  <Badge tone="warning">Nenhuma ação liberada</Badge>
+                ) : null}
               </div>
-              {permissions.length === 0 ? (
-                <span className="role-empty">Nenhuma ação liberada</span>
-              ) : null}
-            </div>
 
-            <Field label="Nome exibido" htmlFor={nameFieldId}>
-              <Input
-                id={nameFieldId}
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </Field>
+              <Field label="Nome exibido" htmlFor={nameFieldId}>
+                <Input
+                  id={nameFieldId}
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                />
+              </Field>
 
-            <div className="permission-groups nx-stagger">
-              {groups.map(([resource, items]) => (
-                <fieldset className="permission-group" key={resource}>
-                  <legend>{resource}</legend>
-                  {items.map((permission) => {
-                    const ownerLock = selected.code === 'OWNER' && permission.code === '*';
-                    return (
-                      <label className="permission-option" key={permission.code}>
-                        <input
-                          type="checkbox"
+              <div className="permission-groups nx-stagger">
+                {groups.map(([resource, items]) => (
+                  <fieldset className="permission-group" key={resource}>
+                    <legend>{resource}</legend>
+                    {items.map((permission) => {
+                      const ownerLock = selected.code === 'OWNER' && permission.code === '*';
+                      return (
+                        <Checkbox
+                          className="permission-option"
+                          key={permission.code}
                           checked={permissions.includes(permission.code)}
                           disabled={ownerLock}
                           onChange={() => toggle(permission.code)}
                           aria-label={`Permitir ${permission.description}`}
+                          label={
+                            <span className="permission-option__copy">
+                              <strong>{permission.description}</strong>
+                              <code>{permission.code}</code>
+                              {permission.sensitive ? (
+                                <span className="permission-sensitive">Ação sensível</span>
+                              ) : null}
+                            </span>
+                          }
                         />
-                        <span className="permission-option__copy">
-                          <strong>{permission.description}</strong>
-                          <code>{permission.code}</code>
-                        </span>
-                        {permission.sensitive ? (
-                          <span className="permission-sensitive">Ação sensível</span>
-                        ) : null}
-                      </label>
-                    );
-                  })}
-                </fieldset>
-              ))}
-            </div>
+                      );
+                    })}
+                  </fieldset>
+                ))}
+              </div>
 
-            {selected.code === 'OWNER' ? (
-              <p className="owner-lock">
-                OWNER mantém acesso completo para evitar bloqueio administrativo do estabelecimento.
-              </p>
-            ) : null}
-            <div className="role-editor__footer">
-              <p>Alterações geram evento, auditoria e alerta para gestores.</p>
-              <Button type="button" busy={busy} onClick={() => void save()}>
-                Salvar permissões
-              </Button>
-            </div>
-          </Card>
-        ) : (
-          <Card className="role-editor role-editor--empty">Nenhum papel cadastrado.</Card>
-        )}
-      </div>
-
-      {creating ? (
-        <div className="roles-dialog-backdrop">
-          <section
-            className="roles-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-role-title"
-          >
-            <p className="roles-eyebrow">DENY-BY-DEFAULT</p>
-            <h2 id="create-role-title">Criar papel</h2>
-            <p>Novo papel começa sem acesso. Permissões podem ser concedidas depois.</p>
-            <div className="roles-dialog__fields">
-              <Field label="Nome do papel" htmlFor={createNameFieldId}>
-                <Input
-                  id={createNameFieldId}
-                  value={createName}
-                  onChange={(event) => setCreateName(event.target.value)}
-                />
-              </Field>
-              <Field
-                label="Código"
-                htmlFor={createCodeFieldId}
-                hint="Letras maiúsculas, números e sublinhado"
-              >
-                <Input
-                  id={createCodeFieldId}
-                  value={createCode}
-                  onChange={(event) => setCreateCode(event.target.value.toUpperCase())}
-                />
-              </Field>
-            </div>
-            <div className="roles-dialog__actions">
-              <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
-                Cancelar
-              </Button>
-              <Button type="button" busy={busy} onClick={() => void createRole()}>
-                Criar sem permissões
-              </Button>
-            </div>
-          </section>
+              {selected.code === 'OWNER' ? (
+                <AlertBanner tone="warning" title="Acesso total é fixo neste papel">
+                  OWNER mantém acesso completo para evitar bloqueio administrativo do
+                  estabelecimento.
+                </AlertBanner>
+              ) : null}
+              <div className="db-editor__footer">
+                <p className="db-hint">
+                  Alterações geram evento, auditoria e alerta para gestores.
+                </p>
+                <Button type="button" busy={busy} onClick={() => void save()}>
+                  Salvar permissões
+                </Button>
+              </div>
+            </Card>
+          ) : null}
         </div>
-      ) : null}
+      )}
+
+      <Modal
+        open={creating}
+        onClose={() => setCreating(false)}
+        eyebrow="Deny-by-default"
+        title="Criar papel"
+        actions={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" busy={busy} onClick={() => void createRole()}>
+              Criar sem permissões
+            </Button>
+          </>
+        }
+      >
+        <p>Novo papel começa sem acesso. Permissões podem ser concedidas depois.</p>
+        <Field label="Nome do papel" htmlFor={createNameFieldId}>
+          <Input
+            id={createNameFieldId}
+            value={createName}
+            onChange={(event) => setCreateName(event.target.value)}
+          />
+        </Field>
+        <Field
+          label="Código"
+          htmlFor={createCodeFieldId}
+          hint="Letras maiúsculas, números e sublinhado"
+        >
+          <Input
+            id={createCodeFieldId}
+            value={createCode}
+            onChange={(event) => setCreateCode(event.target.value.toUpperCase())}
+          />
+        </Field>
+      </Modal>
     </main>
   );
 }

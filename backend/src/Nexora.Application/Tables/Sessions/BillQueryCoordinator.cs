@@ -2,6 +2,7 @@ using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Orders.Support;
 using Nexora.Application.Tables.Billing;
+using Nexora.Application.Tables.Support;
 using Nexora.Contracts.Operation;
 using Nexora.Domain.Cashier;
 using Nexora.Domain.Operation;
@@ -20,10 +21,16 @@ namespace Nexora.Application.Tables.Sessions;
 /// </summary>
 internal static class BillQueryCoordinator
 {
+    // US-035 §8: "não entregue" também cobre READY (pronto, mas ainda não levado à mesa) — antes
+    // desta história só as fases de cozinha propriamente ditas contavam como pendente aqui; RÉADY
+    // adicionado para que este mesmo indicador (usado por US-027 na tela de divisão) já reflita a
+    // regra de bloqueio de fechamento sem duplicar uma segunda lista de "ainda não servido" à parte
+    // (ver PendingItemsClosePolicy.FindPendingForClose, que usa a definição completa SERVED/CANCELLED
+    // diretamente da entidade — aqui o filtro é o mesmo, só que espelhado por nome de status).
     private static readonly string[] StillCookingStatuses =
     {
         nameof(OrderItemStatus.Queued), nameof(OrderItemStatus.Fired),
-        nameof(OrderItemStatus.InOven), nameof(OrderItemStatus.OutOfOven)
+        nameof(OrderItemStatus.InOven), nameof(OrderItemStatus.OutOfOven), nameof(OrderItemStatus.Ready)
     };
 
     /// <summary>Itens (não cancelados e cancelados) de todos os pedidos da sessão, com variante/produto carregados — reaproveitado por <c>AssignBillItemsCommandHandler</c>.</summary>
@@ -63,6 +70,7 @@ internal static class BillQueryCoordinator
     {
         var items = await LoadItemsAsync(db, session.Id, cancellationToken);
         var feePercent = await ResolveFeePercentAsync(db, session.TenantId, cancellationToken);
+        var pendingItemsMode = await PendingItemsClosePolicy.ResolveModeAsync(db, session.TenantId, cancellationToken);
 
         var activeItems = items.Where(i => i.Status != OrderItemStatus.Cancelled).ToList();
         var subtotal = activeItems.Sum(i => i.TotalPrice);
@@ -88,7 +96,8 @@ internal static class BillQueryCoordinator
                 }
 
                 var result = BillSplitCalculator.CalculateByPerson(subtotal, feePercent, people, waived);
-                return Result<BillResponse>.Success(ToResponse(itemResponses, pendingItems, splitMode, result, amountPaid: null, remaining: null));
+                return Result<BillResponse>.Success(
+                    ToResponse(itemResponses, pendingItems, splitMode, result, amountPaid: null, remaining: null, pendingItemsMode));
             }
 
             case "BY_ITEM":
@@ -102,7 +111,7 @@ internal static class BillQueryCoordinator
                 var response = new BillResponse(
                     itemResponses, subtotal, serviceFeeNominal, subtotal + serviceFeeNominal, splitMode,
                     Split: Array.Empty<BillSplitPartResponse>(), pendingItems, pendingItems.Count > 0,
-                    AmountPaid: null, RemainingAmount: null, UnassignedItemIds: unassigned);
+                    AmountPaid: null, RemainingAmount: null, UnassignedItemIds: unassigned, PendingItemsMode: pendingItemsMode);
                 return Result<BillResponse>.Success(response);
             }
 
@@ -128,7 +137,8 @@ internal static class BillQueryCoordinator
                 var response = new BillResponse(
                     itemResponses, subtotal, serviceFeeNominal, total, splitMode,
                     Split: Array.Empty<BillSplitPartResponse>(), pendingItems, pendingItems.Count > 0,
-                    AmountPaid: amountSplit.AmountNow, RemainingAmount: amountSplit.Remaining, UnassignedItemIds: Array.Empty<Guid>());
+                    AmountPaid: amountSplit.AmountNow, RemainingAmount: amountSplit.Remaining, UnassignedItemIds: Array.Empty<Guid>(),
+                    PendingItemsMode: pendingItemsMode);
                 return Result<BillResponse>.Success(response);
             }
 
@@ -170,7 +180,8 @@ internal static class BillQueryCoordinator
         string splitMode,
         BillSplitResult result,
         decimal? amountPaid,
-        decimal? remaining) =>
+        decimal? remaining,
+        string pendingItemsMode) =>
         new(
             items,
             result.Subtotal,
@@ -182,5 +193,6 @@ internal static class BillQueryCoordinator
             pendingItems.Count > 0,
             amountPaid,
             remaining,
-            result.UnassignedItemIds);
+            result.UnassignedItemIds,
+            pendingItemsMode);
 }

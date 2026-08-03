@@ -39,14 +39,49 @@
   border-radius: var(--radius-md);
   line-height: 1;
 }
-.db-order-timer--sm { font-size: var(--fs-14); padding: var(--sp-2) var(--sp-3); }
-.db-order-timer--md { font-size: var(--fs-20); padding: var(--sp-3) var(--sp-4); }
-.db-order-timer--lg { font-size: var(--fs-42); padding: var(--sp-3) var(--sp-5); }
-.db-order-timer--late { animation: nx-pulse-alert var(--dur-pulse-urgent) var(--ease-in-out) infinite; }
-.db-order-timer__icon { flex: 0 0 auto; line-height: 1; }
-.db-order-timer--sm .db-order-timer__icon { font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 14; }
-.db-order-timer--md .db-order-timer__icon { font-size: 18px; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 18; }
-.db-order-timer--lg .db-order-timer__icon { font-size: 32px; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 32; }
+.db-order-timer--sm {
+  font-size: var(--fs-14);
+  padding: var(--sp-2) var(--sp-3);
+}
+.db-order-timer--md {
+  font-size: var(--fs-20);
+  padding: var(--sp-3) var(--sp-4);
+}
+.db-order-timer--lg {
+  font-size: var(--fs-42);
+  padding: var(--sp-3) var(--sp-5);
+}
+.db-order-timer--late {
+  animation: nx-pulse-alert var(--dur-pulse-urgent) var(--ease-in-out) infinite;
+}
+.db-order-timer__icon {
+  flex: 0 0 auto;
+  line-height: 1;
+}
+.db-order-timer--sm .db-order-timer__icon {
+  font-size: 14px;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 14;
+}
+.db-order-timer--md .db-order-timer__icon {
+  font-size: 18px;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 18;
+}
+.db-order-timer--lg .db-order-timer__icon {
+  font-size: 32px;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 32;
+}
 
 /* AlertBanner — porte fiel de components/feedback/AlertBanner.jsx */
 .db-alert-banner {
@@ -57,17 +92,29 @@
   border-radius: var(--brand-radius);
   border: var(--border-1) solid transparent;
   font: var(--type-body);
-  animation: nx-toast-in var(--dur-base) var(--ease-out) both;
+  animation: nx-toast-in var(--dur-base) var(--ease-out) backwards;
 }
 .db-alert-banner__icon {
   flex: 0 0 auto;
   font-size: 22px;
   line-height: 1;
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 22;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 22;
 }
-.db-alert-banner__content { min-width: 0; }
-.db-alert-banner__title { font: var(--type-h3); margin-bottom: 2px; }
-.db-alert-banner__body { color: inherit; opacity: 0.82; }
+.db-alert-banner__content {
+  min-width: 0;
+}
+.db-alert-banner__title {
+  font: var(--type-h3);
+  margin-bottom: 2px;
+}
+.db-alert-banner__body {
+  color: inherit;
+  opacity: 0.82;
+}
 .db-alert-banner__actions {
   margin-left: auto;
   display: flex;
@@ -75,11 +122,31 @@
   align-items: center;
   flex: 0 0 auto;
 }
-.db-alert-banner--info { background: var(--nx-blue-50); border-color: var(--nx-blue-100); color: var(--nx-navy-800); }
-.db-alert-banner--success { background: var(--nx-success-100); border-color: #bfe6ce; color: var(--nx-success-600); }
-.db-alert-banner--warning { background: var(--nx-warning-100); border-color: #f3dfa6; color: var(--nx-warning-600); }
-.db-alert-banner--danger { background: var(--nx-danger-100); border-color: #f3c4c6; color: var(--nx-danger-600); }
-.db-alert-banner--neutral { background: var(--surface-sunken); border-color: var(--border-subtle); color: var(--text-primary); }
+.db-alert-banner--info {
+  background: var(--nx-blue-50);
+  border-color: var(--nx-blue-100);
+  color: var(--nx-navy-800);
+}
+.db-alert-banner--success {
+  background: var(--nx-success-100);
+  border-color: #bfe6ce;
+  color: var(--nx-success-600);
+}
+.db-alert-banner--warning {
+  background: var(--nx-warning-100);
+  border-color: #f3dfa6;
+  color: var(--nx-warning-600);
+}
+.db-alert-banner--danger {
+  background: var(--nx-danger-100);
+  border-color: #f3c4c6;
+  color: var(--nx-danger-600);
+}
+.db-alert-banner--neutral {
+  background: var(--surface-sunken);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
 
 /* SyncStatus — porte fiel de components/feedback/SyncStatus.jsx */
 .db-sync-status {
@@ -93,11 +160,32 @@
   border: var(--border-1) solid transparent;
   white-space: nowrap;
 }
-.db-sync-status--online { background: var(--nx-success-100); color: var(--nx-success-600); }
-.db-sync-status--local { background: var(--nx-warning-100); color: var(--nx-warning-600); }
-.db-sync-status--delayed { background: var(--nx-danger-100); color: var(--nx-danger-600); }
-.db-sync-status__icon { flex: 0 0 auto; font-size: 16px; line-height: 1; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 16; }
-.db-sync-status__meta { font-family: var(--font-mono); opacity: 0.85; }
+.db-sync-status--online {
+  background: var(--nx-success-100);
+  color: var(--nx-success-600);
+}
+.db-sync-status--local {
+  background: var(--nx-warning-100);
+  color: var(--nx-warning-600);
+}
+.db-sync-status--delayed {
+  background: var(--nx-danger-100);
+  color: var(--nx-danger-600);
+}
+.db-sync-status__icon {
+  flex: 0 0 auto;
+  font-size: 16px;
+  line-height: 1;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 16;
+}
+.db-sync-status__meta {
+  font-family: var(--font-mono);
+  opacity: 0.85;
+}
 
 /* EmptyState — porte fiel de components/feedback/EmptyState.jsx */
 .db-empty-state {
@@ -109,7 +197,7 @@
   padding: var(--sp-11) var(--sp-8);
   text-align: center;
   color: var(--text-muted);
-  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) backwards;
 }
 .db-empty-state__icon {
   width: 56px;
@@ -121,10 +209,28 @@
   justify-content: center;
   color: var(--text-muted);
 }
-.db-empty-state__icon-glyph { font-size: 28px; line-height: 1; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 28; }
-.db-empty-state__title { font: var(--type-h3); color: var(--text-primary); }
-.db-empty-state__body { font: var(--type-body); color: var(--text-muted); max-width: 46ch; text-wrap: pretty; }
-.db-empty-state__action { margin-top: var(--sp-3); }
+.db-empty-state__icon-glyph {
+  font-size: 28px;
+  line-height: 1;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 28;
+}
+.db-empty-state__title {
+  font: var(--type-h3);
+  color: var(--text-primary);
+}
+.db-empty-state__body {
+  font: var(--type-body);
+  color: var(--text-muted);
+  max-width: 46ch;
+  text-wrap: pretty;
+}
+.db-empty-state__action {
+  margin-top: var(--sp-3);
+}
 
 /* Respeita prefers-reduced-motion: os alarmes pulsantes (ponto vivo do StatusPill e
    cronômetro atrasado do OrderTimer) não usam as variáveis --dur-*, então precisam

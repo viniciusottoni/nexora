@@ -68,6 +68,9 @@ public sealed class TableMapIntegrationTests
             var order = Order.Create(tenantId, storeId, Channel.DineIn, "A001", Today(), sessionId: session.Id);
             var item1 = OrderItem.Create(tenantId, order.Id, variantId, unitPrice: 30.00m);
             var item2 = OrderItem.Create(tenantId, order.Id, variantId, unitPrice: 25.00m);
+            // ck_item_sequence (US-032) exige fired_at preenchido antes de ready_at — RN-002 "T1 e
+            // T4 são obrigatórios no ciclo": nenhum item fica pronto sem antes ser disparado.
+            item2.Fire(waiterId);
             item2.MarkReady(waiterId);
             order.AddItem(item1);
             order.AddItem(item2);
@@ -174,6 +177,8 @@ public sealed class TableMapIntegrationTests
 
             var order = Order.Create(tenantId, storeId, Channel.DineIn, "A003", Today(), sessionId: readySession.Id);
             var ready = OrderItem.Create(tenantId, order.Id, variantId, unitPrice: 10.00m);
+            // ck_item_sequence (US-032) exige fired_at preenchido antes de ready_at — mesmo motivo do comentário acima.
+            ready.Fire(Guid.NewGuid());
             ready.MarkReady(Guid.NewGuid());
             order.AddItem(ready);
             seedDb.Orders.Add(order);

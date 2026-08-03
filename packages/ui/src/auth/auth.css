@@ -147,7 +147,7 @@
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(18rem, 1fr) minmax(22rem, 32rem);
-  background: var(--brand-surface);
+  background: var(--surface-page);
   color: var(--color-text);
 }
 .db-pin-intro {
@@ -214,7 +214,7 @@
   justify-content: center;
   gap: 1rem;
   padding: 1.25rem;
-  background: var(--color-surface);
+  background: var(--surface-page);
 }
 
 /* Login e primeiro acesso sao o mesmo cartao: claro, destacado do fundo por sombra. */
@@ -287,10 +287,12 @@
   justify-content: center;
   gap: 1rem;
   padding: 1.25rem;
-  background: var(--color-surface);
-  /* A tela de pareamento é renderizada fora do shell de cada app (antes dele, no
-     primeiro acesso), então não pode herdar a cor do body: no web-kds o body é
-     --brand-on-primary (branco, para o header de marca) e o texto sumiria no cartão. */
+  /* --surface-page (não --brand-surface): pareamento e login são chrome da plataforma,
+     não uma tela de tenant, então não podem herdar a cor de branding (que por padrão,
+     sem tenant configurado, é o creme de createNeutralBrandingResponse, não o cinza
+     neutro da plataforma). Também não pode herdar a cor do body do app — no web-kds o
+     body fica escuro/de marca fora do shell autenticado. */
+  background: var(--surface-page);
   color: var(--color-text);
 }
 

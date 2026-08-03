@@ -148,7 +148,10 @@ internal sealed class LoginWithPinCommandHandler : IRequestHandler<LoginWithPinC
             Roles: roles,
             Permissions: permissions,
             DeviceId: device.Id,
-            SessionId: sessionId);
+            SessionId: sessionId,
+            // US-031/ADR-011: terminal pareado a uma praça (ex.: KDS do forno) leva a claim "stn" —
+            // KdsHub inscreve a conexão em station:{id} sem o cliente pedir.
+            StationId: device.StationId);
 
         var accessToken = await _tokenIssuer.IssueAccessTokenAsync(claims, AuthTokenTtlSeconds.PinAccess, cancellationToken);
 
@@ -157,7 +160,8 @@ internal sealed class LoginWithPinCommandHandler : IRequestHandler<LoginWithPinC
             authenticated.Id,
             device.Id,
             refreshHash: null,
-            expiresAt: now.AddSeconds(AuthTokenTtlSeconds.PinAccess)));
+            expiresAt: now.AddSeconds(AuthTokenTtlSeconds.PinAccess),
+            id: sessionId));
 
         authenticated.RecordSuccessfulLogin();
 

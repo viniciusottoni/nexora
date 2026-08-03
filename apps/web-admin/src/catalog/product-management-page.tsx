@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import {
+  AlertBanner,
   Badge,
   Button,
   Card,
@@ -9,6 +10,7 @@ import {
   IconButton,
   Input,
   MenuItemCard,
+  Modal,
   Select,
   Switch,
 } from '@nexora/ui';
@@ -395,31 +397,35 @@ export function ProductManagementPage({
   }
 
   return (
-    <main className="catalog-shell" aria-labelledby="products-title">
-      <header className="catalog-header">
-        <div>
-          <p className="catalog-eyebrow">CARDÁPIO</p>
-          <h1 id="products-title">Produtos</h1>
-          <p className="catalog-lead">
+    <main className="db-page nx-anim-in" aria-labelledby="products-title">
+      <header className="db-page__header">
+        <div className="db-page__heading">
+          <p className="db-page__eyebrow">Cardápio</p>
+          <h1 className="db-page__title" id="products-title">
+            Produtos
+          </h1>
+          <p className="db-page__lead">
             Cadastre os itens vendidos, com foto, ingredientes e praça de produção — o cardápio
             digital substitui o cardápio de papel em todos os canais.
           </p>
         </div>
-        <Button type="button" onClick={() => setCreating(true)} disabled={categories.length === 0}>
-          Novo produto
-        </Button>
+        <div className="db-page__actions">
+          <Button
+            type="button"
+            onClick={() => setCreating(true)}
+            disabled={categories.length === 0}
+          >
+            Novo produto
+          </Button>
+        </div>
       </header>
 
       {notice ? (
-        <p className="catalog-notice" role="status">
+        <AlertBanner tone="success" title="Cardápio atualizado">
           {notice}
-        </p>
+        </AlertBanner>
       ) : null}
-      {error ? (
-        <p className="catalog-error" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <AlertBanner tone="danger">{error}</AlertBanner> : null}
 
       {categories.length === 0 ? (
         <EmptyState icon="restaurant_menu" title="Cadastre uma categoria antes">
@@ -427,26 +433,32 @@ export function ProductManagementPage({
         </EmptyState>
       ) : (
         <>
-          <Field
-            label="Filtrar por categoria"
-            htmlFor={categoryFilterFieldId}
-            className="catalog-filter"
-          >
-            <Select
-              id={categoryFilterFieldId}
-              value={categoryFilter}
-              onChange={(event) => setCategoryFilter(event.target.value)}
-              options={[{ value: '', label: 'Todas as categorias' }, ...categoryOptions]}
-            />
-          </Field>
+          <div className="db-toolbar">
+            <Field
+              label="Filtrar por categoria"
+              htmlFor={categoryFilterFieldId}
+              className="catalog-filter"
+            >
+              <Select
+                id={categoryFilterFieldId}
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value)}
+                options={[{ value: '', label: 'Todas as categorias' }, ...categoryOptions]}
+              />
+            </Field>
+          </div>
 
           {ordered.length === 0 ? (
             <EmptyState icon="no_meals" title="Nenhum produto cadastrado">
               Crie o primeiro produto desta categoria.
             </EmptyState>
           ) : (
-            <div className="catalog-workbench">
-              <Card padding="none" className="catalog-table-card">
+            <div className="db-workbench db-workbench--rail">
+              <Card
+                padding="none"
+                title="Produtos do cardápio"
+                subtitle="Clique em uma linha para editar preço, foto, praça e variações."
+              >
                 <DataTable
                   rowKey="id"
                   rows={ordered}
@@ -516,9 +528,9 @@ export function ProductManagementPage({
               </Card>
 
               {selected ? (
-                <div className="catalog-editor-column">
+                <div className="db-rail">
                   <Card
-                    className="catalog-editor"
+                    className="db-form-card"
                     title={selected.name}
                     subtitle={selected.categoryName}
                   >
@@ -530,7 +542,7 @@ export function ProductManagementPage({
                       />
                     </Field>
 
-                    <div className="catalog-editor__row">
+                    <div className="db-form-row">
                       <Field label="Categoria" htmlFor={editCategoryFieldId}>
                         <Select
                           id={editCategoryFieldId}
@@ -616,8 +628,8 @@ export function ProductManagementPage({
                       />
                     </Field>
 
-                    <div className="catalog-editor__footer">
-                      <span className="catalog-editor__footer-secondary">
+                    <div className="db-editor__footer">
+                      <span className="db-page__actions">
                         <Button
                           type="button"
                           variant="ghost"
@@ -686,11 +698,7 @@ export function ProductManagementPage({
                     ) : null}
                   </Card>
 
-                  <Card
-                    className="catalog-preview"
-                    title="Pré-visualização"
-                    subtitle="Como aparece no cardápio da mesa"
-                  >
+                  <Card title="Pré-visualização" subtitle="Como aparece no cardápio da mesa">
                     <MenuItemCard
                       name={name || selected.name}
                       description={ingredientsText || description || undefined}
@@ -712,115 +720,103 @@ export function ProductManagementPage({
         </>
       )}
 
-      {creating ? (
-        <div className="catalog-dialog-backdrop">
-          <section
-            className="catalog-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-product-title"
-          >
-            <p className="catalog-eyebrow">NOVO PRODUTO</p>
-            <h2 id="create-product-title">Criar produto</h2>
-            <div className="catalog-dialog__fields">
-              <Field label="Nome" htmlFor={createNameFieldId}>
-                <Input
-                  id={createNameFieldId}
-                  value={createName}
-                  onChange={(event) => setCreateName(event.target.value)}
-                />
-              </Field>
-              <Field label="Categoria" htmlFor={createCategoryFieldId}>
-                <Select
-                  id={createCategoryFieldId}
-                  value={createCategoryId}
-                  onChange={(event) => setCreateCategoryId(event.target.value)}
-                  options={categoryOptions}
-                />
-              </Field>
-              <Field label="Praça de produção" htmlFor={createStationFieldId}>
-                <Select
-                  id={createStationFieldId}
-                  value={createStationId}
-                  onChange={(event) => setCreateStationId(event.target.value)}
-                  options={stationOptions}
-                />
-              </Field>
-              <Field label="Descrição" htmlFor={createDescriptionFieldId}>
-                <Input
-                  id={createDescriptionFieldId}
-                  value={createDescription}
-                  onChange={(event) => setCreateDescription(event.target.value)}
-                />
-              </Field>
-              <Field label="Ingredientes" htmlFor={createIngredientsFieldId}>
-                <Input
-                  id={createIngredientsFieldId}
-                  value={createIngredientsText}
-                  onChange={(event) => setCreateIngredientsText(event.target.value)}
-                />
-              </Field>
-              <Field
-                label="Alérgenos"
-                htmlFor={createAllergensFieldId}
-                hint="Separados por vírgula"
-              >
-                <Input
-                  id={createAllergensFieldId}
-                  value={createAllergensText}
-                  onChange={(event) => setCreateAllergensText(event.target.value)}
-                />
-              </Field>
-              <Switch
-                label="Permite frações"
-                checked={createAllowsFractions}
-                onChange={(event) => setCreateAllowsFractions(event.target.checked)}
-              />
-              {createAllowsFractions ? (
-                <Field label="Máximo de frações" htmlFor={createMaxFractionsFieldId}>
-                  <Input
-                    id={createMaxFractionsFieldId}
-                    type="number"
-                    min={1}
-                    numeric
-                    value={createMaxFractions}
-                    onChange={(event) => setCreateMaxFractions(event.target.value)}
-                  />
-                </Field>
-              ) : null}
-              <Field
-                label="Foto do produto"
-                htmlFor={createImageFieldId}
-                hint={
-                  createImage ? 'Recorte pronto para envio.' : 'PNG, JPEG, WebP ou HEIC — até 10 MB'
-                }
-              >
-                <input
-                  id={createImageFieldId}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/heic,image/heif,.heic,.heif"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) {
-                      setCropTarget('create');
-                      setPendingFile(file);
-                    }
-                    event.target.value = '';
-                  }}
-                />
-              </Field>
-            </div>
-            <div className="catalog-dialog__actions">
-              <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
-                Cancelar
-              </Button>
-              <Button type="button" busy={busy} onClick={() => void createProduct()}>
-                Criar produto
-              </Button>
-            </div>
-          </section>
-        </div>
-      ) : null}
+      <Modal
+        open={creating}
+        onClose={() => setCreating(false)}
+        eyebrow="Novo produto"
+        title="Criar produto"
+        actions={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" busy={busy} onClick={() => void createProduct()}>
+              Criar produto
+            </Button>
+          </>
+        }
+      >
+        <Field label="Nome" htmlFor={createNameFieldId}>
+          <Input
+            id={createNameFieldId}
+            value={createName}
+            onChange={(event) => setCreateName(event.target.value)}
+          />
+        </Field>
+        <Field label="Categoria" htmlFor={createCategoryFieldId}>
+          <Select
+            id={createCategoryFieldId}
+            value={createCategoryId}
+            onChange={(event) => setCreateCategoryId(event.target.value)}
+            options={categoryOptions}
+          />
+        </Field>
+        <Field label="Praça de produção" htmlFor={createStationFieldId}>
+          <Select
+            id={createStationFieldId}
+            value={createStationId}
+            onChange={(event) => setCreateStationId(event.target.value)}
+            options={stationOptions}
+          />
+        </Field>
+        <Field label="Descrição" htmlFor={createDescriptionFieldId}>
+          <Input
+            id={createDescriptionFieldId}
+            value={createDescription}
+            onChange={(event) => setCreateDescription(event.target.value)}
+          />
+        </Field>
+        <Field label="Ingredientes" htmlFor={createIngredientsFieldId}>
+          <Input
+            id={createIngredientsFieldId}
+            value={createIngredientsText}
+            onChange={(event) => setCreateIngredientsText(event.target.value)}
+          />
+        </Field>
+        <Field label="Alérgenos" htmlFor={createAllergensFieldId} hint="Separados por vírgula">
+          <Input
+            id={createAllergensFieldId}
+            value={createAllergensText}
+            onChange={(event) => setCreateAllergensText(event.target.value)}
+          />
+        </Field>
+        <Switch
+          label="Permite frações"
+          checked={createAllowsFractions}
+          onChange={(event) => setCreateAllowsFractions(event.target.checked)}
+        />
+        {createAllowsFractions ? (
+          <Field label="Máximo de frações" htmlFor={createMaxFractionsFieldId}>
+            <Input
+              id={createMaxFractionsFieldId}
+              type="number"
+              min={1}
+              numeric
+              value={createMaxFractions}
+              onChange={(event) => setCreateMaxFractions(event.target.value)}
+            />
+          </Field>
+        ) : null}
+        <Field
+          label="Foto do produto"
+          htmlFor={createImageFieldId}
+          hint={createImage ? 'Recorte pronto para envio.' : 'PNG, JPEG, WebP ou HEIC — até 10 MB'}
+        >
+          <input
+            id={createImageFieldId}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/heic,image/heif,.heic,.heif"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) {
+                setCropTarget('create');
+                setPendingFile(file);
+              }
+              event.target.value = '';
+            }}
+          />
+        </Field>
+      </Modal>
 
       {pendingFile ? (
         <ImageCropDialog

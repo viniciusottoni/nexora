@@ -43,7 +43,7 @@ export const STATION_COLOR_CSS_VAR: Record<StationColorKey, string> = {
 export function stationColorCssValue(color: string | null | undefined): string {
   if (color && color in STATION_COLOR_CSS_VAR)
     return STATION_COLOR_CSS_VAR[color as StationColorKey];
-  return 'var(--color-border)';
+  return 'var(--border-default)';
 }
 
 export class StationsApi {

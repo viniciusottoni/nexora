@@ -50,6 +50,6 @@ public sealed class EdgeCurrentTenantContext : ICurrentTenantContext
         return Guid.TryParse(value, out var guid) ? guid : null;
     }
 
-    private IReadOnlyList<string> ReadListClaim(string type) =>
+    private string[] ReadListClaim(string type) =>
         User?.FindAll(type).Select(c => c.Value).ToArray() ?? Array.Empty<string>();
 }

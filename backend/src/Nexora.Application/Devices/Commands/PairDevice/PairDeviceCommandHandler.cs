@@ -124,28 +124,49 @@ internal sealed class PairDeviceCommandHandler : IRequestHandler<PairDeviceComma
         var deviceSecret = _deviceSecretGenerator.Generate();
         var secretHash = _secretDigester.Digest(deviceSecret);
         var deviceType = DeviceKindMapper.ToDeviceType(request.Kind);
+        var fingerprint = request.Fingerprint.Trim();
 
-        var device = Device.Create(tenantId, storeId, request.Label.Trim(), deviceType, request.Fingerprint.Trim());
-        device.SetSecret(secretHash);
+        var device = await _db.Devices
+            .Include(candidate => candidate.Sessions)
+            .FirstOrDefaultAsync(
+                candidate => candidate.TenantId == tenantId && candidate.Fingerprint == fingerprint,
+                cancellationToken);
+        var isReauthorization = device is not null;
+        var before = device is null ? null : DeviceSnapshot.ToJson(device);
 
-        _db.Devices.Add(device);
+        if (device is null)
+        {
+            device = Device.Create(tenantId, storeId, request.Label.Trim(), deviceType, fingerprint);
+            device.SetSecret(secretHash);
+            _db.Devices.Add(device);
+        }
+        else
+        {
+            device.Reauthorize(storeId, request.Label, deviceType, secretHash);
+            foreach (var session in device.Sessions.Where(session => !session.IsRevoked))
+                session.Revoke();
+        }
+
+        var auditAction = isReauthorization ? "DEVICE_REAUTHORIZED" : "DEVICE_REGISTERED";
+        var eventType = isReauthorization ? "device.reauthorized" : "device.registered";
 
         // O ator do registro é quem gerou o código (pairingCode.CreatedBy), não o dispositivo
         // anônimo que está se pareando — mesma escolha do TS original.
         _db.AuditLogs.Add(AuditLog.Create(
             tenantId: tenantId,
-            action: "DEVICE_REGISTERED",
+            action: auditAction,
             entity: "device",
             occurredAt: now,
             storeId: storeId,
             actorId: pairingCode.CreatedBy,
             deviceId: device.Id,
             entityId: device.Id,
+            before: before,
             after: DeviceSnapshot.ToJson(device)));
 
         _db.DomainEvents.Add(DomainEvent.Create(
             tenantId: tenantId,
-            type: "device.registered",
+            type: eventType,
             aggregateType: "Device",
             aggregateId: device.Id,
             payload: JsonSerializer.Serialize(new
@@ -154,6 +175,7 @@ internal sealed class PairDeviceCommandHandler : IRequestHandler<PairDeviceComma
                 label = device.Label,
                 kind = request.Kind,
                 registeredBy = pairingCode.CreatedBy,
+                reauthorized = isReauthorization,
             }),
             origin: _eventOrigin.Origin,
             occurredAt: now,
@@ -165,8 +187,8 @@ internal sealed class PairDeviceCommandHandler : IRequestHandler<PairDeviceComma
         // mesma transação (ADR-006).
 
         _logger.LogInformation(
-            "Dispositivo pareado. TenantId={TenantId}, StoreId={StoreId}, DeviceId={DeviceId}, Kind={Kind}",
-            tenantId, storeId, device.Id, request.Kind);
+            "Dispositivo pareado. TenantId={TenantId}, StoreId={StoreId}, DeviceId={DeviceId}, Kind={Kind}, Reauthorized={Reauthorized}",
+            tenantId, storeId, device.Id, request.Kind, isReauthorization);
 
         return Result<PairDeviceResponse>.Success(
             new PairDeviceResponse(new PairedDeviceInfo(device.Id, device.Label), deviceSecret));

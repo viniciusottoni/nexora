@@ -131,9 +131,11 @@ public sealed class TableSessionsController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] RequestBillRequest request,
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
+        [FromHeader(Name = "X-Authorization-Token")] string? authorizationToken,
         CancellationToken cancellationToken)
     {
-        var result = await _sender.Send(new RequestBillCommand(id, request.SplitMode, request.People), cancellationToken);
+        var result = await _sender.Send(
+            new RequestBillCommand(id, request.SplitMode, request.People, authorizationToken, request.Reason), cancellationToken);
         if (result.IsSuccess)
         {
             return StatusCode(StatusCodes.Status202Accepted, result.Value);
@@ -213,9 +215,11 @@ public sealed class TableSessionsController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] RegisterPartialPaymentRequest request,
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
+        [FromHeader(Name = "X-Authorization-Token")] string? authorizationToken,
         CancellationToken cancellationToken)
     {
-        var result = await _sender.Send(new RegisterPartialPaymentCommand(id, request.Amount, request.Method), cancellationToken);
+        var result = await _sender.Send(
+            new RegisterPartialPaymentCommand(id, request.Amount, request.Method, authorizationToken, request.Reason), cancellationToken);
         if (result.IsSuccess)
         {
             return StatusCode(StatusCodes.Status201Created, result.Value);

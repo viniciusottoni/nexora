@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
+import { AlertBanner } from '@nexora/ui';
 import type { Branding, UpdateBrandingRequest } from '@nexora/contracts';
-import { BrandingApi, LOGO_CONTENT_TYPE_BY_MIME, sha256Hex, type LogoUploadResult } from './branding-api.js';
+import {
+  BrandingApi,
+  LOGO_CONTENT_TYPE_BY_MIME,
+  sha256Hex,
+  type LogoUploadResult,
+} from './branding-api.js';
 import { BrandingManagementPage } from './branding-management-page.js';
 
 export interface BrandingContainerProps {
@@ -15,10 +21,7 @@ export interface BrandingContainerProps {
  * continuar testável só com props (mesmo padrão de `RoleManagementPage`/`DeviceManagementPage`,
  * que recebem callbacks já prontos em vez de instanciar sua própria Api).
  */
-export function BrandingContainer({
-  api,
-  baseUrl = '',
-}: Readonly<BrandingContainerProps>) {
+export function BrandingContainer({ api, baseUrl = '' }: Readonly<BrandingContainerProps>) {
   const brandingApi = api ?? new BrandingApi(baseUrl);
   const [tenantName, setTenantName] = useState<string>();
   const [branding, setBranding] = useState<Branding>();
@@ -34,7 +37,8 @@ export function BrandingContainer({
         setBranding(response.branding);
       })
       .catch((reason: unknown) => {
-        if (active) setError(reason instanceof Error ? reason.message : 'Não foi possível carregar a marca.');
+        if (active)
+          setError(reason instanceof Error ? reason.message : 'Não foi possível carregar a marca.');
       });
     return () => {
       active = false;
@@ -46,7 +50,10 @@ export function BrandingContainer({
     return result.branding;
   }
 
-  async function uploadLogo(kind: 'LOGO_LIGHT' | 'LOGO_DARK', file: File): Promise<LogoUploadResult> {
+  async function uploadLogo(
+    kind: 'LOGO_LIGHT' | 'LOGO_DARK',
+    file: File,
+  ): Promise<LogoUploadResult> {
     const contentType = LOGO_CONTENT_TYPE_BY_MIME[file.type];
     if (!contentType) {
       throw new Error('Formato de imagem não suportado. Use SVG, PNG, JPEG ou WEBP.');
@@ -59,15 +66,15 @@ export function BrandingContainer({
 
   if (error) {
     return (
-      <p className="branding-error" role="alert">
+      <AlertBanner tone="danger" title="Falha ao carregar a identidade visual">
         {error}
-      </p>
+      </AlertBanner>
     );
   }
 
   if (!branding || !tenantName) {
     return (
-      <p className="branding-loading" role="status">
+      <p className="db-loading" role="status">
         <span className="nx-spinner" aria-hidden="true" />
         Carregando identidade visual…
       </p>

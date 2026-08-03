@@ -28,7 +28,10 @@ export class ConsumptionApi {
   constructor(
     private readonly sessionToken: string,
     private readonly baseUrl = '',
-    private readonly fetcher: typeof fetch = fetch,
+    // (...args: Parameters<typeof fetch>) => globalThis.fetch(...args): ver comentário em packages/ui/src/auth/operational-authenticated-fetch.ts
+    // — `fetch` capturado bruto e chamado depois como `this.fetcher(...)` quebra em navegador real
+    // ("Illegal invocation"), mascarado nos testes por injetarem um duplo.
+    private readonly fetcher: typeof fetch = (...args: Parameters<typeof fetch>) => globalThis.fetch(...args),
   ) {}
 
   /**

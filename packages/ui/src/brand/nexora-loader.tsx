@@ -89,7 +89,7 @@ export interface NexoraSplashProps {
  */
 export function NexoraSplash({
   label = 'Carregando',
-  bounces = 2,
+  bounces = 3,
   onOpened,
   children,
 }: Readonly<NexoraSplashProps>) {

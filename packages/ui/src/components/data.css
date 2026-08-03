@@ -9,10 +9,15 @@
   gap: var(--sp-3);
   min-width: 0;
   box-shadow: var(--shadow-card);
-  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) backwards;
 }
-.db-stat--flat { box-shadow: none; }
-.db-stat--pulse { background: var(--surface-inverse); border-color: transparent; }
+.db-stat--flat {
+  box-shadow: none;
+}
+.db-stat--pulse {
+  background: var(--surface-inverse);
+  border-color: transparent;
+}
 .db-stat__label {
   font: var(--type-overline);
   letter-spacing: var(--ls-caps);
@@ -22,7 +27,9 @@
   align-items: center;
   gap: var(--sp-3);
 }
-.db-stat--pulse .db-stat__label { color: rgba(255, 255, 255, .62); }
+.db-stat--pulse .db-stat__label {
+  color: rgba(255, 255, 255, 0.62);
+}
 .db-stat__value {
   font: var(--type-metric);
   color: var(--text-primary);
@@ -31,11 +38,25 @@
   align-items: baseline;
   gap: var(--sp-3);
 }
-.db-stat--pulse .db-stat__value { color: #fff; }
-.db-stat--lg .db-stat__value { font: var(--type-metric-lg); }
-.db-stat__unit { font: var(--fw-medium) var(--fs-16)/1 var(--font-sans); color: var(--text-muted); }
-.db-stat--pulse .db-stat__unit { color: rgba(255, 255, 255, .6); }
-.db-stat__footer { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
+.db-stat--pulse .db-stat__value {
+  color: #fff;
+}
+.db-stat--lg .db-stat__value {
+  font: var(--type-metric-lg);
+}
+.db-stat__unit {
+  font: var(--fw-medium) var(--fs-16)/1 var(--font-sans);
+  color: var(--text-muted);
+}
+.db-stat--pulse .db-stat__unit {
+  color: rgba(255, 255, 255, 0.6);
+}
+.db-stat__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
 .db-stat__delta {
   display: inline-flex;
   align-items: center;
@@ -45,17 +66,47 @@
   padding: 3px var(--sp-3) 3px var(--sp-2);
   border-radius: var(--radius-pill);
 }
-.db-stat__delta--up { color: var(--nx-success-600); background: var(--nx-success-100); }
-.db-stat__delta--down { color: var(--nx-danger-600); background: var(--nx-danger-100); }
-.db-stat__delta--flat { color: var(--text-muted); background: var(--surface-sunken); }
-.db-stat__comparison { font: var(--type-caption); color: var(--text-muted); }
-.db-stat--pulse .db-stat__comparison { color: rgba(255, 255, 255, .55); }
-.db-stat__target { font: var(--type-caption); color: var(--text-muted); }
+.db-stat__delta--up {
+  color: var(--nx-success-600);
+  background: var(--nx-success-100);
+}
+.db-stat__delta--down {
+  color: var(--nx-danger-600);
+  background: var(--nx-danger-100);
+}
+.db-stat__delta--flat {
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+}
+.db-stat__comparison {
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+.db-stat--pulse .db-stat__comparison {
+  color: rgba(255, 255, 255, 0.55);
+}
+.db-stat__target {
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
 
 /* ProgressMeter — porte fiel de components/data/ProgressMeter.jsx (Design System/) */
-.db-meter { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
-.db-meter__top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-4); }
-.db-meter__label { font: var(--type-label); color: var(--text-secondary); }
+.db-meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+.db-meter__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-4);
+}
+.db-meter__label {
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
 .db-meter__value {
   font: var(--fw-semibold) var(--fs-14)/1 var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -68,19 +119,52 @@
   overflow: hidden;
   position: relative;
 }
-.db-meter--lg .db-meter__track { height: 14px; }
-.db-meter__fill { height: 100%; border-radius: var(--radius-pill); transition: width var(--dur-slow) var(--ease-standard); }
-.db-meter__fill--brand { background: var(--brand-primary); }
-.db-meter__fill--success { background: var(--nx-success-500); }
-.db-meter__fill--warning { background: var(--nx-warning-500); }
-.db-meter__fill--danger { background: var(--nx-danger-500); }
-.db-meter__fill--accent { background: var(--nx-teal-500); }
-.db-meter__mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text-primary); opacity: .55; }
-.db-meter__caption { font: var(--type-caption); color: var(--text-muted); }
+.db-meter--lg .db-meter__track {
+  height: 14px;
+}
+.db-meter__fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width var(--dur-slow) var(--ease-standard);
+}
+.db-meter__fill--brand {
+  background: var(--brand-primary);
+}
+.db-meter__fill--success {
+  background: var(--nx-success-500);
+}
+.db-meter__fill--warning {
+  background: var(--nx-warning-500);
+}
+.db-meter__fill--danger {
+  background: var(--nx-danger-500);
+}
+.db-meter__fill--accent {
+  background: var(--nx-teal-500);
+}
+.db-meter__mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--text-primary);
+  opacity: 0.55;
+}
+.db-meter__caption {
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
 
 /* DataTable — porte fiel de components/data/DataTable.jsx (Design System/) */
-.db-table-wrap { width: 100%; overflow-x: auto; }
-.db-table { width: 100%; border-collapse: collapse; font: var(--type-body); }
+.db-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+.db-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--type-body);
+}
 .db-table th {
   font: var(--type-overline);
   letter-spacing: var(--ls-caps);
@@ -101,12 +185,27 @@
   color: var(--text-primary);
   vertical-align: middle;
 }
-.db-table tbody tr:last-child td { border-bottom: 0; }
-.db-table tbody td { transition: background-color var(--dur-fast) var(--ease-standard); }
-.db-table tbody tr:hover td { background: var(--surface-page); }
-.db-table--clickable tbody tr { cursor: pointer; }
-.db-table__numeric { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.db-table--compact td { height: 32px; font-size: var(--fs-13); }
+.db-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.db-table tbody td {
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+.db-table tbody tr:hover td {
+  background: var(--surface-page);
+}
+.db-table--clickable tbody tr {
+  cursor: pointer;
+}
+.db-table__numeric {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.db-table--compact td {
+  height: 32px;
+  font-size: var(--fs-13);
+}
 .db-table tfoot td {
   height: var(--density-desk-row);
   font-weight: var(--fw-semibold);

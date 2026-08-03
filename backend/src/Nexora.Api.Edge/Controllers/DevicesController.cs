@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Nexora.Api.Edge.Infrastructure;
 using Nexora.Application.Devices.Commands.CreatePairingCode;
+using Nexora.Application.Devices.Commands.DeleteDevice;
 using Nexora.Application.Devices.Commands.PairDevice;
 using Nexora.Application.Devices.Commands.RenameDevice;
 using Nexora.Application.Devices.Commands.RevokeDevice;
@@ -128,6 +129,24 @@ public sealed class DevicesController : ControllerBase
     {
         Activity.Current?.SetTag("device.id", id);
         var result = await _sender.Send(new RevokeDeviceCommand(id), cancellationToken);
+        return result.ToActionResult(HttpContext);
+    }
+
+    /// <summary>
+    /// Exclui (soft delete) um dispositivo já revogado da listagem. Rota <c>POST .../delete</c> em
+    /// vez de <c>HttpDelete</c>: o verbo DELETE deste controller já está ocupado por
+    /// <see cref="Revoke"/> (revogação, não exclusão) — manter <c>DELETE /{id}</c> com o
+    /// comportamento existente evita quebrar o contrato já publicado.
+    /// </summary>
+    [HttpPost("{id:guid}/delete")]
+    [Authorize(Policy = "DeviceManage")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        Activity.Current?.SetTag("device.id", id);
+        var result = await _sender.Send(new DeleteDeviceCommand(id), cancellationToken);
         return result.ToActionResult(HttpContext);
     }
 }

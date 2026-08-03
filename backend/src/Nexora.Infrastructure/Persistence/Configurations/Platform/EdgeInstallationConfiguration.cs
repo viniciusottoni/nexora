@@ -22,6 +22,10 @@ internal sealed class EdgeInstallationConfiguration : IEntityTypeConfiguration<E
         builder.Property(e => e.LastSyncedSeq).HasColumnName("last_synced_seq").HasDefaultValue(0L);
         builder.Property(e => e.ClockOffsetMs).HasColumnName("clock_offset_ms"); // ADR-034
         builder.Property(e => e.Health).HasColumnName("health").HasColumnType("jsonb").HasDefaultValue("{}").IsRequired();
+        // US-034 §6/§7: estado de conectividade edge<->nuvem observado no último heartbeat e desde
+        // quando está offline (null enquanto alcançável/desconhecido) — ver EdgeInstallation.RecordHeartbeat.
+        builder.Property(e => e.Connectivity).HasColumnName("connectivity").HasConversion<int>().HasDefaultValue(SyncConnectivity.Unknown);
+        builder.Property(e => e.OfflineSince).HasColumnName("offline_since").HasColumnType("timestamptz");
         builder.Property(e => e.InstallTokenHash).HasColumnName("install_token_hash");
         builder.Property(e => e.TokenExpiresAt).HasColumnName("token_expires_at").HasColumnType("timestamptz");
         builder.Property(e => e.TokenConsumedAt).HasColumnName("token_consumed_at").HasColumnType("timestamptz");

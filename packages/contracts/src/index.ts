@@ -23,3 +23,4 @@ export * from './catalog-prices.js';
 export * from './catalog-products.js';
 export * from './catalog-stations.js';
 export * from './catalog-variants.js';
+export * from './kds.js';

@@ -3,11 +3,14 @@ using Nexora.Application.Abstractions.Events;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Realtime;
+using Nexora.Application.Abstractions.Security;
+using Nexora.Application.Tables.Support;
 using Nexora.Contracts.Operation;
 using Nexora.Domain.Metrics;
 using Nexora.Domain.Operation;
 using Nexora.Domain.Platform;
 using Nexora.Shared.Errors;
+using Microsoft.EntityFrameworkCore;
 
 namespace Nexora.Application.Tables.Sessions;
 
@@ -20,6 +23,14 @@ namespace Nexora.Application.Tables.Sessions;
 /// cliente) precisam do MESMO comportamento depois de resolver a sessão de formas diferentes (uma
 /// por <c>sessionId</c> direto e autorização de permissão, outra por <c>qrToken</c>+claims do token
 /// anônimo).
+///
+/// US-035 (Bloquear fechamento com item pendente): "pedir a conta" é o ponto de "fechamento" mais
+/// próximo que EXISTE hoje neste código — US-052 (fechamento pleno com pagamento total, E-05/Caixa)
+/// não existe neste repositório ainda. Por decisão explícita de escopo, a checagem BLOCK/WARN/
+/// IGNORE (RN-017) é acoplada aqui: o caixa/garçom (via <c>RequestBillCommand</c>) E o cliente (via
+/// <c>RequestBillByQrCommand</c>) recebem o MESMO tratamento, porque os dois compartilham este
+/// núcleo. O cliente nunca autoriza (não há diálogo de PIN no QR) — <paramref name="authorizationToken"/>
+/// chega sempre nulo por esse caminho, o que é o comportamento correto: bloqueio sem contorno.
 /// </summary>
 internal static class BillRequestCoordinator
 {
@@ -28,10 +39,13 @@ internal static class BillRequestCoordinator
         IEventOriginProvider eventOrigin,
         IAlertsBroadcaster alertsBroadcaster,
         ITableMapBroadcaster tableMapBroadcaster,
+        IAuthorizationTokenValidator authorizationValidator,
         TableSession session,
         DiningTable table,
         string splitMode,
         short? people,
+        string? authorizationToken,
+        string? reason,
         CancellationToken cancellationToken)
     {
         if (session.Status is TableSessionStatus.Paid or TableSessionStatus.Closed)
@@ -46,12 +60,23 @@ internal static class BillRequestCoordinator
         {
             // Cenário análogo a "Chamada repetida" da US-025: a conta já foi solicitada — só
             // atualiza a preferência (ex.: corrigir de 3 para 4 pessoas), sem um segundo alerta ao
-            // caixa (ver docstring de TableSession.UpdateSplitPreference).
+            // caixa (ver docstring de TableSession.UpdateSplitPreference). A checagem de itens
+            // pendentes (US-035) só se aplica à transição OPEN -> BILL_REQUESTED abaixo — uma
+            // re-solicitação idempotente não é uma nova tentativa de fechamento.
             session.UpdateSplitPreference(splitMode, people);
 
             return Result<BillRequestOutcome>.Success(
-                new BillRequestOutcome(TableSessionMapper.Map(session, table), AlreadyRequested: true));
+                new BillRequestOutcome(TableSessionMapper.Map(session, table), AlreadyRequested: true, Array.Empty<BillPendingItemResponse>()));
         }
+
+        var pendingCheck = await PendingItemsClosePolicy.EnforceAsync(
+            db, authorizationValidator, session.TenantId, session.StoreId, session.Id, authorizationToken, reason, now, cancellationToken);
+        if (pendingCheck.IsFailure)
+        {
+            return Result<BillRequestOutcome>.Failure(pendingCheck.Error!, pendingCheck.Code, pendingCheck.Errors);
+        }
+
+        var pendingItemsForWarning = pendingCheck.Value!;
 
         session.RequestBill(splitMode, people);
 
@@ -95,9 +120,9 @@ internal static class BillRequestCoordinator
             session.TenantId, "table.bill_requested", new { tableId = table.Id, label = table.Label }, cancellationToken);
 
         return Result<BillRequestOutcome>.Success(
-            new BillRequestOutcome(TableSessionMapper.Map(session, table), AlreadyRequested: false));
+            new BillRequestOutcome(TableSessionMapper.Map(session, table), AlreadyRequested: false, pendingItemsForWarning));
     }
 }
 
 /// <summary>Resultado de <see cref="BillRequestCoordinator.RequestAsync"/> — mapeado para <c>RequestBillResponse</c> pelo handler.</summary>
-internal sealed record BillRequestOutcome(TableSessionResponse Session, bool AlreadyRequested);
+internal sealed record BillRequestOutcome(TableSessionResponse Session, bool AlreadyRequested, IReadOnlyList<BillPendingItemResponse> PendingItems);

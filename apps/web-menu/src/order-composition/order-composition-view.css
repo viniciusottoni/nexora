@@ -1,0 +1,199 @@
+/* US-030 §10 — carrinho/total sempre visíveis enquanto o cliente monta o pedido pelo celular. */
+
+.order-composition {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  padding-bottom: 6rem;
+}
+
+.order-composition__loading {
+  padding: 2rem;
+  text-align: center;
+}
+
+/* US-034 §10 — aviso de "pedido recebido, sincronizando" na queda de LAN: nunca modal/pop-up, some
+   sozinho. Ancorado no TOPO (não no rodapé) de propósito — o rodapé já tem o carrinho fixo
+   (`.order-composition__cart`) e, na aba "Consumo"/QR, o grupo flutuante "Chamar garçom"
+   (`waiter-call-panel.css`); topo é a única faixa livre em qualquer aba. */
+.order-composition__queued-toast {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  z-index: 25;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--surface-success-subtle, var(--surface-raised));
+  color: var(--text-success, var(--text-primary));
+  font-weight: 600;
+  text-align: center;
+  box-shadow: var(--shadow-raised);
+}
+
+.order-composition__category h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.order-composition__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.order-composition__cart {
+  /* `position: fixed`, não `sticky` — mesmo padrão comprovado de
+     `consumption-view.css#.consumption-view__totals`: um rodapé `sticky` só "cola" quando o
+     conteúdo é mais alto que a viewport; numa tela curta (poucos produtos, sem grupos/frações)
+     ele fica preso no MEIO da página, exatamente na faixa onde o grupo flutuante "Chamar
+     garçom"/"Pedir a conta" (`waiter-call-panel.css`, sempre `fixed` e ancorado à viewport) vive
+     — sobreposição real, reproduzida em `tests/e2e/order-composition.spec.ts`. `fixed` ancora
+     este rodapé à viewport igual ao grupo flutuante, preservando a coexistência já resolvida lá. */
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--surface-card);
+  border-top: 1px solid var(--border-subtle);
+  padding: 1rem;
+  box-shadow: 0 -2px 8px color-mix(in srgb, var(--nx-gray-900) 6%, transparent);
+}
+
+.order-composition__cart h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.order-composition__cart-empty {
+  color: var(--text-muted);
+}
+
+.order-composition__cart-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 30vh;
+  overflow-y: auto;
+}
+
+.order-composition__cart-error {
+  color: var(--nx-danger-600);
+  margin-top: 0.5rem;
+}
+
+.order-composition__cart-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.order-composition__cart-total {
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+
+.order-composition-configure {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  padding-bottom: 6rem;
+}
+
+.order-composition-configure__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.order-composition-configure__header h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.order-composition-configure__qty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.order-composition-configure__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.order-composition-configure__group h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+}
+
+.order-composition-configure__notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-weight: 500;
+}
+
+.order-composition-configure__notes textarea {
+  min-height: 4.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  padding: 0.625rem 0.75rem;
+  font: inherit;
+  resize: vertical;
+}
+
+.order-composition-configure__error {
+  color: var(--nx-danger-600);
+}
+
+.order-composition-configure__footer {
+  /* `position: fixed` — mesmo motivo/mesmo padrão de `.order-composition__cart` acima. */
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: var(--surface-card);
+  border-top: 1px solid var(--border-subtle);
+  padding: 1rem;
+  box-shadow: 0 -2px 8px color-mix(in srgb, var(--nx-gray-900) 6%, transparent);
+}
+
+.order-composition-confirmed {
+  max-width: 24rem;
+  margin: 2rem auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.menu-eyebrow {
+  color: var(--brand-primary);
+  font: 700 0.7rem/1 var(--brand-font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.order-composition-confirmed__code {
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin: 0.5rem 0;
+}
+
+.order-composition-confirmed__total {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}

@@ -1,5 +1,17 @@
 import { useEffect, useId, useState } from 'react';
-import { Badge, Button, Card, DataTable, Field, Input, Select, Switch } from '@nexora/ui';
+import {
+  AlertBanner,
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  Field,
+  Input,
+  Modal,
+  Select,
+  Switch,
+} from '@nexora/ui';
 import type { CreateStationRequest, StationDto, UpdateStationRequest } from '@nexora/contracts';
 import { STATION_COLOR_OPTIONS, stationColorCssValue } from './stations-api.js';
 import './stations.css';
@@ -143,268 +155,278 @@ export function StationManagementPage({
   }
 
   return (
-    <main className="stations-shell" aria-labelledby="stations-title">
-      <header className="stations-header">
-        <div>
-          <p className="stations-eyebrow">COZINHA</p>
-          <h1 id="stations-title">Praças de produção</h1>
-          <p className="stations-lead">
+    <main className="db-page nx-anim-in" aria-labelledby="stations-title">
+      <header className="db-page__header">
+        <div className="db-page__heading">
+          <p className="db-page__eyebrow">Cozinha</p>
+          <h1 className="db-page__title" id="stations-title">
+            Praças de produção
+          </h1>
+          <p className="db-page__lead">
             Organize forno, montagem, bebidas e demais praças da cozinha. A praça marcada como
             gargalo determina o ritmo real da produção.
           </p>
         </div>
-        <Button type="button" onClick={() => setCreating(true)}>
-          Nova praça
-        </Button>
+        <div className="db-page__actions">
+          <Button type="button" onClick={() => setCreating(true)}>
+            Nova praça
+          </Button>
+        </div>
       </header>
 
       {notice ? (
-        <p className="stations-notice" role="status">
+        <AlertBanner tone="success" title="Praças atualizadas">
           {notice}
-        </p>
+        </AlertBanner>
       ) : null}
-      {error ? (
-        <p className="stations-error" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <AlertBanner tone="danger">{error}</AlertBanner> : null}
 
-      <div className="stations-workbench">
-        <Card padding="none" className="stations-table-card">
-          <DataTable
-            rowKey="id"
-            rows={stations}
-            onRowClick={(row) => setSelectedId(row.id)}
-            columns={[
-              {
-                key: 'color',
-                header: '',
-                width: '2.5rem',
-                render: (row) => (
-                  <span
-                    className="station-swatch"
-                    style={{ background: stationColorCssValue(row.color) }}
-                    aria-hidden="true"
-                  />
-                ),
-              },
-              { key: 'code', header: 'Código', render: (row) => <code>{row.code}</code> },
-              { key: 'name', header: 'Nome' },
-              {
-                key: 'capacitySlots',
-                header: 'Capacidade',
-                align: 'right',
-                render: (row) => (row.capacitySlots ? `${row.capacitySlots} slots` : '—'),
-              },
-              {
-                key: 'isBottleneck',
-                header: 'Gargalo',
-                render: (row) => (row.isBottleneck ? <Badge tone="warning">Gargalo</Badge> : null),
-              },
-              {
-                key: 'linkedProductCount',
-                header: 'Produtos',
-                align: 'right',
-                render: (row) => row.linkedProductCount,
-              },
-            ]}
-          />
+      {stations.length === 0 ? (
+        <Card padding="none">
+          <EmptyState icon="soup_kitchen" title="Nenhuma praça cadastrada">
+            Forno, montagem e bar são praças — é por elas que o KDS separa a fila. Comece em "Nova
+            praça", acima.
+          </EmptyState>
         </Card>
-
-        {selected ? (
+      ) : (
+        <div className="db-workbench db-workbench--rail">
           <Card
-            className="station-editor"
-            title={selected.name}
-            subtitle={`Código ${selected.code}`}
+            padding="none"
+            title="Praças cadastradas"
+            subtitle="Clique em uma linha para editar. A ordem define a posição no KDS."
           >
-            <Field label="Nome da praça" htmlFor={editNameFieldId}>
-              <Input
-                id={editNameFieldId}
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </Field>
-
-            <Field label="Cor de identificação" htmlFor={editColorFieldId}>
-              <Select
-                id={editColorFieldId}
-                value={color}
-                onChange={(event) => setColor(event.target.value)}
-                options={STATION_COLOR_OPTIONS.map((option) => ({
-                  value: option.value,
-                  label: option.label,
-                }))}
-              />
-            </Field>
-
-            <div className="station-editor__row">
-              <Field
-                label="Capacidade (slots)"
-                htmlFor={editCapacityFieldId}
-                hint="Posições simultâneas do recurso — em branco significa sem limite"
-              >
-                <Input
-                  id={editCapacityFieldId}
-                  type="number"
-                  min={1}
-                  numeric
-                  value={capacitySlots}
-                  onChange={(event) => setCapacitySlots(event.target.value)}
-                />
-              </Field>
-              <Field label="Posição no KDS" htmlFor={editPositionFieldId}>
-                <Input
-                  id={editPositionFieldId}
-                  type="number"
-                  min={0}
-                  numeric
-                  value={position}
-                  onChange={(event) => setPosition(event.target.value)}
-                />
-              </Field>
-            </div>
-
-            <Switch
-              label="Marcar como gargalo"
-              aria-label="Marcar como gargalo"
-              description="O gargalo é, por definição, um só — marcar esta praça desmarca a atual."
-              checked={isBottleneck}
-              onChange={(event) => setIsBottleneck(event.target.checked)}
+            <DataTable
+              rowKey="id"
+              rows={stations}
+              onRowClick={(row) => setSelectedId(row.id)}
+              columns={[
+                {
+                  key: 'color',
+                  header: '',
+                  width: '2.5rem',
+                  render: (row) => (
+                    <span
+                      className="db-swatch"
+                      style={{ background: stationColorCssValue(row.color) }}
+                      aria-hidden="true"
+                    />
+                  ),
+                },
+                {
+                  key: 'code',
+                  header: 'Código',
+                  render: (row) => <span className="db-code">{row.code}</span>,
+                },
+                { key: 'name', header: 'Nome' },
+                {
+                  key: 'capacitySlots',
+                  header: 'Capacidade',
+                  align: 'right',
+                  render: (row) => (row.capacitySlots ? `${row.capacitySlots} slots` : '—'),
+                },
+                {
+                  key: 'isBottleneck',
+                  header: 'Gargalo',
+                  render: (row) =>
+                    row.isBottleneck ? <Badge tone="warning">Gargalo</Badge> : null,
+                },
+                {
+                  key: 'linkedProductCount',
+                  header: 'Produtos',
+                  align: 'right',
+                  render: (row) => row.linkedProductCount,
+                },
+              ]}
             />
-            {isBottleneck && currentBottleneck && currentBottleneck.id !== selected.id ? (
-              <p className="station-bottleneck-warning">
-                {currentBottleneck.name} deixará de ser o gargalo.
-              </p>
-            ) : null}
-
-            <div className="station-editor__footer">
-              {selected.linkedProductCount > 0 ? (
-                <span className="station-linked-warning">
-                  {selected.linkedProductCount} produto(s) vinculado(s) — reatribua antes de
-                  excluir.
-                </span>
-              ) : confirmingDeleteId === selected.id ? (
-                <span className="station-delete-confirm">
-                  Excluir esta praça?
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setConfirmingDeleteId(undefined)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="danger"
-                    size="sm"
-                    busy={busy}
-                    onClick={() => void confirmDelete(selected.id)}
-                  >
-                    Confirmar exclusão
-                  </Button>
-                </span>
-              ) : (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setConfirmingDeleteId(selected.id)}
-                >
-                  Excluir praça
-                </Button>
-              )}
-              <Button type="button" busy={busy} onClick={() => void save()}>
-                Salvar praça
-              </Button>
-            </div>
           </Card>
-        ) : (
-          <Card className="station-editor station-editor--empty">Nenhuma praça cadastrada.</Card>
-        )}
-      </div>
 
-      {creating ? (
-        <div className="stations-dialog-backdrop">
-          <section
-            className="stations-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-station-title"
-          >
-            <p className="stations-eyebrow">NOVA PRAÇA</p>
-            <h2 id="create-station-title">Criar praça</h2>
-            <div className="stations-dialog__fields">
-              <Field label="Nome" htmlFor={createNameFieldId}>
+          {selected ? (
+            <Card
+              className="db-form-card"
+              title={selected.name}
+              subtitle={`Código ${selected.code}`}
+            >
+              <Field label="Nome da praça" htmlFor={editNameFieldId}>
                 <Input
-                  id={createNameFieldId}
-                  value={createName}
-                  onChange={(event) => setCreateName(event.target.value)}
+                  id={editNameFieldId}
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
                 />
               </Field>
-              <Field
-                label="Código"
-                htmlFor={createCodeFieldId}
-                hint="Letras maiúsculas, números e sublinhado"
-              >
-                <Input
-                  id={createCodeFieldId}
-                  value={createCode}
-                  onChange={(event) => setCreateCode(event.target.value.toUpperCase())}
-                />
-              </Field>
-              <Field label="Cor de identificação" htmlFor={createColorFieldId}>
+
+              <Field label="Cor de identificação" htmlFor={editColorFieldId}>
                 <Select
-                  id={createColorFieldId}
-                  value={createColor}
-                  onChange={(event) => setCreateColor(event.target.value)}
+                  id={editColorFieldId}
+                  value={color}
+                  onChange={(event) => setColor(event.target.value)}
                   options={STATION_COLOR_OPTIONS.map((option) => ({
                     value: option.value,
                     label: option.label,
                   }))}
                 />
               </Field>
-              <div className="station-editor__row">
-                <Field label="Capacidade (slots)" htmlFor={createCapacityFieldId}>
+
+              <div className="db-form-row">
+                <Field
+                  label="Capacidade (slots)"
+                  htmlFor={editCapacityFieldId}
+                  hint="Posições simultâneas do recurso — em branco significa sem limite"
+                >
                   <Input
-                    id={createCapacityFieldId}
+                    id={editCapacityFieldId}
                     type="number"
                     min={1}
                     numeric
-                    value={createCapacity}
-                    onChange={(event) => setCreateCapacity(event.target.value)}
+                    value={capacitySlots}
+                    onChange={(event) => setCapacitySlots(event.target.value)}
                   />
                 </Field>
-                <Field label="Posição no KDS" htmlFor={createPositionFieldId}>
+                <Field label="Posição no KDS" htmlFor={editPositionFieldId}>
                   <Input
-                    id={createPositionFieldId}
+                    id={editPositionFieldId}
                     type="number"
                     min={0}
                     numeric
-                    value={createPosition}
-                    onChange={(event) => setCreatePosition(event.target.value)}
+                    value={position}
+                    onChange={(event) => setPosition(event.target.value)}
                   />
                 </Field>
               </div>
+
               <Switch
                 label="Marcar como gargalo"
-                aria-label="Marcar nova praça como gargalo"
-                description="Só uma praça pode ser o gargalo por vez."
-                checked={createBottleneck}
-                onChange={(event) => setCreateBottleneck(event.target.checked)}
+                aria-label="Marcar como gargalo"
+                description="O gargalo é, por definição, um só — marcar esta praça desmarca a atual."
+                checked={isBottleneck}
+                onChange={(event) => setIsBottleneck(event.target.checked)}
               />
-            </div>
-            <div className="stations-dialog__actions">
-              <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
-                Cancelar
-              </Button>
-              <Button type="button" busy={busy} onClick={() => void createStation()}>
-                Criar praça
-              </Button>
-            </div>
-          </section>
+              {isBottleneck && currentBottleneck && currentBottleneck.id !== selected.id ? (
+                <p className="db-hint db-hint--warning">
+                  {currentBottleneck.name} deixará de ser o gargalo.
+                </p>
+              ) : null}
+
+              <div className="db-editor__footer">
+                {selected.linkedProductCount > 0 ? (
+                  <span className="db-hint db-hint--warning">
+                    {selected.linkedProductCount} produto(s) vinculado(s) — reatribua antes de
+                    excluir.
+                  </span>
+                ) : confirmingDeleteId === selected.id ? (
+                  <span className="station-delete-confirm">
+                    Excluir esta praça?
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setConfirmingDeleteId(undefined)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      size="sm"
+                      busy={busy}
+                      onClick={() => void confirmDelete(selected.id)}
+                    >
+                      Confirmar exclusão
+                    </Button>
+                  </span>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setConfirmingDeleteId(selected.id)}
+                  >
+                    Excluir praça
+                  </Button>
+                )}
+                <Button type="button" busy={busy} onClick={() => void save()}>
+                  Salvar praça
+                </Button>
+              </div>
+            </Card>
+          ) : null}
         </div>
-      ) : null}
+      )}
+
+      <Modal
+        open={creating}
+        onClose={() => setCreating(false)}
+        eyebrow="Nova praça"
+        title="Criar praça"
+        actions={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" busy={busy} onClick={() => void createStation()}>
+              Criar praça
+            </Button>
+          </>
+        }
+      >
+        <Field label="Nome" htmlFor={createNameFieldId}>
+          <Input
+            id={createNameFieldId}
+            value={createName}
+            onChange={(event) => setCreateName(event.target.value)}
+          />
+        </Field>
+        <Field
+          label="Código"
+          htmlFor={createCodeFieldId}
+          hint="Letras maiúsculas, números e sublinhado"
+        >
+          <Input
+            id={createCodeFieldId}
+            value={createCode}
+            onChange={(event) => setCreateCode(event.target.value.toUpperCase())}
+          />
+        </Field>
+        <Field label="Cor de identificação" htmlFor={createColorFieldId}>
+          <Select
+            id={createColorFieldId}
+            value={createColor}
+            onChange={(event) => setCreateColor(event.target.value)}
+            options={STATION_COLOR_OPTIONS.map((option) => ({
+              value: option.value,
+              label: option.label,
+            }))}
+          />
+        </Field>
+        <div className="db-form-row">
+          <Field label="Capacidade (slots)" htmlFor={createCapacityFieldId}>
+            <Input
+              id={createCapacityFieldId}
+              type="number"
+              min={1}
+              numeric
+              value={createCapacity}
+              onChange={(event) => setCreateCapacity(event.target.value)}
+            />
+          </Field>
+          <Field label="Posição no KDS" htmlFor={createPositionFieldId}>
+            <Input
+              id={createPositionFieldId}
+              type="number"
+              min={0}
+              numeric
+              value={createPosition}
+              onChange={(event) => setCreatePosition(event.target.value)}
+            />
+          </Field>
+        </div>
+        <Switch
+          label="Marcar como gargalo"
+          aria-label="Marcar nova praça como gargalo"
+          description="Só uma praça pode ser o gargalo por vez."
+          checked={createBottleneck}
+          onChange={(event) => setCreateBottleneck(event.target.checked)}
+        />
+      </Modal>
     </main>
   );
 }

@@ -16,6 +16,7 @@ using Nexora.Domain.Catalog;
 using Nexora.Domain.Operation;
 using Nexora.Domain.Platform;
 using Nexora.Infrastructure.Devices;
+using Nexora.Infrastructure.Persistence;
 using Nexora.IntegrationTests.Fakes;
 using Nexora.IntegrationTests.Fixtures;
 using Nexora.Shared.Errors;
@@ -394,6 +395,16 @@ public sealed class BillSplitIntegrationTests
         services.AddSingleton<IAlertsBroadcaster>(new RecordingAlertsBroadcaster());
         services.AddSingleton<ITableMapBroadcaster>(new RecordingTableMapBroadcaster());
         services.AddSingleton<IOrderConsumptionBroadcaster>(new RecordingOrderConsumptionBroadcaster());
+        // US-031: AddOrderItemCommand/AdvanceOrderItemStatusCommand também dependem de IStationBroadcaster.
+        services.AddSingleton<IStationBroadcaster>(new RecordingStationBroadcaster());
+        // US-035: RegisterPartialPaymentCommand agora depende de IAuthorizationTokenValidator (checagem
+        // de item pendente, ADR-023) — nenhum teste desta suíte cai no modo BLOCK, então um duplo que
+        // sempre nega basta (ver docstring de StubAuthorizationTokenValidator).
+        services.AddSingleton<IAuthorizationTokenValidator>(new StubAuthorizationTokenValidator());
+        if (db is AppDbContext appDbContext)
+        {
+            services.AddSingleton<IOrderShortCodeAllocator>(new OrderShortCodeAllocator(appDbContext));
+        }
 
         services.AddMediatR(cfg =>
         {

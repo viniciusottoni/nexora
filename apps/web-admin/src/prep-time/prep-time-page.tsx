@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { Badge, Button, Card, Field, Input, Select } from '@nexora/ui';
+import { AlertBanner, Badge, Button, Card, EmptyState, Field, Input, Select } from '@nexora/ui';
 import type { PrepTimeAnalysisResponse, StationDto } from '@nexora/contracts';
 import { stationColorCssValue } from '../stations/stations-api.js';
 import './prep-time.css';
@@ -30,6 +30,9 @@ export interface PrepTimePageProps {
   readonly onUpdatePrepTime: (variantId: string, input: UpdatePrepTimeInput) => Promise<void>;
   readonly onReassignStation: (productId: string, stationId: string | null) => Promise<void>;
   readonly onLoadAnalysis: (variantId: string) => Promise<PrepTimeAnalysisResponse>;
+  /** Falha de carregamento: entra como alerta dentro da página, não no lugar dela. */
+  readonly loadError?: string | undefined;
+  readonly loading?: boolean | undefined;
 }
 
 const NO_STATION = '__none__';
@@ -40,22 +43,41 @@ export function PrepTimePage({
   onUpdatePrepTime,
   onReassignStation,
   onLoadAnalysis,
+  loadError,
+  loading = false,
 }: Readonly<PrepTimePageProps>) {
   return (
-    <main className="prep-time-shell" aria-labelledby="prep-time-title">
-      <header className="prep-time-header">
-        <div>
-          <p className="prep-time-eyebrow">CARDÁPIO · TEMPO E PRAÇA</p>
-          <h1 id="prep-time-title">Tempo de preparo e praça por produto</h1>
-          <p className="prep-time-lead">
+    <main className="db-page nx-anim-in" aria-labelledby="prep-time-title">
+      <header className="db-page__header">
+        <div className="db-page__heading">
+          <p className="db-page__eyebrow">Cardápio · tempo e praça</p>
+          <h1 className="db-page__title" id="prep-time-title">
+            Tempo de preparo e praça por produto
+          </h1>
+          <p className="db-page__lead">
             Defina quanto tempo cada variação leva e em qual praça é feita. O prazo dinâmico e o
             roteamento da fila do KDS usam essa informação.
           </p>
         </div>
       </header>
 
-      {variants.length === 0 ? (
-        <Card className="prep-time-empty">Nenhuma variação cadastrada.</Card>
+      {loadError ? (
+        <AlertBanner tone="danger" title="Falha ao carregar tempos de preparo">
+          {loadError}
+        </AlertBanner>
+      ) : null}
+
+      {loading ? (
+        <p className="db-loading" role="status">
+          <span className="nx-spinner" aria-hidden="true" />
+          Carregando variações…
+        </p>
+      ) : variants.length === 0 ? (
+        <Card padding="none">
+          <EmptyState icon="schedule" title="Nenhuma variação cadastrada">
+            Cadastre produtos e variações no cardápio para definir tempo de preparo e praça.
+          </EmptyState>
+        </Card>
       ) : (
         <ul className="prep-time-list nx-stagger" aria-label="Variações de produto">
           {variants.map((row) => (
@@ -178,28 +200,27 @@ function PrepTimeRow({
 
   return (
     <li className="prep-time-row">
-      <Card className="prep-time-card">
-        <div className="prep-time-card__heading">
-          <div>
-            <strong>{row.productName}</strong>
-            <span className="prep-time-variant-name">{row.variantName}</span>
-          </div>
-          {currentStation ? (
+      <Card
+        className="prep-time-card"
+        title={row.productName}
+        subtitle={row.variantName}
+        actions={
+          currentStation ? (
             <span className="prep-time-station-tag">
               <span
-                className="prep-time-station-tag__swatch"
+                className="db-swatch"
                 style={{ background: stationColorCssValue(currentStation.color) }}
                 aria-hidden="true"
               />
               {currentStation.name}
             </span>
           ) : (
-            <Badge tone="neutral" square>
+            <Badge tone="neutral" size="sm">
               Sem praça
             </Badge>
-          )}
-        </div>
-
+          )
+        }
+      >
         <div className="prep-time-card__fields">
           <Field label="Preparo (min)" htmlFor={prepFieldId}>
             <Input
@@ -254,7 +275,7 @@ function PrepTimeRow({
           </Field>
         </div>
 
-        <div className="prep-time-card__footer">
+        <div className="db-editor__footer">
           <Button
             type="button"
             variant="ghost"
@@ -268,11 +289,7 @@ function PrepTimeRow({
           </Button>
         </div>
 
-        {error ? (
-          <p className="prep-time-error" role="alert">
-            {error}
-          </p>
-        ) : null}
+        {error ? <AlertBanner tone="danger">{error}</AlertBanner> : null}
 
         {analysis ? <PrepTimeAnalysisPanel analysis={analysis} /> : null}
       </Card>
@@ -307,11 +324,11 @@ function PrepTimeAnalysisPanel({ analysis }: Readonly<{ analysis: PrepTimeAnalys
         </strong>
       </div>
       {analysis.suggestion !== null ? (
-        <p className="prep-time-analysis__suggestion">
+        <p className="db-hint db-hint--warning">
           Divergência relevante — considere ajustar para {analysis.suggestion} min.
         </p>
       ) : analysis.note ? (
-        <p className="prep-time-analysis__note">{analysis.note}</p>
+        <p className="db-hint">{analysis.note}</p>
       ) : null}
     </div>
   );

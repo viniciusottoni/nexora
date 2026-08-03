@@ -3,6 +3,7 @@ using Nexora.Application.Abstractions.Events;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Realtime;
+using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Orders.Support;
 using Nexora.Contracts.Operation;
 using Nexora.Domain.Catalog;
@@ -28,12 +29,15 @@ internal sealed class RepeatOrderItemCommandHandler : IRequestHandler<RepeatOrde
     private readonly IApplicationDbContext _db;
     private readonly IEventOriginProvider _eventOrigin;
     private readonly IOrderConsumptionBroadcaster _broadcaster;
+    private readonly ICurrentTenantContext _tenantContext;
 
-    public RepeatOrderItemCommandHandler(IApplicationDbContext db, IEventOriginProvider eventOrigin, IOrderConsumptionBroadcaster broadcaster)
+    public RepeatOrderItemCommandHandler(
+        IApplicationDbContext db, IEventOriginProvider eventOrigin, IOrderConsumptionBroadcaster broadcaster, ICurrentTenantContext tenantContext)
     {
         _db = db;
         _eventOrigin = eventOrigin;
         _broadcaster = broadcaster;
+        _tenantContext = tenantContext;
     }
 
     public async Task<Result<RepeatOrderItemResponse>> Handle(RepeatOrderItemCommand request, CancellationToken cancellationToken)
@@ -75,7 +79,7 @@ internal sealed class RepeatOrderItemCommandHandler : IRequestHandler<RepeatOrde
                 ApiErrorCodes.ProductUnavailable);
         }
 
-        var currentPrice = await ResolveCurrentPriceAsync(original.VariantId, order.TenantId, cancellationToken);
+        var currentPrice = await OrderItemPriceResolver.ResolveAsync(_db, original.VariantId, order.TenantId, order.Channel, cancellationToken);
         if (currentPrice is null)
         {
             return Result<RepeatOrderItemResponse>.Failure("Este item não tem preço vigente cadastrado.", ApiErrorCodes.OrderItemVariantPriceNotFound);
@@ -89,7 +93,8 @@ internal sealed class RepeatOrderItemCommandHandler : IRequestHandler<RepeatOrde
             original.Quantity,
             stationId: original.StationId,
             notes: OrderItemCloner.CopyNotes(original),
-            repeatedFromItemId: original.Id);
+            repeatedFromItemId: original.Id,
+            deviceId: _tenantContext.DeviceId);
 
         foreach (var selection in OrderItemCloner.CopyModifiers(original))
         {
@@ -113,7 +118,7 @@ internal sealed class RepeatOrderItemCommandHandler : IRequestHandler<RepeatOrde
                 return Result<RepeatOrderItemResponse>.Failure("Uma das frações do item original não existe mais.", ApiErrorCodes.VariantNotFound);
             }
 
-            var fractionPrice = await ResolveCurrentPriceAsync(fractionVariant.Id, order.TenantId, cancellationToken);
+            var fractionPrice = await OrderItemPriceResolver.ResolveAsync(_db, fractionVariant.Id, order.TenantId, order.Channel, cancellationToken);
             if (fractionPrice is null)
             {
                 return Result<RepeatOrderItemResponse>.Failure("Uma das frações do item original não tem preço vigente.", ApiErrorCodes.OrderItemVariantPriceNotFound);
@@ -162,15 +167,5 @@ internal sealed class RepeatOrderItemCommandHandler : IRequestHandler<RepeatOrde
         }
 
         return Result<RepeatOrderItemResponse>.Success(new RepeatOrderItemResponse(OrderItemMapper.Map(repeated, productName)));
-    }
-
-    private async Task<decimal?> ResolveCurrentPriceAsync(Guid variantId, Guid tenantId, CancellationToken cancellationToken)
-    {
-        var price = await _db.Prices
-            .Where(p => p.VariantId == variantId && p.TenantId == tenantId && p.Channel == Channel.DineIn && p.ValidTo == null)
-            .OrderByDescending(p => p.ValidFrom)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return price?.Amount;
     }
 }

@@ -101,13 +101,19 @@ public sealed class Order
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
-    public void Place()
+    /// <param name="occurredAt">
+    /// US-030/ADR-034 — horário real da confirmação (T0), já corrigido pelo desvio de relógio do
+    /// dispositivo quando aplicável (ver <see cref="Nexora.Application.Orders.Support.ClockSkewPolicy"/>).
+    /// Nulo usa o relógio do servidor no momento da chamada — mesma convenção de
+    /// <see cref="OrderItem.Fire"/>/<see cref="TableSession.Create"/>.
+    /// </param>
+    public void Place(DateTimeOffset? occurredAt = null)
     {
         if (Status is not OrderStatus.Draft)
             throw new DomainException("Só é possível confirmar um pedido em rascunho.");
 
         Status = OrderStatus.Placed;
-        PlacedAt = DateTimeOffset.UtcNow;
+        PlacedAt = occurredAt ?? DateTimeOffset.UtcNow;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 

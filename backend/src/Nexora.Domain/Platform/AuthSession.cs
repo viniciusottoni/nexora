@@ -20,13 +20,22 @@ public sealed class AuthSession
     public AppUser User { get; private set; } = null!;
     public Device? Device { get; private set; }
 
-    public static AuthSession Create(Guid tenantId, Guid userId, Guid? deviceId, string? refreshHash, DateTimeOffset expiresAt)
+    public static AuthSession Create(
+        Guid tenantId,
+        Guid userId,
+        Guid? deviceId,
+        string? refreshHash,
+        DateTimeOffset expiresAt,
+        Guid? id = null)
     {
+        if (id == Guid.Empty)
+            throw new DomainException("O identificador da sessão é inválido.");
+
         var now = DateTimeOffset.UtcNow;
 
         return new AuthSession
         {
-            Id = IdGenerator.NewId(),
+            Id = id ?? IdGenerator.NewId(),
             TenantId = tenantId,
             UserId = userId,
             DeviceId = deviceId,

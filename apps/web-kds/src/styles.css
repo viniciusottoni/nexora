@@ -3,8 +3,8 @@
 }
 body {
   margin: 0;
-  background: var(--brand-primary, var(--color-primary));
-  color: var(--brand-on-primary, var(--color-on-primary));
+  background: var(--surface-page);
+  color: var(--text-primary);
 }
 .kds-shell {
   min-height: 100vh;
@@ -123,8 +123,9 @@ body {
   place-content: center;
   padding: 2rem;
   text-align: center;
-  background: var(--brand-primary);
-  color: var(--brand-on-primary);
+  background: var(--surface-page);
+  color: var(--text-primary);
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 .kds-device-missing h1 {
   font: 700 2.5rem/1 var(--font-display);

@@ -5,6 +5,11 @@
 
 $ErrorActionPreference = 'Stop'
 
+function Test-PortListening {
+  param([int]$Port)
+  return [bool](Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
+}
+
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $repoRoot
 
@@ -27,28 +32,41 @@ Write-Host "==> Criando massa de usuários de teste (Cloud + Edge)..." -Foregrou
 dotnet run --project backend/src/Nexora.DevSeeder -- --connection $connCloud --mode cloud
 dotnet run --project backend/src/Nexora.DevSeeder -- --connection $connEdge --mode edge
 
-Write-Host "==> Subindo Nexora.Api.Edge em http://localhost:5000 ..." -ForegroundColor Cyan
-Start-Process powershell -ArgumentList @(
-  '-NoExit', '-Command',
-  "Set-Location '$repoRoot'; `$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS='http://localhost:5000'; dotnet run --project backend/src/Nexora.Api.Edge"
-)
+if (Test-PortListening -Port 5000) {
+  Write-Host "==> Nexora.Api.Edge já está rodando em http://localhost:5000, pulando." -ForegroundColor Yellow
+} else {
+  Write-Host "==> Subindo Nexora.Api.Edge em http://localhost:5000 ..." -ForegroundColor Cyan
+  Start-Process powershell -ArgumentList @(
+    '-NoExit', '-Command',
+    "Set-Location '$repoRoot'; `$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS='http://localhost:5000'; dotnet run --project backend/src/Nexora.Api.Edge"
+  )
+}
 
-Write-Host "==> Subindo Nexora.Api.Cloud em http://localhost:5100 ..." -ForegroundColor Cyan
-Start-Process powershell -ArgumentList @(
-  '-NoExit', '-Command',
-  "Set-Location '$repoRoot'; `$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS='http://localhost:5100'; dotnet run --project backend/src/Nexora.Api.Cloud"
-)
+if (Test-PortListening -Port 5100) {
+  Write-Host "==> Nexora.Api.Cloud já está rodando em http://localhost:5100, pulando." -ForegroundColor Yellow
+} else {
+  Write-Host "==> Subindo Nexora.Api.Cloud em http://localhost:5100 ..." -ForegroundColor Cyan
+  Start-Process powershell -ArgumentList @(
+    '-NoExit', '-Command',
+    "Set-Location '$repoRoot'; `$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS='http://localhost:5100'; dotnet run --project backend/src/Nexora.Api.Cloud"
+  )
+}
 
 if (-not (Test-Path (Join-Path $repoRoot 'node_modules'))) {
   Write-Host "==> node_modules ausente, rodando pnpm install..." -ForegroundColor Cyan
   pnpm install
 }
 
-Write-Host "==> Subindo os 5 apps do frontend (pnpm dev / turbo --parallel)..." -ForegroundColor Cyan
-Start-Process powershell -ArgumentList @(
-  '-NoExit', '-Command',
-  "Set-Location '$repoRoot'; pnpm dev"
-)
+$frontendPorts = 5173, 5174, 5175, 5176, 5177
+if (($frontendPorts | Where-Object { Test-PortListening -Port $_ }).Count -eq $frontendPorts.Count) {
+  Write-Host "==> Os 5 apps do frontend já estão rodando (portas 5173-5177), pulando." -ForegroundColor Yellow
+} else {
+  Write-Host "==> Subindo os 5 apps do frontend (pnpm dev / turbo --parallel)..." -ForegroundColor Cyan
+  Start-Process powershell -ArgumentList @(
+    '-NoExit', '-Command',
+    "Set-Location '$repoRoot'; pnpm dev"
+  )
+}
 
 Write-Host ''
 Write-Host 'Ambiente completo no ar (cada serviço em sua própria janela):' -ForegroundColor Green

@@ -154,7 +154,8 @@ internal sealed class LoginWithPasswordCommandHandler
             user.Id,
             deviceId: null,
             refreshHash: _secretDigester.Digest(refreshToken),
-            expiresAt: now.AddSeconds(AuthTokenTtlSeconds.Refresh)));
+            expiresAt: now.AddSeconds(AuthTokenTtlSeconds.Refresh),
+            id: sessionId));
 
         user.RecordSuccessfulLogin();
 

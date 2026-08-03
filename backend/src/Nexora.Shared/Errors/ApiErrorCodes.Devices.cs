@@ -41,4 +41,7 @@ public static partial class ApiErrorCodes
 
     /// <summary>Loja não resolvida no contexto da requisição (porta de requireStore em device-registry.ts).</summary>
     public const string DeviceStoreContextMissing = "DEVICE_STORE_CONTEXT_MISSING";
+
+    /// <summary>Exclusão recusada: o dispositivo ainda está ativo — precisa ser revogado antes de sair da listagem.</summary>
+    public const string DeviceMustBeRevokedBeforeDelete = "DEVICE_MUST_BE_REVOKED_BEFORE_DELETE";
 }

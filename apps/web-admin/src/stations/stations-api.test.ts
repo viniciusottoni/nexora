@@ -51,8 +51,8 @@ describe('StationsApi', () => {
 
   it('resolve token semântico e usa fallback seguro', () => {
     expect(stationColorCssValue('red')).toBe('var(--nx-danger-500)');
-    expect(stationColorCssValue('#fff')).toBe('var(--color-border)');
-    expect(stationColorCssValue(null)).toBe('var(--color-border)');
+    expect(stationColorCssValue('#fff')).toBe('var(--border-default)');
+    expect(stationColorCssValue(null)).toBe('var(--border-default)');
   });
 
   it('propaga detalhe de erro e usa mensagem segura quando corpo não é JSON', async () => {

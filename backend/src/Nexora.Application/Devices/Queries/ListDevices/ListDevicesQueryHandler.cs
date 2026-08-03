@@ -37,7 +37,7 @@ internal sealed class ListDevicesQueryHandler : IRequestHandler<ListDevicesQuery
 
         var devices = await _db.Devices
             .AsNoTracking()
-            .Where(d => d.TenantId == tenantId)
+            .Where(d => d.TenantId == tenantId && d.DeletedAt == null)
             .OrderByDescending(d => d.CreatedAt)
             .ToListAsync(cancellationToken);
 

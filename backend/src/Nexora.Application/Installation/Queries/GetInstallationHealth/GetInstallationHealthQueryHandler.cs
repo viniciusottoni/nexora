@@ -37,6 +37,7 @@ internal sealed class GetInstallationHealthQueryHandler
         string postgres;
         int pendingEvents;
         DateTimeOffset? lastSyncAt;
+        DateTimeOffset? offlineSince;
         string sync = "UNKNOWN";
 
         try
@@ -46,6 +47,9 @@ internal sealed class GetInstallationHealthQueryHandler
 
             var installation = await _db.EdgeInstallations.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
             lastSyncAt = installation?.LastSeenAt;
+            // US-034 §7: não nulo enquanto PollSyncHealthCommand não detectar a reconexão — ver
+            // EdgeInstallation.RecordHeartbeat/OfflineSince.
+            offlineSince = installation?.OfflineSince;
 
             if (installation is not null)
             {
@@ -62,6 +66,7 @@ internal sealed class GetInstallationHealthQueryHandler
             postgres = "DOWN";
             pendingEvents = 0;
             lastSyncAt = null;
+            offlineSince = null;
         }
 
         var redis = await SafePingAsync(cancellationToken);
@@ -72,6 +77,7 @@ internal sealed class GetInstallationHealthQueryHandler
             Sync: sync,
             PendingEvents: pendingEvents,
             LastSyncAt: lastSyncAt,
+            OfflineSince: offlineSince,
             Version: _version.CurrentVersion));
     }
 

@@ -10,6 +10,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "dev:all": "powershell -ExecutionPolicy Bypass -File infra/scripts/dev-up.ps1",
+    "dev:pairing-code": "powershell -ExecutionPolicy Bypass -File infra/scripts/dev-refresh-pairing-code.ps1",
     "dev:down": "docker compose -f infra/dev/docker-compose.yml down",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

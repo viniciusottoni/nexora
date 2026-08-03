@@ -5,6 +5,16 @@ import {
 } from '@nexora/contracts';
 import { authenticatedFetch } from '@nexora/ui';
 
+export class DevicesApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: string | undefined,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
 export class DevicesApi {
   constructor(
     private readonly baseUrl = '',
@@ -34,6 +44,10 @@ export class DevicesApi {
     await this.write(`/v1/devices/${encodeURIComponent(id)}`, { method: 'DELETE' });
   }
 
+  async remove(id: string): Promise<void> {
+    await this.write(`/v1/devices/${encodeURIComponent(id)}/delete`, { method: 'POST' });
+  }
+
   private async write(path: string, init: RequestInit): Promise<Response> {
     const response = await this.fetcher(`${this.baseUrl}${path}`, {
       ...init,
@@ -51,6 +65,13 @@ export class DevicesApi {
 
 async function requireSuccess(response: Response): Promise<void> {
   if (response.ok) return;
-  const problem = (await response.json().catch(() => null)) as { detail?: string } | null;
-  throw new Error(problem?.detail ?? 'Não foi possível concluir a operação.');
+  const problem = (await response.json().catch(() => null)) as {
+    code?: string;
+    detail?: string;
+  } | null;
+  throw new DevicesApiError(
+    response.status,
+    problem?.code,
+    problem?.detail ?? 'N\u00e3o foi poss\u00edvel concluir a opera\u00e7\u00e3o.',
+  );
 }

@@ -21,6 +21,7 @@ public sealed class Device
     public DateTimeOffset? LastSeenAt { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
+    public DateTimeOffset? DeletedAt { get; private set; }
 
     public Tenant Tenant { get; private set; } = null!;
     public Store Store { get; private set; } = null!;
@@ -86,6 +87,39 @@ public sealed class Device
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Autoriza novamente uma instalação já conhecida pela mesma impressão digital. A posse de
+    /// um código de pareamento válido permite rotacionar o segredo sem criar outro registro para
+    /// o mesmo dispositivo.
+    /// </summary>
+    public void Reauthorize(Guid storeId, string label, DeviceType type, string secretHash)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+            throw new DomainException("Informe um nome para o dispositivo.");
+
+        var trimmedLabel = label.Trim();
+        if (trimmedLabel.Length > 100)
+            throw new DomainException("Nome do dispositivo deve ter até 100 caracteres.");
+
+        if (string.IsNullOrWhiteSpace(secretHash))
+            throw new DomainException("O segredo do dispositivo é obrigatório.");
+
+        if (StoreId != storeId || Type != type)
+            StationId = null;
+
+        StoreId = storeId;
+        Label = trimmedLabel;
+        Type = type;
+        SecretHash = secretHash;
+        IsActive = true;
+        // Um dispositivo excluído (US do gestor: "não quero mais ver na lista") continua com o
+        // mesmo fingerprint reservado (uq_device_fingerprint) — posse de um código de pareamento
+        // válido para essa instalação física deve reviver o mesmo registro, não ficar bloqueada
+        // por ele estar soft-deleted.
+        DeletedAt = null;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     public void AssignStation(Guid? stationId)
     {
         StationId = stationId;
@@ -101,6 +135,12 @@ public sealed class Device
     public void Deactivate()
     {
         IsActive = false;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void SoftDelete()
+    {
+        DeletedAt = DateTimeOffset.UtcNow;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 }
