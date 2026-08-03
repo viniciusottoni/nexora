@@ -134,24 +134,11 @@ internal sealed class CancelOrderItemCommandHandler : IRequestHandler<CancelOrde
         item.Cancel(request.Reason, actorId, authorizedBy);
         var cancelledAt = item.UpdatedAt;
 
-        _db.AuditLogs.Add(AuditLog.Create(
-            item.TenantId,
-            action: "ORDER_ITEM_CANCELLED",
-            entity: "order_item",
-            occurredAt: cancelledAt,
-            storeId: item.Order.StoreId,
-            actorId: actorId == Guid.Empty ? null : actorId,
-            authorizedBy: authorizedBy,
-            deviceId: deviceId,
-            entityId: item.Id,
-            before: beforeSnapshot,
-            after: JsonSerializer.Serialize(new { status = "CANCELLED", totalPrice = item.TotalPrice, wasStarted }),
-            reason: request.Reason));
-
         // EVT-010 order.item.cancelled (US-033 §6) — payload exigido: reason, authorizedBy,
         // wasStarted. RN-008/US-105: wasStarted=true é a única sinalização desta história para o
         // registro de perda de estoque — a baixa real fica para US-105 (Fase 2, fora de escopo).
-        _db.DomainEvents.Add(DomainEvent.Create(
+        // Criado antes do AuditLog para correlacionar via DomainEventId (E-09/US-090).
+        var itemCancelledEvent = DomainEvent.Create(
             item.TenantId,
             type: "order.item.cancelled",
             aggregateType: "order_item",
@@ -170,7 +157,23 @@ internal sealed class CancelOrderItemCommandHandler : IRequestHandler<CancelOrde
             storeId: item.Order.StoreId,
             actorId: actorId == Guid.Empty ? null : actorId,
             authorizedBy: authorizedBy,
-            deviceId: deviceId));
+            deviceId: deviceId);
+        _db.DomainEvents.Add(itemCancelledEvent);
+
+        _db.AuditLogs.Add(AuditLog.Create(
+            item.TenantId,
+            action: "ORDER_ITEM_CANCELLED",
+            entity: "order_item",
+            occurredAt: cancelledAt,
+            storeId: item.Order.StoreId,
+            actorId: actorId == Guid.Empty ? null : actorId,
+            authorizedBy: authorizedBy,
+            deviceId: deviceId,
+            entityId: item.Id,
+            before: beforeSnapshot,
+            after: JsonSerializer.Serialize(new { status = "CANCELLED", totalPrice = item.TotalPrice, wasStarted }),
+            reason: request.Reason,
+            domainEventId: itemCancelledEvent.Id));
 
         var productName = $"{item.Variant.Product.Name} {item.Variant.Name}".Trim();
 

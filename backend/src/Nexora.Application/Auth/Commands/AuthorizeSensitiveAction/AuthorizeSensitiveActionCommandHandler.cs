@@ -140,18 +140,9 @@ internal sealed class AuthorizeSensitiveActionCommandHandler
         var authorizationToken = await _tokenIssuer.IssueAuthorizationTokenAsync(
             authorizationClaims, AuthTokenTtlSeconds.Authorization, cancellationToken);
 
-        _db.AuditLogs.Add(AuditLog.Create(
-            tenantId: tenantId,
-            action: request.Action,
-            entity: "authorization",
-            occurredAt: now,
-            storeId: storeId,
-            actorId: actorId,
-            authorizedBy: authorizer.Id,
-            deviceId: deviceId,
-            after: JsonSerializer.Serialize(request.Context)));
-
-        _db.DomainEvents.Add(DomainEvent.Create(
+        // EVT-071 authorization.granted — criado ANTES do AuditLog para correlacionar via
+        // DomainEventId (E-09/US-090, "Correlação com o evento").
+        var authorizationGrantedEvent = DomainEvent.Create(
             tenantId: tenantId,
             type: "authorization.granted",
             aggregateType: nameof(AppUser),
@@ -167,7 +158,20 @@ internal sealed class AuthorizeSensitiveActionCommandHandler
             storeId: storeId,
             actorId: actorId,
             authorizedBy: authorizer.Id,
-            deviceId: deviceId));
+            deviceId: deviceId);
+        _db.DomainEvents.Add(authorizationGrantedEvent);
+
+        _db.AuditLogs.Add(AuditLog.Create(
+            tenantId: tenantId,
+            action: request.Action,
+            entity: "authorization",
+            occurredAt: now,
+            storeId: storeId,
+            actorId: actorId,
+            authorizedBy: authorizer.Id,
+            deviceId: deviceId,
+            after: JsonSerializer.Serialize(request.Context),
+            domainEventId: authorizationGrantedEvent.Id));
 
         _logger.LogInformation(
             "Autorização concedida. TenantId={TenantId} Action={Action} ActorId={ActorId} AuthorizedBy={AuthorizedBy}",

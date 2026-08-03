@@ -63,6 +63,8 @@ export const permissionCodes = [
   'device:manage',
   'tenant:*',
   'tenant:manage',
+  'audit:*',
+  'audit:read',
 ] as const;
 
 export const permissionCodeSchema = z.enum(permissionCodes, {

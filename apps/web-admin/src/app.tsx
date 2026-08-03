@@ -31,6 +31,8 @@ import type {
   StationDto,
   TableDto,
 } from '@nexora/contracts';
+import { AuditApi } from './audit/audit-api.js';
+import { AuditLogPage } from './audit/audit-log-page.js';
 import { BrandingContainer } from './branding/branding-container.js';
 import { UnavailableListPage } from './availability/unavailable-list-page.js';
 import { CatalogPage } from './catalog/catalog-page.js';
@@ -75,6 +77,7 @@ const cloudStationsApi = new StationsApi(CLOUD_API_BASE_URL);
 const cloudModifierGroupsApi = new ModifierGroupsApi(CLOUD_API_BASE_URL);
 const cloudPrepTimeApi = new PrepTimeApi(CLOUD_API_BASE_URL);
 const cloudPricingApi = new PricingApi(CLOUD_API_BASE_URL);
+const cloudAuditApi = new AuditApi(CLOUD_API_BASE_URL);
 
 /** Dispara o download do PDF de QR Codes (US-020, cenário "Exportação para impressão"). */
 function downloadPdfBlob(blob: Blob, areaId?: string): void {
@@ -550,6 +553,7 @@ function CloudAdmin() {
                 variantsApi={cloudVariantsApi}
               />
             ) : null}
+            {section === 'audit' ? <AuditLogPage auditApi={cloudAuditApi} /> : null}
             <CreatedByFooter />
           </div>
         </div>
@@ -732,7 +736,8 @@ export type CloudAdminSection =
   | 'modifiers'
   | 'stations'
   | 'prep-time'
-  | 'pricing';
+  | 'pricing'
+  | 'audit';
 
 /* Agrupado por assunto \u2014 a navega\u00e7\u00e3o de dez itens corridos n\u00e3o dizia o que era opera\u00e7\u00e3o da
    loja, o que era card\u00e1pio e o que era cozinha (SideNav aceita `group` para isso). */
@@ -750,6 +755,8 @@ const ADMIN_NAV_ITEMS: readonly SideNavItem[] = [
   { group: 'Cozinha' },
   { id: 'stations', label: 'Pra\u00e7as de produ\u00e7\u00e3o', icon: 'soup_kitchen' },
   { id: 'prep-time', label: 'Tempo e pra\u00e7a', icon: 'schedule' },
+  { group: 'Auditoria' },
+  { id: 'audit', label: 'Trilha de auditoria', icon: 'fact_check' },
 ];
 
 /** R\u00f3tulo da se\u00e7\u00e3o ativa para a trilha da barra superior \u2014 mesma fonte da navega\u00e7\u00e3o. */

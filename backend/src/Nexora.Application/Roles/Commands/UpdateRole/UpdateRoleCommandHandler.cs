@@ -61,6 +61,24 @@ internal sealed class UpdateRoleCommandHandler : IRequestHandler<UpdateRoleComma
 
         var permissionsChanged = added.Count > 0 || removed.Count > 0;
 
+        // EVT-072 permission.changed — criado ANTES do AuditLog (quando aplicável) para
+        // correlacionar via DomainEventId (E-09/US-090, "Correlação com o evento").
+        DomainEvent? permissionChangedEvent = null;
+        if (permissionsChanged)
+        {
+            permissionChangedEvent = DomainEvent.Create(
+                tenantId,
+                type: "permission.changed",
+                aggregateType: "role",
+                aggregateId: role.Id,
+                payload: JsonSerializer.Serialize(new { roleId = role.Id, added, removed }),
+                origin: "CLOUD",
+                occurredAt: now,
+                actorId: actorId,
+                deviceId: _tenantContext.DeviceId);
+            _db.DomainEvents.Add(permissionChangedEvent);
+        }
+
         _db.AuditLogs.Add(AuditLog.Create(
             tenantId,
             action: permissionsChanged ? "PERMISSION_CHANGED" : "ROLE_UPDATED",
@@ -70,21 +88,11 @@ internal sealed class UpdateRoleCommandHandler : IRequestHandler<UpdateRoleComma
             deviceId: _tenantContext.DeviceId,
             entityId: role.Id,
             before: JsonSerializer.Serialize(new { name = oldName, permissions = currentPermissions }),
-            after: JsonSerializer.Serialize(new { name = nextName, permissions = nextPermissions })));
+            after: JsonSerializer.Serialize(new { name = nextName, permissions = nextPermissions }),
+            domainEventId: permissionChangedEvent?.Id));
 
         if (permissionsChanged)
         {
-            _db.DomainEvents.Add(DomainEvent.Create(
-                tenantId,
-                type: "permission.changed",
-                aggregateType: "role",
-                aggregateId: role.Id,
-                payload: JsonSerializer.Serialize(new { roleId = role.Id, added, removed }),
-                origin: "CLOUD",
-                occurredAt: now,
-                actorId: actorId,
-                deviceId: _tenantContext.DeviceId));
-
             _db.Alerts.Add(Alert.Create(
                 tenantId,
                 type: "PERMISSION_CHANGED",

@@ -105,20 +105,10 @@ internal sealed class SetVariantChannelPriceCommandHandler : IRequestHandler<Set
             _db.Prices.Add(newPrice);
             effective[channel] = newPrice;
 
-            _db.AuditLogs.Add(AuditLog.Create(
-                tenantId,
-                action: "PRICE_CHANGED",
-                entity: "price",
-                occurredAt: now,
-                actorId: actorId,
-                deviceId: _tenantContext.DeviceId,
-                entityId: newPrice.Id,
-                before: oldAmount is null ? null : JsonSerializer.Serialize(new { amount = oldAmount, channel = channel.ToString() }),
-                after: JsonSerializer.Serialize(new { amount = newPrice.Amount, channel = channel.ToString() })));
-
             // EVT-052 price.changed (US-014 §6) — payload inclui "channel" (uma chamada pode
-            // alterar mais de um canal, diferente do POST de canal único da US-011).
-            _db.DomainEvents.Add(DomainEvent.Create(
+            // alterar mais de um canal, diferente do POST de canal único da US-011). Criado antes
+            // do AuditLog para correlacionar via DomainEventId (E-09/US-090).
+            var priceChangedEvent = DomainEvent.Create(
                 tenantId,
                 type: "price.changed",
                 aggregateType: "product_variant",
@@ -134,7 +124,20 @@ internal sealed class SetVariantChannelPriceCommandHandler : IRequestHandler<Set
                 origin: "CLOUD",
                 occurredAt: now,
                 actorId: actorId,
-                deviceId: _tenantContext.DeviceId));
+                deviceId: _tenantContext.DeviceId);
+            _db.DomainEvents.Add(priceChangedEvent);
+
+            _db.AuditLogs.Add(AuditLog.Create(
+                tenantId,
+                action: "PRICE_CHANGED",
+                entity: "price",
+                occurredAt: now,
+                actorId: actorId,
+                deviceId: _tenantContext.DeviceId,
+                entityId: newPrice.Id,
+                before: oldAmount is null ? null : JsonSerializer.Serialize(new { amount = oldAmount, channel = channel.ToString() }),
+                after: JsonSerializer.Serialize(new { amount = newPrice.Amount, channel = channel.ToString() }),
+                domainEventId: priceChangedEvent.Id));
         }
 
         // SaveChangesAsync é feito pelo TransactionBehavior.
