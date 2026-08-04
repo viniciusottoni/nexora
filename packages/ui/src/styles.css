@@ -20,6 +20,7 @@
 @import './components/console.css';
 @import './components/operacao.css';
 @import './components/motion.css';
+@import './notifications/notification-center.css';
 
 .db-theme {
   min-height: 100%;

@@ -379,6 +379,11 @@ public static class ResultExtensions
         ApiErrorCodes.StationHasLinkedProducts => (StatusCodes.Status422UnprocessableEntity, true, false),
         ApiErrorCodes.StationStoreContextMissing => (StatusCodes.Status403Forbidden, false, false),
 
+        // Motor de alertas e notificações (E-08).
+        ApiErrorCodes.AlertNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.AlertAlreadyResolved => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.PushSubscriptionInvalid => (StatusCodes.Status400BadRequest, true, false),
+
         // Legados do cloud (placeholders de módulos ainda não portados — mantidos do arquivo
         // anterior a esta tarefa; nenhum handler emite hoje, mas preservam o comportamento
         // pré-existente caso algo dependa deles em Swagger/testes).

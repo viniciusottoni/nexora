@@ -5,6 +5,7 @@ using Nexora.Api.Cloud.Infrastructure.Auth;
 using Nexora.Api.Cloud.Infrastructure.Idempotency;
 using Nexora.Api.Cloud.Infrastructure.Observability;
 using Nexora.Api.Cloud.Realtime;
+using Nexora.Api.Cloud.Workers;
 using Nexora.Application.Abstractions.Behaviors;
 using Nexora.Application.Abstractions.Events;
 using Nexora.Application.Abstractions.Idempotency;
@@ -16,6 +17,7 @@ using Nexora.Application.Abstractions.Realtime;
 using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Abstractions.Storage;
 using Nexora.Application.Auth.Shared;
+using Nexora.Application.Alerts.Support;
 using Nexora.Application.Devices.Abstractions;
 using Nexora.Application.Installation.Abstractions;
 using Nexora.Application.Installations.Abstractions;
@@ -222,6 +224,31 @@ else
 }
 
 builder.Services.AddHostedService<EmailOutboxDeliveryWorker>();
+
+// ---------------------------------------------------------------------------
+// E-08 — motor de alertas e notificações. AlertRaiser é o núcleo único de
+// criação/dedupe/direcionamento/agrupamento (US-080/US-082/US-083), usado tanto pelos handlers
+// reativos (MarkProductUnavailable) quanto pelos workers de avaliação abaixo; registrado aqui
+// (não em Infrastructure) porque é público na própria Application (ver docstring de AlertRaiser).
+// Web Push (US-081 §2 "enviado pela nuvem") segue o MESMO padrão condicional de
+// SmtpEmailDispatcher/LoggingEmailDispatcher acima: sem "WebPush:PublicKeyBase64Url" configurado
+// (dev/CI), LoggingPushNotificationSender assume no lugar do envio real.
+// ---------------------------------------------------------------------------
+builder.Services.AddScoped<IAlertRaiser, AlertRaiser>();
+builder.Services.Configure<WebPushOptions>(builder.Configuration.GetSection(WebPushOptions.SectionName));
+
+var vapidPublicKey = builder.Configuration[$"{WebPushOptions.SectionName}:PublicKeyBase64Url"];
+if (!string.IsNullOrWhiteSpace(vapidPublicKey))
+{
+    builder.Services.AddHttpClient<IPushNotificationSender, WebPushSender>();
+}
+else
+{
+    builder.Services.AddSingleton<IPushNotificationSender, LoggingPushNotificationSender>();
+}
+
+builder.Services.AddHostedService<AlertEvaluationWorker>();
+builder.Services.AddHostedService<PushDeliveryWorker>();
 
 // ---------------------------------------------------------------------------
 // Installations (cloud, plural) — registro/consumo de token de instalação,

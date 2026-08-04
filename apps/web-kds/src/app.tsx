@@ -4,6 +4,7 @@ import {
   createNeutralBrandingResponse,
   CreatedByFooter,
   DevicePairingScreen,
+  NotificationCenter,
   OperatorBar,
   OperationalAuthClient,
   OperationalAuthError,
@@ -18,6 +19,7 @@ import './styles.css';
 import { AvailabilityApi } from './availability/availability-api.js';
 import { UnavailablePanel } from './availability/unavailable-panel.js';
 import { KdsQueuePage } from './kds/kds-queue-page.js';
+import { useNotificationCenter } from './notifications/use-notification-center.js';
 
 export interface KdsHomeProps {
   readonly tenantName: string;
@@ -89,6 +91,12 @@ function BrandedKds() {
         : undefined,
     [device, session],
   );
+  // E-08 (US-081/US-083) — central de notificações do shell autenticado, visível de qualquer tela
+  // (§10: "acessível de qualquer tela"). Ver comentário equivalente em apps/web-pos/src/app.tsx
+  // sobre por que o hook é chamado incondicionalmente (regra dos hooks) mesmo antes do login.
+  const identity = device && session ? { accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret } : undefined;
+  const notificationCenter = useNotificationCenter({ identity });
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const submit = async (pin: string) => {
     if (!client) return;
     setBusy(true);
@@ -131,14 +139,25 @@ function BrandedKds() {
     );
   return (
     <div className="kds-authenticated">
-      <OperatorBar
-        userName={session.user.name}
-        onSwitchOperator={() => {
-          setSwitching(true);
-          setError(undefined);
-          setIntentionId(crypto.randomUUID());
-        }}
-      />
+      <div className="kds-top-row">
+        <NotificationCenter
+          items={notificationCenter.items}
+          open={notificationCenterOpen}
+          onOpenChange={setNotificationCenterOpen}
+          onAcknowledge={(id) => void notificationCenter.acknowledge(id)}
+          loading={notificationCenter.loading}
+          pushPermissionPending={notificationCenter.pushPermissionPending}
+          onRequestPushPermission={() => void notificationCenter.requestPushPermission()}
+        />
+        <OperatorBar
+          userName={session.user.name}
+          onSwitchOperator={() => {
+            setSwitching(true);
+            setError(undefined);
+            setIntentionId(crypto.randomUUID());
+          }}
+        />
+      </div>
       <KdsQueuePage
         identity={{
           accessToken: session.accessToken,

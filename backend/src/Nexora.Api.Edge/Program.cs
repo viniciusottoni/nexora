@@ -14,6 +14,7 @@ using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Platform;
 using Nexora.Application.Abstractions.Realtime;
 using Nexora.Application.Abstractions.Security;
+using Nexora.Application.Alerts.Support;
 using Nexora.Application.Auth.Shared;
 using Nexora.Application.Devices.Abstractions;
 using Nexora.Application.Installation.Abstractions;
@@ -195,6 +196,12 @@ builder.Services.AddSingleton<ITableMapBroadcaster, SignalRTableMapBroadcaster>(
 // do mesmo padrão acima, salas role:{papel}/user:{id} em vez de tenant (ver Hubs.AlertsHub).
 builder.Services.AddSingleton<IAlertsBroadcaster, SignalRAlertsBroadcaster>();
 builder.Services.AddHostedService<WaiterCallEscalationWorker>();
+
+// E-08 — motor de alertas do MVP (US-080/US-082/US-083). AlertRaiser é o núcleo único de
+// criação/dedupe/direcionamento/agrupamento, público na própria Application (ver docstring de
+// AlertRaiser) para ser instanciável por AddScoped a partir daqui.
+builder.Services.AddScoped<IAlertRaiser, AlertRaiser>();
+builder.Services.AddHostedService<AlertEvaluationWorker>();
 
 // SignalR (US-031) — roteamento de pedido/item por praça (ADR-011), salas station:{id}/
 // role:{papel}/table:{id} (ver Hubs.KdsHub).

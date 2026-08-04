@@ -15,4 +15,47 @@ public static class AlertTypes
 
     /// <summary>EVT-022 <c>table.bill_requested</c> — conta solicitada, sessão em <c>BILL_REQUESTED</c> (US-026).</summary>
     public const string BillRequested = "BILL_REQUESTED";
+
+    /// <summary>US-004/E-01 — papel de um usuário mudou (Roles/CreateRole, Roles/UpdateRole).</summary>
+    public const string PermissionChanged = "PERMISSION_CHANGED";
+
+    /// <summary>US-004/Auth — login por PIN de dispositivo não pareado.</summary>
+    public const string DeviceNotRegistered = "DEVICE_NOT_REGISTERED";
+
+    /// <summary>US-004/Auth — PIN bloqueado por excesso de tentativas.</summary>
+    public const string PinLocked = "PIN_LOCKED";
+
+    // Catálogo do motor de alertas do MVP (E-08/US-080 §2) — thresholds em
+    // Nexora.Application.Alerts.Support.AlertThresholds, mensagem em AlertMessages.
+
+    /// <summary>Pedido ultrapassou o limiar de atraso configurado (US-080, cenário "Pedido atrasado").</summary>
+    public const string OrderLate = "ORDER_LATE";
+
+    /// <summary>Tempo médio de entrega/produção da loja acima da meta prometida (US-080).</summary>
+    public const string AvgTimeAboveTarget = "AVG_TIME_ABOVE_TARGET";
+
+    /// <summary>Produto marcado indisponível (US-080; espelha EVT-051 <c>product.availability_changed</c>).</summary>
+    public const string ProductUnavailable = "PRODUCT_UNAVAILABLE";
+
+    /// <summary>Divergência de caixa acima do limiar no fechamento de uma sessão (US-080).</summary>
+    public const string CashDivergence = "CASH_DIVERGENCE";
+
+    /// <summary>Instalação edge atrasada na sincronização com a nuvem além do limiar (US-080).</summary>
+    public const string SyncDelay = "SYNC_DELAY";
+
+    /// <summary>Cancelamentos de item/pedido acima do padrão numa janela recente (US-080).</summary>
+    public const string CancellationAboveThreshold = "CANCELLATION_ABOVE_THRESHOLD";
+
+    /// <summary>Descontos concedidos acima do padrão numa janela recente (US-080).</summary>
+    public const string DiscountAboveThreshold = "DISCOUNT_ABOVE_THRESHOLD";
+
+    /// <summary>
+    /// Todos os tipos avaliados pelo motor (US-080) — usados para validar chaves de configuração
+    /// (thresholds/routing) e para os workers de avaliação periódica saberem o que escalonar.
+    /// </summary>
+    public static readonly IReadOnlyList<string> EngineTypes = new[]
+    {
+        OrderLate, AvgTimeAboveTarget, ProductUnavailable, CashDivergence, SyncDelay,
+        CancellationAboveThreshold, DiscountAboveThreshold,
+    };
 }

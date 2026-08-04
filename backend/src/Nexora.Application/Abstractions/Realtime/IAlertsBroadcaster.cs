@@ -45,4 +45,24 @@ public interface IAlertsBroadcaster
     /// <c>role:waiter</c> inteiro (todos os garçons do ambiente), não só o responsável original.
     /// </summary>
     Task WaiterCallEscalated(Guid tenantId, Guid tableId, string tableLabel, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// E-08/US-081 §7 <c>{ type: "alert.raised", data: {...} }</c> — canal genérico do motor de
+    /// alertas (US-080/US-082), diferente dos métodos acima (específicos de US-025/US-026): entrega
+    /// a <c>alert.TargetRoles</c> (<c>role:{papel}</c>, um por papel) e/ou <c>alert.TargetUserId</c>
+    /// (<c>user:{id}</c>) — as MESMAS salas que o <c>AlertsHub</c> já usa (<c>RoleGroup</c>/
+    /// <c>UserGroup</c>), só que resolvidas dinamicamente a partir da matriz de direcionamento
+    /// (US-082), não fixas por método.
+    /// </summary>
+    Task AlertRaised(Domain.Metrics.Alert alert, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// US-083 §10 "som toca apenas na criação do grupo, nunca nas atualizações" — entregue quando
+    /// um novo alerta se junta a um grupo já aberto (mesmo <c>GroupKey</c>): o cliente atualiza a
+    /// contagem sem repetir som/vibração.
+    /// </summary>
+    Task AlertGroupUpdated(Domain.Metrics.Alert alert, int groupCount, CancellationToken cancellationToken);
+
+    /// <summary>US-080 §4 "Resolução automática" — avisa quem já recebeu o alerta que ele foi encerrado (sai da lista de pendentes).</summary>
+    Task AlertResolved(Domain.Metrics.Alert alert, CancellationToken cancellationToken);
 }

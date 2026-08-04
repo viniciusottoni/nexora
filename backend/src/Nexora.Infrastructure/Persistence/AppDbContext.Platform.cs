@@ -37,4 +37,5 @@ public partial class AppDbContext
     public DbSet<Domain.Platform.DomainEvent> DomainEvents => Set<Domain.Platform.DomainEvent>();
     public DbSet<Domain.Platform.MediaAsset> MediaAssets => Set<Domain.Platform.MediaAsset>();
     public DbSet<Domain.Platform.TenantSecret> TenantSecrets => Set<Domain.Platform.TenantSecret>();
+    public DbSet<Domain.Platform.PushSubscription> PushSubscriptions => Set<Domain.Platform.PushSubscription>();
 }

@@ -30,6 +30,18 @@ public sealed class Alert
     public DateTimeOffset? ResolvedAt { get; private set; }
     public string? GroupKey { get; private set; }
 
+    /// <summary>
+    /// Início da janela de agrupamento que este alerta ocupa (US-083) — todo alerta do MESMO tipo
+    /// raised dentro de <c>[GroupWindowStart, GroupWindowStart + groupWindowSeconds)</c> recebe o
+    /// mesmo <see cref="GroupKey"/>; um alerta fora da janela abre um grupo (e uma notificação) novos.
+    /// Nulo para alertas cujo tipo não tem agrupamento configurado (ex.: CASH_DIVERGENCE, sempre
+    /// pontual, um por sessão de caixa).
+    /// </summary>
+    public DateTimeOffset? GroupWindowStart { get; private set; }
+
+    /// <summary>Marcado pelo worker de entrega de push da nuvem (US-081) — evita reenviar o mesmo alerta.</summary>
+    public DateTimeOffset? PushedAt { get; private set; }
+
     public static Alert Create(
         Guid tenantId,
         string type,
@@ -41,7 +53,8 @@ public sealed class Alert
         string? entityType = null,
         Guid? entityId = null,
         Guid? targetUserId = null,
-        string? groupKey = null)
+        string? groupKey = null,
+        DateTimeOffset? groupWindowStart = null)
     {
         if (string.IsNullOrWhiteSpace(type))
             throw new DomainException("O tipo do alerta é obrigatório.");
@@ -63,7 +76,8 @@ public sealed class Alert
             Message = message,
             Payload = payload ?? "{}",
             RaisedAt = DateTimeOffset.UtcNow,
-            GroupKey = groupKey
+            GroupKey = groupKey,
+            GroupWindowStart = groupWindowStart
         };
     }
 
@@ -79,6 +93,19 @@ public sealed class Alert
         TargetRoles = targetRoles;
     }
 
+    /// <summary>
+    /// US-080 §4, cenário "Escalonamento por duração": severidade sobe quando o alerta permanece
+    /// ativo além do limiar de escalonamento do tipo — nunca desce sozinha (só <see cref="Resolve"/>
+    /// encerra o alerta).
+    /// </summary>
+    public void IncreaseSeverity(AlertSeverity severity)
+    {
+        if (severity > Severity)
+        {
+            Severity = severity;
+        }
+    }
+
     public void Acknowledge(Guid acknowledgedBy)
     {
         AcknowledgedAt = DateTimeOffset.UtcNow;
@@ -88,5 +115,10 @@ public sealed class Alert
     public void Resolve()
     {
         ResolvedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void MarkPushed()
+    {
+        PushedAt = DateTimeOffset.UtcNow;
     }
 }

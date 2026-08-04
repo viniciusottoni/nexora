@@ -4,7 +4,9 @@ using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Realtime;
 using Nexora.Application.Abstractions.Security;
+using Nexora.Application.Alerts.Support;
 using Nexora.Contracts.Catalog;
+using Nexora.Domain.Metrics;
 using Nexora.Domain.Platform;
 using Nexora.Shared.Errors;
 using MediatR;
@@ -29,17 +31,20 @@ internal sealed class MarkProductUnavailableCommandHandler
     private readonly ICurrentTenantContext _tenantContext;
     private readonly IEventOriginProvider _eventOrigin;
     private readonly IAvailabilityBroadcaster _broadcaster;
+    private readonly IAlertRaiser _alertRaiser;
 
     public MarkProductUnavailableCommandHandler(
         IApplicationDbContext db,
         ICurrentTenantContext tenantContext,
         IEventOriginProvider eventOrigin,
-        IAvailabilityBroadcaster broadcaster)
+        IAvailabilityBroadcaster broadcaster,
+        IAlertRaiser alertRaiser)
     {
         _db = db;
         _tenantContext = tenantContext;
         _eventOrigin = eventOrigin;
         _broadcaster = broadcaster;
+        _alertRaiser = alertRaiser;
     }
 
     public async Task<Result<ProductAvailabilityResponse>> Handle(
@@ -123,6 +128,13 @@ internal sealed class MarkProductUnavailableCommandHandler
         // "depois"; ver docstring de IAvailabilityBroadcaster e o teste que prova isso).
         await _broadcaster.ProductMarkedUnavailableAsync(
             tenantId, product.Id, product.UnavailableReason!, product.UnavailableSince!.Value, cancellationToken);
+
+        // E-08/US-080 §2 "produto indisponível" — alerta reativo (não espera a próxima varredura
+        // periódica do motor): a indisponibilidade já é conhecida no exato instante da marcação.
+        await _alertRaiser.RaiseAsync(new RaiseAlertRequest(
+            tenantId, _tenantContext.StoreId, AlertTypes.ProductUnavailable, AlertSeverity.Warning,
+            $"Produto \"{product.Name}\" está indisponível ({product.UnavailableReason}).",
+            "product", product.Id), cancellationToken);
 
         return Result<ProductAvailabilityResponse>.Success(new ProductAvailabilityResponse(
             product.Id, product.Name, product.IsAvailable, product.UnavailableReason, product.UnavailableSince));

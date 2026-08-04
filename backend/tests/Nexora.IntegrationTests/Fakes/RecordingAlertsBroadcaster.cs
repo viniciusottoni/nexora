@@ -18,6 +18,12 @@ public sealed class RecordingAlertsBroadcaster : IAlertsBroadcaster
 
     public sealed record WaiterCallEscalatedCall(Guid TenantId, Guid TableId, string TableLabel);
 
+    public sealed record AlertRaisedCall(Guid AlertId, string Type, IReadOnlyList<string> TargetRoles, Guid? TargetUserId);
+
+    public sealed record AlertGroupUpdatedCall(Guid AlertId, string Type, int GroupCount);
+
+    public sealed record AlertResolvedCall(Guid AlertId, string Type);
+
     public ConcurrentQueue<WaiterCalledCall> WaiterCalledCalls { get; } = new();
 
     public ConcurrentQueue<BillRequestedCall> BillRequestedCalls { get; } = new();
@@ -25,6 +31,12 @@ public sealed class RecordingAlertsBroadcaster : IAlertsBroadcaster
     public ConcurrentQueue<BillRequestCancelledCall> BillRequestCancelledCalls { get; } = new();
 
     public ConcurrentQueue<WaiterCallEscalatedCall> WaiterCallEscalatedCalls { get; } = new();
+
+    public ConcurrentQueue<AlertRaisedCall> AlertRaisedCalls { get; } = new();
+
+    public ConcurrentQueue<AlertGroupUpdatedCall> AlertGroupUpdatedCalls { get; } = new();
+
+    public ConcurrentQueue<AlertResolvedCall> AlertResolvedCalls { get; } = new();
 
     public Task WaiterCalled(Guid tenantId, Guid tableId, string tableLabel, Guid? waiterId, CancellationToken cancellationToken)
     {
@@ -48,6 +60,24 @@ public sealed class RecordingAlertsBroadcaster : IAlertsBroadcaster
     public Task WaiterCallEscalated(Guid tenantId, Guid tableId, string tableLabel, CancellationToken cancellationToken)
     {
         WaiterCallEscalatedCalls.Enqueue(new WaiterCallEscalatedCall(tenantId, tableId, tableLabel));
+        return Task.CompletedTask;
+    }
+
+    public Task AlertRaised(Nexora.Domain.Metrics.Alert alert, CancellationToken cancellationToken)
+    {
+        AlertRaisedCalls.Enqueue(new AlertRaisedCall(alert.Id, alert.Type, alert.TargetRoles, alert.TargetUserId));
+        return Task.CompletedTask;
+    }
+
+    public Task AlertGroupUpdated(Nexora.Domain.Metrics.Alert alert, int groupCount, CancellationToken cancellationToken)
+    {
+        AlertGroupUpdatedCalls.Enqueue(new AlertGroupUpdatedCall(alert.Id, alert.Type, groupCount));
+        return Task.CompletedTask;
+    }
+
+    public Task AlertResolved(Nexora.Domain.Metrics.Alert alert, CancellationToken cancellationToken)
+    {
+        AlertResolvedCalls.Enqueue(new AlertResolvedCall(alert.Id, alert.Type));
         return Task.CompletedTask;
     }
 }

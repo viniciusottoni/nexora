@@ -399,6 +399,11 @@ public static class ResultExtensions
         ApiErrorCodes.StationHasLinkedProducts => (StatusCodes.Status422UnprocessableEntity, true, false),
         ApiErrorCodes.StationStoreContextMissing => (StatusCodes.Status403Forbidden, false, false),
 
+        // Motor de alertas e notificações (E-08).
+        ApiErrorCodes.AlertNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.AlertAlreadyResolved => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.PushSubscriptionInvalid => (StatusCodes.Status400BadRequest, true, false),
+
         // Catch-all: código não catalogado -> 500, tratado como bug de mapeamento (não vaza
         // stack trace nem mensagem interna — ADR-021).
         _ => (StatusCodes.Status500InternalServerError, false, false),

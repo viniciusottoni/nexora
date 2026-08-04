@@ -3,6 +3,8 @@ using Nexora.Application.Abstractions.Events;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Realtime;
+using Nexora.Application.Alerts.Support;
+using Nexora.Domain.Metrics;
 using Nexora.Domain.Platform;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -15,13 +17,15 @@ internal sealed class RestoreProductsPastBusinessDayCommandHandler
     private readonly IApplicationDbContext _db;
     private readonly IEventOriginProvider _eventOrigin;
     private readonly IAvailabilityBroadcaster _broadcaster;
+    private readonly IAlertRaiser _alertRaiser;
 
     public RestoreProductsPastBusinessDayCommandHandler(
-        IApplicationDbContext db, IEventOriginProvider eventOrigin, IAvailabilityBroadcaster broadcaster)
+        IApplicationDbContext db, IEventOriginProvider eventOrigin, IAvailabilityBroadcaster broadcaster, IAlertRaiser alertRaiser)
     {
         _db = db;
         _eventOrigin = eventOrigin;
         _broadcaster = broadcaster;
+        _alertRaiser = alertRaiser;
     }
 
     public async Task<Result<int>> Handle(RestoreProductsPastBusinessDayCommand request, CancellationToken cancellationToken)
@@ -74,6 +78,9 @@ internal sealed class RestoreProductsPastBusinessDayCommandHandler
                 occurredAt: now));
 
             await _broadcaster.ProductMarkedAvailableAsync(tenantId, product.Id, cancellationToken);
+
+            // E-08/US-080 §4 "Resolução automática" — mesmo racional do retorno manual (MarkProductAvailableCommandHandler).
+            await _alertRaiser.ResolveAsync(tenantId, AlertTypes.ProductUnavailable, "product", product.Id, cancellationToken);
         }
 
         // SaveChangesAsync é feito pelo TransactionBehavior.

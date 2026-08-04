@@ -15,6 +15,7 @@ export * from './components/icon-button.js';
 export * from './components/input.js';
 export * from './components/menu-item-card.js';
 export * from './components/modal.js';
+export * from './notifications/notification-center.js';
 export * from './components/numeric-keypad.js';
 export * from './components/order-line.js';
 export * from './components/order-ticket.js';

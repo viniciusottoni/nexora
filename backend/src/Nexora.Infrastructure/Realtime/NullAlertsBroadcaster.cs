@@ -23,4 +23,13 @@ public sealed class NullAlertsBroadcaster : IAlertsBroadcaster
 
     public Task WaiterCallEscalated(Guid tenantId, Guid tableId, string tableLabel, CancellationToken cancellationToken) =>
         Task.CompletedTask;
+
+    public Task AlertRaised(Domain.Metrics.Alert alert, CancellationToken cancellationToken) =>
+        Task.CompletedTask;
+
+    public Task AlertGroupUpdated(Domain.Metrics.Alert alert, int groupCount, CancellationToken cancellationToken) =>
+        Task.CompletedTask;
+
+    public Task AlertResolved(Domain.Metrics.Alert alert, CancellationToken cancellationToken) =>
+        Task.CompletedTask;
 }
