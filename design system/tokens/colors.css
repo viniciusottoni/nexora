@@ -1,0 +1,30 @@
+:root{
+  /* ---- Rampa da marca: extraída do gradiente do logo (navy → azul → ciano → verde) ---- */
+  --nx-navy-950:#071731; --nx-navy-900:#0B1F3F; --nx-navy-800:#10305E; --nx-navy-700:#16407C;
+  --nx-navy-600:#1D5299; --nx-navy-500:#2463B5;
+  --nx-blue-600:#1657B0; --nx-blue-500:#1F6FD0; --nx-blue-400:#3B8AE6; --nx-blue-100:#DCEAFB; --nx-blue-50:#EFF6FE;
+  --nx-cyan-600:#0B87A6; --nx-cyan-500:#0FA3C8; --nx-cyan-400:#2CBBDA; --nx-cyan-100:#D3F0F7;
+  --nx-teal-600:#0C9179; --nx-teal-500:#10B394; --nx-teal-100:#D2F4EC;
+  --nx-green-700:#417C13; --nx-green-600:#55A21C; --nx-green-500:#6FBE2C; --nx-green-400:#8FD44A; --nx-green-100:#E7F6D6;
+
+  /* ---- Neutros com leve viés frio (navy) ---- */
+  --nx-white:#FFFFFF;
+  --nx-gray-50:#F6F8FB; --nx-gray-100:#EEF2F7; --nx-gray-200:#DFE6EF; --nx-gray-300:#C6D0DD;
+  --nx-gray-400:#97A4B6; --nx-gray-500:#6B7A8F; --nx-gray-600:#4A5A70; --nx-gray-700:#33455C;
+  --nx-gray-800:#1F2E44; --nx-gray-900:#101C2E;
+
+  /* ---- Semânticos ---- */
+  --nx-success-600:#1F8A4C; --nx-success-500:#28A55C; --nx-success-100:#DCF3E5;
+  --nx-warning-600:#B97403; --nx-warning-500:#E8A302; --nx-warning-100:#FDF0D0;
+  --nx-danger-700:#A3161B; --nx-danger-600:#C42026; --nx-danger-500:#E0393F; --nx-danger-100:#FBE0E1;
+  --nx-info-500:var(--nx-blue-500); --nx-info-100:var(--nx-blue-100);
+
+  /* ---- Escalonamento de tempo (KDS, cronômetros, SLA) — RF-KDS-03 ---- */
+  --nx-time-ok:#28A55C; --nx-time-ok-bg:#0F2A1D;
+  --nx-time-warn:#E8A302; --nx-time-warn-bg:#33260A;
+  --nx-time-late:#E0393F; --nx-time-late-bg:#3A1214;
+
+  /* ---- Gradiente da marca (usar só em marca/hero, nunca em fundo de conteúdo) ---- */
+  --nx-gradient-brand:linear-gradient(103deg,var(--nx-navy-900) 0%,var(--nx-blue-500) 38%,var(--nx-cyan-500) 66%,var(--nx-green-500) 100%);
+  --nx-gradient-brand-soft:linear-gradient(103deg,var(--nx-navy-800) 0%,var(--nx-cyan-600) 100%);
+}

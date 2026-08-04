@@ -1,0 +1,13 @@
+/* Camada de tenant (white-label). O motor de personalização injeta estes valores
+   em runtime — nunca em build (doc 02, ADR de theming). Os valores abaixo são os
+   documentados para a primeira instância. */
+[data-tenant="dona-betinha"]{
+  --brand-primary:#C1121F;
+  --brand-secondary:#669BBC;
+  --brand-surface:#FDF0D5;
+  --brand-on-primary:#FFFFFF;
+  --brand-radius:12px;
+  --brand-primary-hover:#A3101A;
+  --brand-primary-active:#870D16;
+  --brand-primary-subtle:#FBE0E1;
+}

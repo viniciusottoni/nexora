@@ -1,0 +1,51 @@
+<!-- @dsCard group="Components" viewport="700x300" name="Core" subtitle="Botões, ícone-botão, badges, card e assinatura de marca" -->
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;padding:20px;background:var(--surface-page)}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.col{display:flex;flex-direction:column;gap:12px}.lbl{font:var(--type-overline);letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--text-muted)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const {Button, IconButton, Badge, Card, BrandMark, NexoraLogo, NexoraLoader, Icon, Field, Input, Select, Checkbox, Switch, QuantityStepper, NumericKeypad, StatTile, ProgressMeter, DataTable, StatusPill, OrderTimer, AlertBanner, SyncStatus, EmptyState, SideNav, TopBar, SegmentedControl, TableCard, OrderTicket, MenuItemCard, OrderLine} = window.NexoraDesignSystem_aa692a;
+
+function Demo(){return <div className="col">
+<div className="row">
+<Button variant="primary" iconLeft="send">Enviar pedido</Button>
+<Button variant="accent" iconLeft="check">Pronto</Button>
+<Button variant="secondary">Cancelar</Button>
+<Button variant="ghost" iconLeft="filter_list">Filtrar</Button>
+<Button variant="danger" iconLeft="block" size="sm">Estornar</Button>
+<Button variant="primary" size="sm" disabled>Desabilitado</Button>
+</div>
+<div className="row">
+<Button variant="primary" size="touch" iconLeft="restaurant">Toque · 64px</Button>
+<Button variant="secondary" size="lg">lg · 48px</Button>
+<IconButton icon="notifications" label="Alertas" badge={3} variant="outline" />
+<IconButton icon="print" label="Imprimir" />
+<IconButton icon="add" label="Novo" variant="solid" />
+</div>
+<div className="row">
+<Badge tone="brand" icon="bolt">Fase 1</Badge>
+<Badge tone="info" icon="delivery_dining">Delivery</Badge>
+<Badge tone="success">Dentro da meta</Badge>
+<Badge tone="warning">Atenção</Badge>
+<Badge tone="danger" size="sm">Atrasado</Badge>
+<Badge tone="accent">Salão</Badge>
+<Badge tone="solid" square>M12</Badge>
+</div>
+<div className="row" style={{alignItems:'stretch'}}>
+<Card title="Ficha técnica" subtitle="Pizza G · Calabresa" style={{width:280}} actions={<IconButton icon="more_horiz" label="Mais" size="sm"/>}>
+<div style={{font:'var(--type-body)',color:'var(--text-secondary)'}}>Custo R$ 18,42 · margem 71,6%</div>
+</Card>
+<Card elevation="flat" style={{width:200,justifyContent:'center'}}><BrandMark size={26}/></Card>
+<Card elevation="raised" style={{width:210,justifyContent:'center'}}><BrandMark tenantName="Dona Betinha" subtitle="Pizzaria" size={34}/></Card>
+<div style={{width:200,display:'flex',alignItems:'center',justifyContent:'center',background:'var(--nx-navy-900)',borderRadius:'var(--brand-radius)',padding:16}}><BrandMark inverse size={26}/></div>
+</div>
+<div className="row" style={{gap:32}}>
+<div><div className="lbl">Carregando</div><NexoraLoader label="Carregando" size={64}/></div>
+<div><div className="lbl">Só símbolo</div><NexoraLogo variant="symbol" height={44}/></div>
+</div>
+</div>;}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script></body></html>

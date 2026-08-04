@@ -1,0 +1,11 @@
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font:var(--type-body);color:var(--text-primary);background:var(--surface-page);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p,figure{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--text-link);text-decoration:none}
+a:hover{color:var(--text-link-hover);text-decoration:underline}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+:where(table){border-collapse:collapse}
+.nx-tnum{font-variant-numeric:tabular-nums}
+.nx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

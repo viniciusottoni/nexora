@@ -1,0 +1,39 @@
+:root{
+  --font-display:"Montserrat","Inter",system-ui,sans-serif;
+  --font-sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono","SFMono-Regular",Consolas,monospace;
+
+  --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-14:14px; --fs-16:16px; --fs-18:18px;
+  --fs-20:20px; --fs-24:24px; --fs-28:28px; --fs-34:34px; --fs-42:42px; --fs-56:56px; --fs-72:72px;
+
+  --lh-tight:1.08; /* @kind font */
+  --lh-snug:1.24; /* @kind font */
+  --lh-normal:1.45; /* @kind font */
+  --lh-relaxed:1.6; /* @kind font */
+  --fw-regular:400; /* @kind font */
+  --fw-medium:500; /* @kind font */
+  --fw-semibold:600; /* @kind font */
+  --fw-bold:700; /* @kind font */
+  --fw-black:800; /* @kind font */
+  --ls-tight:-0.02em; /* @kind font */
+  --ls-normal:0; /* @kind font */
+  --ls-wide:0.02em; /* @kind font */
+  --ls-caps:0.08em; /* @kind font */
+
+  /* Papéis tipográficos */
+  --type-display:var(--fw-black) var(--fs-56)/var(--lh-tight) var(--font-display);
+  --type-brand-title:var(--fw-bold) var(--fs-34)/var(--lh-snug) var(--font-display);
+  --type-h1:var(--fw-bold) var(--fs-28)/var(--lh-snug) var(--font-sans);
+  --type-h2:var(--fw-semibold) var(--fs-20)/var(--lh-snug) var(--font-sans);
+  --type-h3:var(--fw-semibold) var(--fs-16)/var(--lh-snug) var(--font-sans);
+  --type-body:var(--fw-regular) var(--fs-14)/var(--lh-normal) var(--font-sans);
+  --type-body-lg:var(--fw-regular) var(--fs-16)/var(--lh-normal) var(--font-sans);
+  --type-label:var(--fw-medium) var(--fs-13)/var(--lh-snug) var(--font-sans);
+  --type-caption:var(--fw-regular) var(--fs-12)/var(--lh-snug) var(--font-sans);
+  --type-overline:var(--fw-semibold) var(--fs-11)/var(--lh-snug) var(--font-sans);
+  --type-metric:var(--fw-bold) var(--fs-34)/var(--lh-tight) var(--font-sans);
+  --type-metric-lg:var(--fw-bold) var(--fs-56)/var(--lh-tight) var(--font-sans);
+  --type-numeric:var(--fw-medium) var(--fs-14)/var(--lh-snug) var(--font-mono);
+  --type-timer:var(--fw-bold) var(--fs-42)/1 var(--font-mono);
+  --type-kds-item:var(--fw-bold) var(--fs-24)/var(--lh-snug) var(--font-sans);
+}

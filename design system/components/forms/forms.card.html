@@ -1,0 +1,33 @@
+<!-- @dsCard group="Components" viewport="700x400" name="Formulários" subtitle="Campo, input, select, marcação, switch, stepper e teclado numérico" -->
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;padding:20px;background:var(--surface-page)}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.col{display:flex;flex-direction:column;gap:12px}.lbl{font:var(--type-overline);letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--text-muted)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const {Button, IconButton, Badge, Card, BrandMark, Icon, Field, Input, Select, Checkbox, Switch, QuantityStepper, NumericKeypad, StatTile, ProgressMeter, DataTable, StatusPill, OrderTimer, AlertBanner, SyncStatus, EmptyState, SideNav, TopBar, SegmentedControl, TableCard, OrderTicket, MenuItemCard, OrderLine} = window.NexoraDesignSystem_aa692a;
+
+function Demo(){const [q,setQ]=React.useState(2);const [pin,setPin]=React.useState('42');
+return <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 210px',gap:24,alignItems:'start'}}>
+<div className="col">
+<Field label="Buscar produto"><Input icon="search" placeholder="Nome ou código"/></Field>
+<Field label="Preço de salão" hint="Preço distinto por canal (RF-CAT-06)" required><Input numeric prefix="R$" defaultValue="64,90"/></Field>
+<Field label="Desconto" error="Acima do limite — exige autorização"><Input numeric suffix="%" defaultValue="25" invalid/></Field>
+<Field label="Praça de produção"><Select options={['Montagem','Forno','Fritura','Bebidas']}/></Field>
+</div>
+<div className="col">
+<span className="lbl">Modificadores</span>
+<Checkbox label="Borda recheada catupiry" price="+ R$ 8,00" defaultChecked/>
+<Checkbox label="Sem cebola" compact/>
+<Checkbox type="radio" name="m" label="Massa fina" defaultChecked compact/>
+<Checkbox type="radio" name="m" label="Massa tradicional" compact/>
+<Switch label="Bloquear venda sem insumo" description="RF-EST-12 · todos os canais" defaultChecked/>
+<div className="row" style={{marginTop:8}}><QuantityStepper value={q} onChange={setQ}/><QuantityStepper value={1} size="sm"/></div>
+</div>
+<div className="col"><span className="lbl">PIN do operador</span>
+<NumericKeypad value={pin} onChange={setPin} length={4} showDots/></div>
+</div>;}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script></body></html>
