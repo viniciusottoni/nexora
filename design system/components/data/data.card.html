@@ -1,0 +1,32 @@
+<!-- @dsCard group="Components" viewport="700x360" name="Indicadores" subtitle="Tiles de KPI, medidor com meta e tabela densa" -->
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;padding:20px;background:var(--surface-page)}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.col{display:flex;flex-direction:column;gap:12px}.lbl{font:var(--type-overline);letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--text-muted)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const {Button, IconButton, Badge, Card, BrandMark, Icon, Field, Input, Select, Checkbox, Switch, QuantityStepper, NumericKeypad, StatTile, ProgressMeter, DataTable, StatusPill, OrderTimer, AlertBanner, SyncStatus, EmptyState, SideNav, TopBar, SegmentedControl, TableCard, OrderTicket, MenuItemCard, OrderLine} = window.NexoraDesignSystem_aa692a;
+
+function Demo(){const cols=[{key:'p',header:'Produto'},{key:'v',header:'Vendidos',numeric:true},{key:'m',header:'Margem',numeric:true},{key:'c',header:'Classe',render:r=>r.c}];
+const rows=[{p:'Calabresa G',v:'182',m:'71,6%',c:<Badge tone="success" size="sm">Estrela</Badge>},
+{p:'Mussarela G',v:'164',m:'48,2%',c:<Badge tone="warning" size="sm">Cavalo</Badge>},
+{p:'Frango c/ catupiry',v:'38',m:'69,1%',c:<Badge tone="info" size="sm">Quebra-cabeça</Badge>},
+{p:'Camarão G',v:'6',m:'22,4%',c:<Badge tone="danger" size="sm">Abacaxi</Badge>}];
+return <div className="col">
+<div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+<StatTile label="Faturamento hoje" value="R$ 4.180" icon="payments" delta="+12,4%" comparison="vs. mesma terça"/>
+<StatTile label="Tempo médio · 1h" value="11:40" unit="min" icon="timer" delta="-1,2 min" deltaDirection="up" target="≤ 10 min"/>
+<StatTile variant="pulse" label="Pedidos em atraso" value="3" icon="warning"/>
+<StatTile label="CMV" value="32,8" unit="%" icon="inventory_2" delta="+2,1 p.p." deltaDirection="down" target="≤ 30%"/>
+</div>
+<div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
+<ProgressMeter label="Aderência ao prazo" value={82} display="82%" target={85} tone="warning" caption="meta 85%"/>
+<ProgressMeter label="Ocupação do forno" value={68} display="68%" tone="accent" caption="5 posições"/>
+<ProgressMeter label="Meta do dia" value={4180} max={6000} display="R$ 4.180" tone="brand" caption="de R$ 6.000"/>
+</div>
+<Card padding="none" elevation="flat"><DataTable columns={cols} rows={rows} compact/></Card>
+</div>;}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script></body></html>

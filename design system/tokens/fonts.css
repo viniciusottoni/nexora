@@ -1,0 +1,12 @@
+/* Nexora webfonts.
+   SUBSTITUIÇÃO: nenhum arquivo de fonte foi fornecido. A arquitetura declara
+   --brand-font: 'Inter' (doc 02, §5.2), por isso Inter é a fonte de interface.
+   O wordmark do logo é um sans geométrico pesado; Montserrat ExtraBold é a
+   aproximação mais próxima disponível no Google Fonts e é usada como fonte de
+   display/marca. Trocar por arquivos oficiais quando existirem. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap");
+
+/* Iconografia: nenhum set de ícones foi fornecido nas fontes.
+   SUBSTITUIÇÃO sinalizada — Material Symbols Rounded (traço arredondado, coerente
+   com as terminações redondas do símbolo do logo). Ver readme.md › ICONOGRAPHY. */
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0&display=block");

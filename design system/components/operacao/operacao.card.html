@@ -1,0 +1,42 @@
+<!-- @dsCard group="Components" viewport="700x400" name="Operação" subtitle="Mapa de mesas, ticket de KDS, item de cardápio e linha de comanda" -->
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;padding:20px;background:var(--surface-page)}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.col{display:flex;flex-direction:column;gap:12px}.lbl{font:var(--type-overline);letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--text-muted)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const {Button, IconButton, Badge, Card, BrandMark, Icon, Field, Input, Select, Checkbox, Switch, QuantityStepper, NumericKeypad, StatTile, ProgressMeter, DataTable, StatusPill, OrderTimer, AlertBanner, SyncStatus, EmptyState, SideNav, TopBar, SegmentedControl, TableCard, OrderTicket, MenuItemCard, OrderLine} = window.NexoraDesignSystem_aa692a;
+
+function Demo(){return <div style={{display:'grid',gridTemplateColumns:'1.1fr 1fr',gap:20,alignItems:'start'}}>
+<div className="col">
+<span className="lbl">Mapa de mesas</span>
+<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+<TableCard name="Mesa 07" status="OPEN" elapsed="18 min" guests={2} total="R$ 96,80" waiter="Jonas"/>
+<TableCard name="Mesa 12" status="BILL_REQUESTED" elapsed="1h 04" guests={4} total="R$ 186,40" waiter="Rita" attention/>
+<TableCard name="Mesa 14" status="FREE"/>
+<TableCard name="Mesa 15" status="READY" elapsed="9 min" guests={3} total="R$ 132,00" waiter="Jonas"/>
+</div>
+<span className="lbl" style={{marginTop:8}}>Linha de comanda</span>
+<Card elevation="flat" padding="tight">
+<OrderLine qty={1} name="Pizza G · Calabresa / Mussarela" modifiers="borda catupiry" note="sem cebola" price="R$ 72,90" status={<StatusPill status="IN_OVEN"/>}/>
+<OrderLine qty={2} name="Refrigerante lata" price="R$ 14,00" status={<StatusPill status="SERVED"/>}/>
+<OrderLine qty={1} name="Porção de fritas" price="R$ 28,00" cancelled status={<StatusPill status="CANCELLED"/>}/>
+</Card>
+</div>
+<div className="col">
+<span className="lbl">Ticket do KDS</span>
+<div data-surface="kds" style={{background:'var(--surface-page)',padding:12,borderRadius:12}}>
+<OrderTicket code="42" where="Mesa 07" channel="DINE_IN" seconds={318} items={[
+{qty:1,name:'Pizza G · Calabresa / Mussarela',modifiers:'sem cebola · borda catupiry'},
+{qty:1,name:'Porção de fritas',modifiers:'bem passada'},
+{qty:2,name:'Refrigerante lata',done:true}]}
+fireAt="agora" footer={<Button variant="accent" size="lg" iconLeft="check">Pronto · 42</Button>}/>
+</div>
+<span className="lbl">Cardápio</span>
+<MenuItemCard name="Calabresa G" description="Molho de tomate, mussarela, calabresa fatiada, cebola" price="R$ 64,90" prepMinutes={12}/>
+<MenuItemCard name="Portuguesa G" description="Presunto, ovo, cebola, azeitona" price="R$ 72,00" unavailable/>
+</div></div>;}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script></body></html>

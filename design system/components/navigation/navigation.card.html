@@ -1,0 +1,26 @@
+<!-- @dsCard group="Components" viewport="700x340" name="Navegação" subtitle="Lateral navy, barra superior e controle segmentado" -->
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;padding:20px;background:var(--surface-page)}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.col{display:flex;flex-direction:column;gap:12px}.lbl{font:var(--type-overline);letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--text-muted)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const {Button, IconButton, Badge, Card, BrandMark, Icon, Field, Input, Select, Checkbox, Switch, QuantityStepper, NumericKeypad, StatTile, ProgressMeter, DataTable, StatusPill, OrderTimer, AlertBanner, SyncStatus, EmptyState, SideNav, TopBar, SegmentedControl, TableCard, OrderTicket, MenuItemCard, OrderLine} = window.NexoraDesignSystem_aa692a;
+
+function Demo(){const [v,setV]=React.useState('pulso');const [p,setP]=React.useState('Hoje');
+return <div style={{display:'flex',gap:20,height:280}}>
+<div style={{height:'100%',borderRadius:12,overflow:'hidden',boxShadow:'var(--shadow-card)'}}>
+<SideNav brand={<BrandMark inverse size={22} subtitle="Gestão"/>} activeId={v} onSelect={setV}
+ items={[{group:'Operação'},{id:'pulso',label:'Pulso',icon:'monitor_heart'},{id:'mesas',label:'Mesas',icon:'table_restaurant',count:12},{id:'kds',label:'Cozinha',icon:'outdoor_grill'},{group:'Gestão'},{id:'desemp',label:'Desempenho',icon:'insights'},{id:'result',label:'Resultado',icon:'account_balance_wallet'}]}
+ footer={<SyncStatus state="online" lastSync="há 4 s"/>}/></div>
+<div style={{flex:'1 1 auto',display:'flex',flexDirection:'column',gap:16,minWidth:0}}>
+<div style={{borderRadius:12,overflow:'hidden',boxShadow:'var(--shadow-card)'}}>
+<TopBar title="Painel do dono" subtitle="Dona Betinha · terça, 21:14" right={<><SegmentedControl options={['Hoje','7 dias','Mês']} value={p} onChange={setP}/><IconButton icon="notifications" label="Alertas" badge={2}/></>}/></div>
+<div style={{borderRadius:12,overflow:'hidden',boxShadow:'var(--shadow-card)'}}>
+<TopBar variant="brand" title="Mesa 12" subtitle="4 pessoas · 42 min" left={<IconButton icon="arrow_back" label="Voltar"/>} right={<SyncStatus state="local" queued={7}/>}/></div>
+<div className="row"><SegmentedControl size="lg" options={[{value:'a',label:'Todas',icon:'grid_view'},{value:'b',label:'Forno',icon:'outdoor_grill'},{value:'c',label:'Bebidas',icon:'local_bar'}]} value="b" onChange={()=>{}}/></div>
+</div></div>;}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script></body></html>
