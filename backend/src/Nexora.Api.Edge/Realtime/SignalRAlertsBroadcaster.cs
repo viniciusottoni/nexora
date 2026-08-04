@@ -56,4 +56,45 @@ internal sealed class SignalRAlertsBroadcaster : IAlertsBroadcaster
             MethodName,
             new { type = "table.waiter_call_escalated", data = new { tableId, label = tableLabel } },
             cancellationToken);
+
+    public Task AlertRaised(Domain.Metrics.Alert alert, CancellationToken cancellationToken) =>
+        _hub.Clients.Groups(TargetGroups(alert)).SendAsync(MethodName, BuildEnvelope("alert.raised", alert, count: null), cancellationToken);
+
+    public Task AlertGroupUpdated(Domain.Metrics.Alert alert, int groupCount, CancellationToken cancellationToken) =>
+        _hub.Clients.Groups(TargetGroups(alert)).SendAsync(MethodName, BuildEnvelope("alert.group_updated", alert, groupCount), cancellationToken);
+
+    public Task AlertResolved(Domain.Metrics.Alert alert, CancellationToken cancellationToken) =>
+        _hub.Clients.Groups(TargetGroups(alert)).SendAsync(MethodName, BuildEnvelope("alert.resolved", alert, count: null), cancellationToken);
+
+    /// <summary>
+    /// US-081 §7 <c>{ type, data: { alertId, alertType, severity, entityId, message } }</c> — as
+    /// mesmas salas do resto deste broadcaster: <c>role:{papel}</c> por papel-alvo E/OU
+    /// <c>user:{id}</c> quando o alerta tem destinatário único (US-082, escopo RESPONSIBLE/TABLE_OWNER).
+    /// </summary>
+    private static List<string> TargetGroups(Domain.Metrics.Alert alert)
+    {
+        var groups = alert.TargetRoles.Select(r => AlertsHub.RoleGroup(r)).ToList();
+        if (alert.TargetUserId is { } userId)
+        {
+            groups.Add(AlertsHub.UserGroup(userId));
+        }
+
+        return groups;
+    }
+
+    private static object BuildEnvelope(string type, Domain.Metrics.Alert alert, int? count) => new
+    {
+        type,
+        data = new
+        {
+            alertId = alert.Id,
+            alertType = alert.Type,
+            severity = alert.Severity.ToString().ToUpperInvariant(),
+            entityType = alert.EntityType,
+            entityId = alert.EntityId,
+            message = alert.Message,
+            groupKey = alert.GroupKey,
+            count
+        }
+    };
 }

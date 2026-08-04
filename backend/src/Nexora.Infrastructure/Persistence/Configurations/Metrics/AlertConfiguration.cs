@@ -28,7 +28,25 @@ internal sealed class AlertConfiguration : IEntityTypeConfiguration<Alert>
         builder.Property(a => a.AcknowledgedBy).HasColumnName("acknowledged_by");
         builder.Property(a => a.ResolvedAt).HasColumnName("resolved_at").HasColumnType("timestamptz");
         builder.Property(a => a.GroupKey).HasColumnName("group_key");
+        builder.Property(a => a.GroupWindowStart).HasColumnName("group_window_start").HasColumnType("timestamptz");
+        builder.Property(a => a.PushedAt).HasColumnName("pushed_at").HasColumnType("timestamptz");
 
         builder.HasIndex(a => new { a.TenantId, a.EntityType, a.EntityId });
+
+        // US-080 §12/E-08: consulta de "abertos" (GET /v1/alerts?status=open) e o motor de
+        // avaliação filtram por isto o tempo todo — Docs/Domain/09 idx_alert_open (parcial,
+        // só alertas não reconhecidos).
+        builder.HasIndex(a => new { a.TenantId, a.StoreId, a.Severity, a.RaisedAt })
+            .HasDatabaseName("idx_alert_open")
+            .HasFilter("acknowledged_at IS NULL");
+
+        // US-083: agrupamento por tipo+grupo dentro de um tenant/loja — só alertas ainda abertos
+        // entram num grupo (um alerta resolvido não deve "puxar" um novo alerta para o grupo
+        // antigo). Diferente do uq_alert_group do doc. Domain/09: aqui é DELIBERADAMENTE
+        // não-único, porque cada instância individual (um pedido atrasado por vez) precisa da sua
+        // própria linha para o detalhamento do grupo (US-083 §7: "alerts": [ {...}, {...} ]).
+        builder.HasIndex(a => new { a.TenantId, a.GroupKey })
+            .HasDatabaseName("idx_alert_group")
+            .HasFilter("resolved_at IS NULL AND group_key IS NOT NULL");
     }
 }

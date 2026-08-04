@@ -5,6 +5,7 @@ using Nexora.Application.Abstractions.Notifications;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Realtime;
 using Nexora.Application.Abstractions.Security;
+using Nexora.Application.Alerts.Support;
 using Nexora.Application.Auth.Shared;
 using Nexora.Application.Installations.Abstractions;
 using Nexora.Infrastructure.Auth;
@@ -92,6 +93,15 @@ internal static class MediatRTestContainerFactory
         // consomem IAuthorizationTokenValidator diretamente (elevação pontual, ADR-023) para a
         // checagem BLOCK/WARN/IGNORE de item pendente — mesmo registro de Program.cs (Api.Edge/Cloud).
         services.AddSingleton<IAuthorizationTokenValidator, AuthorizationTokenValidator>();
+
+        // E-08: AlertRaiser é dependência de MarkProductUnavailable/MarkProductAvailable/
+        // RestoreProductsPastBusinessDay (US-080 §2 "produto indisponível") além dos comandos
+        // próprios do motor de alertas — registrado aqui para qualquer teste que dispare esses
+        // handlers pelo container real. IPushNotificationSender só é exercitado pelos testes do
+        // próprio módulo de alertas (DeliverPendingPushCommand); LoggingPushNotificationSender
+        // evita I/O de rede real durante o teste (mesmo espírito de LoggingEmailDispatcher).
+        services.AddSingleton<IAlertRaiser, AlertRaiser>();
+        services.AddSingleton<IPushNotificationSender, Nexora.Infrastructure.Notifications.LoggingPushNotificationSender>();
 
         services.AddMediatR(cfg =>
         {

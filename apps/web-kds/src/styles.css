@@ -105,12 +105,22 @@ body {
     grid-template-columns: 1fr;
   }
 }
-.kds-authenticated > .db-operator-bar {
+/* E-08: a central de notificações (sino, US-081 §10 "acessível de qualquer tela") entra na MESMA
+   linha fixa do OperatorBar, à esquerda dele — junto do único chrome fixo do shell, não um
+   terceiro ponto flutuante novo. */
+.kds-authenticated > .kds-top-row {
   position: fixed;
   z-index: 10;
   top: 0.65rem;
   right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   width: min(24rem, calc(100% - 2rem));
+}
+.kds-authenticated > .kds-top-row > .db-operator-bar {
+  flex: 1 1 auto;
+  width: auto;
 }
 .kds-operational-tools {
   width: min(90rem, calc(100% - 2rem));

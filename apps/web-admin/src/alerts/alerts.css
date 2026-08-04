@@ -1,0 +1,21 @@
+/* Limiares de alerta (US-080) e Direcionamento de alertas (US-082) — cabeçalho, bancada, cartão de
+   formulário e rodapé de editor vêm de `console.css` (@nexora/ui). Sobra só a lista de papéis do
+   editor de direcionamento. */
+
+.alert-routing-roles {
+  display: grid;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: var(--sp-6);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+}
+
+.alert-routing-roles legend {
+  padding: 0 var(--sp-3);
+  font: var(--type-overline);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

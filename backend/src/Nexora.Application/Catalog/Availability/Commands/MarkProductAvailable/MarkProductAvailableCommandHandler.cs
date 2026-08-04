@@ -4,7 +4,9 @@ using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Realtime;
 using Nexora.Application.Abstractions.Security;
+using Nexora.Application.Alerts.Support;
 using Nexora.Contracts.Catalog;
+using Nexora.Domain.Metrics;
 using Nexora.Domain.Platform;
 using Nexora.Shared.Errors;
 using MediatR;
@@ -19,17 +21,20 @@ internal sealed class MarkProductAvailableCommandHandler
     private readonly ICurrentTenantContext _tenantContext;
     private readonly IEventOriginProvider _eventOrigin;
     private readonly IAvailabilityBroadcaster _broadcaster;
+    private readonly IAlertRaiser _alertRaiser;
 
     public MarkProductAvailableCommandHandler(
         IApplicationDbContext db,
         ICurrentTenantContext tenantContext,
         IEventOriginProvider eventOrigin,
-        IAvailabilityBroadcaster broadcaster)
+        IAvailabilityBroadcaster broadcaster,
+        IAlertRaiser alertRaiser)
     {
         _db = db;
         _tenantContext = tenantContext;
         _eventOrigin = eventOrigin;
         _broadcaster = broadcaster;
+        _alertRaiser = alertRaiser;
     }
 
     public async Task<Result<ProductAvailabilityResponse>> Handle(
@@ -89,6 +94,10 @@ internal sealed class MarkProductAvailableCommandHandler
 
             // Broadcast síncrono, aguardado dentro do Handle (ver IAvailabilityBroadcaster).
             await _broadcaster.ProductMarkedAvailableAsync(tenantId, product.Id, cancellationToken);
+
+            // E-08/US-080 §4 "Resolução automática" — encerra o alerta PRODUCT_UNAVAILABLE assim
+            // que o produto volta a ficar disponível (reativo, mesmo espírito da criação).
+            await _alertRaiser.ResolveAsync(tenantId, AlertTypes.ProductUnavailable, "product", product.Id, cancellationToken);
         }
 
         return Result<ProductAvailabilityResponse>.Success(new ProductAvailabilityResponse(

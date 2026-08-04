@@ -1,0 +1,138 @@
+/* Central de notificações (E-08/US-081) — sino na TopBar + painel ancorado. */
+
+.db-notification-center {
+  position: relative;
+  display: inline-flex;
+}
+
+.db-notification-center__trigger--urgent .db-icon-button__dot {
+  background: var(--nx-danger-600);
+  animation: nx-flash-update var(--dur-slower) var(--ease-out) infinite;
+}
+
+.db-notification-center__panel {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  right: 0;
+  z-index: 60;
+  width: 380px;
+  max-width: calc(100vw - var(--sp-6));
+  max-height: min(70vh, 560px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
+  overflow: hidden;
+}
+
+.db-notification-center__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.db-notification-center__title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.db-notification-center__count {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.db-notification-center__push-invite {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-brand-subtle);
+  color: var(--text-brand);
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.db-notification-center__list {
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+.db-notification-center__loading {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-5);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.db-notification-center__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+
+.db-notification-center__item:hover {
+  background: var(--surface-sunken);
+}
+
+.db-notification-center__item--read {
+  opacity: 0.6;
+}
+
+.db-notification-center__item-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.db-notification-center__item--info .db-notification-center__item-icon {
+  color: var(--nx-blue-600);
+}
+.db-notification-center__item--warning .db-notification-center__item-icon {
+  color: var(--text-warning);
+}
+.db-notification-center__item--high .db-notification-center__item-icon,
+.db-notification-center__item--critical .db-notification-center__item-icon {
+  color: var(--text-danger);
+}
+
+.db-notification-center__item-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.db-notification-center__item-message {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.db-notification-center__item-meta {
+  display: flex;
+  gap: var(--sp-3);
+  margin-top: var(--sp-1);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .db-notification-center__trigger--urgent .db-icon-button__dot {
+    animation: none;
+  }
+}

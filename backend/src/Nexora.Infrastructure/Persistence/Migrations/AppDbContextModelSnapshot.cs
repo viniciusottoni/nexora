@@ -2288,6 +2288,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("group_key");
 
+                    b.Property<DateTimeOffset?>("GroupWindowStart")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("group_window_start");
+
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasColumnType("text")
@@ -2299,6 +2303,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("jsonb")
                         .HasDefaultValue("{}")
                         .HasColumnName("payload");
+
+                    b.Property<DateTimeOffset?>("PushedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("pushed_at");
 
                     b.Property<DateTimeOffset>("RaisedAt")
                         .HasColumnType("timestamptz")
@@ -2340,8 +2348,16 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_alert");
 
+                    b.HasIndex("TenantId", "GroupKey")
+                        .HasDatabaseName("idx_alert_group")
+                        .HasFilter("resolved_at IS NULL AND group_key IS NOT NULL");
+
                     b.HasIndex("TenantId", "EntityType", "EntityId")
                         .HasDatabaseName("ix_alert_tenant_id_entity_type_entity_id");
+
+                    b.HasIndex("TenantId", "StoreId", "Severity", "RaisedAt")
+                        .HasDatabaseName("idx_alert_open")
+                        .HasFilter("acknowledged_at IS NULL");
 
                     b.ToTable("alert", (string)null);
                 });
@@ -4428,6 +4444,60 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("idx_pairing_code_tenant_expires");
 
                     b.ToTable("pairing_code", (string)null);
+                });
+
+            modelBuilder.Entity("Nexora.Domain.Platform.PushSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AuthKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("auth_key");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("endpoint");
+
+                    b.Property<DateTimeOffset?>("LastSeenAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_seen_at");
+
+                    b.Property<string>("P256dhKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("p256dh_key");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_push_subscription");
+
+                    b.HasIndex("TenantId", "Endpoint")
+                        .IsUnique()
+                        .HasDatabaseName("ix_push_subscription_tenant_id_endpoint");
+
+                    b.HasIndex("TenantId", "UserId")
+                        .HasDatabaseName("ix_push_subscription_tenant_id_user_id");
+
+                    b.ToTable("push_subscription", (string)null);
                 });
 
             modelBuilder.Entity("Nexora.Domain.Platform.Role", b =>

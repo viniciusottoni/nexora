@@ -42,6 +42,7 @@ public interface IApplicationDbContext
     DbSet<Domain.Platform.DomainEvent> DomainEvents { get; }
     DbSet<Domain.Platform.MediaAsset> MediaAssets { get; }
     DbSet<Domain.Platform.TenantSecret> TenantSecrets { get; }
+    DbSet<Domain.Platform.PushSubscription> PushSubscriptions { get; }
 
     // Catalog
     DbSet<Domain.Catalog.Category> Categories { get; }

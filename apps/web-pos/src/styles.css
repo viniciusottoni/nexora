@@ -97,15 +97,27 @@ body {
 /* Chrome fixo do produto (Design System readme.md § "Espaço, densidade e layout") reserva a
    própria linha em vez de flutuar sobre a página — um OperatorBar em position:fixed cobria os
    controles do próprio cabeçalho da tela (Switch "Minhas mesas" e SegmentedControl de ordenação,
-   ambos com o mesmo canto superior direito), tornando-os invisíveis apesar de renderizados. */
-.pos-authenticated > .db-operator-bar {
+   ambos com o mesmo canto superior direito), tornando-os invisíveis apesar de renderizados.
+   E-08: a central de notificações (sino, US-081 §10 "acessível de qualquer tela") entra na MESMA
+   linha, à esquerda do operador — junto do único outro chrome fixo do shell, não um terceiro ponto
+   flutuante novo. */
+.pos-authenticated > .pos-top-row {
   flex: 0 0 auto;
   align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2, 0.5rem);
   width: min(24rem, calc(100% - 2rem));
   margin: 0.65rem 1rem 0 0;
-  /* OperatorBar (packages/ui) não tem animação própria — entra deslizando ao autenticar, mesma
-     assinatura de entrada do resto do app (nunca duração/easing "solto"). */
+  /* Não tem animação própria — entra deslizando ao autenticar, mesma assinatura de entrada do
+     resto do app (nunca duração/easing "solto"). */
   animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+}
+.pos-authenticated > .pos-top-row > .db-operator-bar {
+  flex: 1 1 auto;
+  width: auto;
+  margin: 0;
+  animation: none;
 }
 
 /* US-034 §10 — indicador discreto e permanente da fila local de pedidos (queda de LAN), visível

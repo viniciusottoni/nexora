@@ -5,6 +5,7 @@ import {
   createNeutralBrandingResponse,
   CreatedByFooter,
   DevicePairingScreen,
+  NotificationCenter,
   OperatorBar,
   OperationalAuthClient,
   OperationalAuthError,
@@ -16,6 +17,7 @@ import {
   type OperationalSession,
 } from '@nexora/ui';
 import { BillingPage } from './billing/billing-page.js';
+import { useNotificationCenter } from './notifications/use-notification-center.js';
 import { configurePosOrderQueue, posOrderQueue } from './offline/pos-order-queue.js';
 import { OrderCompositionPage } from './order-composition/order-composition-page.js';
 import { OpenTablePage } from './tables/open-table-page.js';
@@ -112,6 +114,14 @@ function BrandedPos() {
     () => (device ? new OperationalAuthClient({ baseUrl: '', ...device }) : undefined),
     [device],
   );
+  // E-08 (US-081/US-083) — central de notificações do shell autenticado, visível de qualquer tela
+  // (§10: "acessível de qualquer tela"). O hook precisa ser chamado incondicionalmente em TODO
+  // render (regra dos hooks) mesmo antes do login — por isso `identity` é `undefined` até
+  // device/session existirem, e é o próprio hook (não esta chamada) que fica ocioso nesse meio-tempo
+  // (mesmo padrão de `if (!device || !session) return;` dentro do efeito de reenvio, acima).
+  const identity = device && session ? { accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret } : undefined;
+  const notificationCenter = useNotificationCenter({ identity });
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const submit = async (pin: string) => {
     if (!client) return;
     setBusy(true);
@@ -154,14 +164,25 @@ function BrandedPos() {
     );
   return (
     <div className="pos-authenticated">
-      <OperatorBar
-        userName={session.user.name}
-        onSwitchOperator={() => {
-          setSwitching(true);
-          setError(undefined);
-          setIntentionId(crypto.randomUUID());
-        }}
-      />
+      <div className="pos-top-row">
+        <NotificationCenter
+          items={notificationCenter.items}
+          open={notificationCenterOpen}
+          onOpenChange={setNotificationCenterOpen}
+          onAcknowledge={(id) => void notificationCenter.acknowledge(id)}
+          loading={notificationCenter.loading}
+          pushPermissionPending={notificationCenter.pushPermissionPending}
+          onRequestPushPermission={() => void notificationCenter.requestPushPermission()}
+        />
+        <OperatorBar
+          userName={session.user.name}
+          onSwitchOperator={() => {
+            setSwitching(true);
+            setError(undefined);
+            setIntentionId(crypto.randomUUID());
+          }}
+        />
+      </div>
       {queuedOrderCount > 0 ? (
         // US-034 §10: indicador discreto e PERMANENTE (nunca modal/pop-up) — usa `SyncStatus`
         // (packages/ui) já existente, mais uma legenda sem jargão técnico com a redação exata da

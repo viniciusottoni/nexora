@@ -31,6 +31,12 @@ import type {
   StationDto,
   TableDto,
 } from '@nexora/contracts';
+import { AlertRoutingApi } from './alerts/alert-routing-api.js';
+import { AlertRoutingPage } from './alerts/alert-routing-page.js';
+import { NotificationBell } from './alerts/notification-bell.js';
+import { NotificationsApi } from './alerts/notifications-api.js';
+import { ThresholdConfigPage } from './alerts/threshold-config-page.js';
+import { ThresholdsApi } from './alerts/thresholds-api.js';
 import { AuditApi } from './audit/audit-api.js';
 import { AuditLogPage } from './audit/audit-log-page.js';
 import { BrandingContainer } from './branding/branding-container.js';
@@ -78,6 +84,9 @@ const cloudModifierGroupsApi = new ModifierGroupsApi(CLOUD_API_BASE_URL);
 const cloudPrepTimeApi = new PrepTimeApi(CLOUD_API_BASE_URL);
 const cloudPricingApi = new PricingApi(CLOUD_API_BASE_URL);
 const cloudAuditApi = new AuditApi(CLOUD_API_BASE_URL);
+const cloudThresholdsApi = new ThresholdsApi(CLOUD_API_BASE_URL);
+const cloudAlertRoutingApi = new AlertRoutingApi(CLOUD_API_BASE_URL);
+const cloudNotificationsApi = new NotificationsApi(CLOUD_API_BASE_URL);
 
 /** Dispara o download do PDF de QR Codes (US-020, cenário "Exportação para impressão"). */
 function downloadPdfBlob(blob: Blob, areaId?: string): void {
@@ -296,6 +305,7 @@ function CloudAdmin() {
           }
           right={
             <div className="admin-account">
+              <NotificationBell notificationsApi={cloudNotificationsApi} />
               <Button
                 type="button"
                 variant="ghost"
@@ -554,6 +564,12 @@ function CloudAdmin() {
               />
             ) : null}
             {section === 'audit' ? <AuditLogPage auditApi={cloudAuditApi} /> : null}
+            {section === 'alert-thresholds' ? (
+              <ThresholdConfigPage thresholdsApi={cloudThresholdsApi} />
+            ) : null}
+            {section === 'alert-routing' ? (
+              <AlertRoutingPage roles={roles} alertRoutingApi={cloudAlertRoutingApi} />
+            ) : null}
             <CreatedByFooter />
           </div>
         </div>
@@ -737,7 +753,9 @@ export type CloudAdminSection =
   | 'stations'
   | 'prep-time'
   | 'pricing'
-  | 'audit';
+  | 'audit'
+  | 'alert-thresholds'
+  | 'alert-routing';
 
 /* Agrupado por assunto \u2014 a navega\u00e7\u00e3o de dez itens corridos n\u00e3o dizia o que era opera\u00e7\u00e3o da
    loja, o que era card\u00e1pio e o que era cozinha (SideNav aceita `group` para isso). */
@@ -755,6 +773,9 @@ const ADMIN_NAV_ITEMS: readonly SideNavItem[] = [
   { group: 'Cozinha' },
   { id: 'stations', label: 'Pra\u00e7as de produ\u00e7\u00e3o', icon: 'soup_kitchen' },
   { id: 'prep-time', label: 'Tempo e pra\u00e7a', icon: 'schedule' },
+  { group: 'Alertas' },
+  { id: 'alert-thresholds', label: 'Limiares de alerta', icon: 'rule' },
+  { id: 'alert-routing', label: 'Direcionamento de alertas', icon: 'alt_route' },
   { group: 'Auditoria' },
   { id: 'audit', label: 'Trilha de auditoria', icon: 'fact_check' },
 ];
