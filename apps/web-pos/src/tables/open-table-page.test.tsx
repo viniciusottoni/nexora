@@ -44,7 +44,7 @@ describe('OpenTablePage', () => {
   it('abrir mesa em dois toques: escolher a mesa, confirmar quantidade e some da lista de livres (feedback otimista)', async () => {
     let openCalls = 0;
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = input.toString();
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
       if (init?.method === 'POST' && url.includes('/sessions')) {
         openCalls += 1;
         return jsonResponse(
@@ -80,7 +80,7 @@ describe('OpenTablePage', () => {
 
   it('mesa ja ocupada por outra requisicao (409) mostra mensagem amigavel e volta a lista', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = input.toString();
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
       if (init?.method === 'POST' && url.includes('/sessions')) {
         return jsonResponse({ detail: 'Esta mesa já tem uma comanda em aberto.', code: 'TABLE_ALREADY_OPEN' }, 409);
       }

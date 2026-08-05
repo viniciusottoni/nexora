@@ -123,6 +123,14 @@ public sealed class TenantConfig
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>US-058 (Registrar pagamento de maquininha externa) — taxas por provedor/forma (<c>{ "providers": [...] }</c>), lidas por <c>PaymentProviderFeePolicy</c>.</summary>
+    public void UpdatePayments(string paymentsJson)
+    {
+        Payments = paymentsJson;
+        ConfigVersion++;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     public void BumpCatalogVersion()
     {
         CatalogVersion++;

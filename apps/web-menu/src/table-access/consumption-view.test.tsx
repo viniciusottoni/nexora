@@ -12,6 +12,12 @@ function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
+function requestUrl(input: RequestInfo | URL) {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
+}
+
 function buildConsumption(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     items: [
@@ -95,7 +101,7 @@ describe('ConsumptionView (US-024/US-028)', () => {
 
   it('repete um item com um toque e mostra o preco atual em destaque quando muda (US-028)', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = input.toString();
+      const url = requestUrl(input);
       if (init?.method === 'POST' && url.includes('/repeat')) {
         return jsonResponse({ item: { id: 'novo', unitPrice: '55.00', repeatedFromItemId: itemId } }, 201);
       }
@@ -112,7 +118,7 @@ describe('ConsumptionView (US-024/US-028)', () => {
 
   it('bloqueia a repeticao de item indisponivel com mensagem amigavel (US-028 §4)', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = input.toString();
+      const url = requestUrl(input);
       if (init?.method === 'POST' && url.includes('/repeat')) {
         return jsonResponse({ detail: 'Produto indisponível.', code: 'PRODUCT_UNAVAILABLE' }, 422);
       }

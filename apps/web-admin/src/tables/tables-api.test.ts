@@ -91,7 +91,9 @@ describe('TablesApi', () => {
 
     expect(fetcher.mock.calls[0]?.[0]).toBe('/api/v1/tables/bulk');
     expect(fetcher.mock.calls[0]?.[1]?.method).toBe('POST');
-    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({
+    const body = fetcher.mock.calls[0]?.[1]?.body;
+    if (typeof body !== 'string') throw new Error('Esperava body JSON serializado como string.');
+    expect(JSON.parse(body)).toEqual({
       areaId: area.id,
       from: 1,
       to: 20,

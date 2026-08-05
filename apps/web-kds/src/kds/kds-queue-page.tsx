@@ -8,7 +8,7 @@ import { readStationIdFromAccessToken } from './decode-station-claim.js';
 import { KdsApiError, KdsQueueApi } from './kds-queue-api.js';
 import { createKdsHubConnection, KdsRealtimeClient, type KdsConnectionMode } from './kds-realtime.js';
 import { KdsHistoryPage } from './kds-history-page.js';
-import { groupKdsQueueByStation, useMultiStationKdsQueue, type KdsQueueItemWithStation } from './kds-multi-station-queue.js';
+import { groupKdsQueueByStation, useMultiStationKdsQueue } from './kds-multi-station-queue.js';
 import { formatItemName, formatRelativeSync, groupItemsByOrder, toOrderTicketChannel, type KdsOrderGroup } from './kds-signals.js';
 import { NumericKeypad } from './numeric-keypad.js';
 import { AllDayPanel } from './all-day-panel.js';
@@ -277,7 +277,7 @@ export function KdsQueuePage({ baseUrl = '', identity }: Readonly<KdsQueuePagePr
       ? [{ key: 'single', label: null, color: null, orderGroups: singleStationOrderGroups }]
       : (() => {
           const byStation = groupKdsQueueByStation(
-            (multiStation.items ?? []) as readonly KdsQueueItemWithStation[],
+            multiStation.items ?? [],
             stationFilter.activeStations.map((station) => station.id),
           );
           return stationFilter.activeStations.map((station) => ({

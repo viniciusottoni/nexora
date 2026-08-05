@@ -76,7 +76,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId", "CashSessionId", "OccurredAt")
                         .HasDatabaseName("ix_cash_movement_tenant_id_cash_session_id_occurred_at");
 
-                    b.ToTable("cash_movement", (string)null);
+                    b.ToTable("cash_movement", (string)null, t =>
+                        {
+                            t.HasCheckConstraint("ck_movement_amount", "amount > 0");
+                        });
                 });
 
             modelBuilder.Entity("Nexora.Domain.Cashier.CashSession", b =>
@@ -160,10 +163,20 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_cash_session");
 
+                    b.HasIndex("StoreId", "OperatorId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_cash_open")
+                        .HasFilter("status <> 2");
+
                     b.HasIndex("TenantId", "BusinessDay")
                         .HasDatabaseName("ix_cash_session_tenant_id_business_day");
 
-                    b.ToTable("cash_session", (string)null);
+                    b.ToTable("cash_session", (string)null, t =>
+                        {
+                            t.HasCheckConstraint("ck_cash_closed", "status <> 2 OR (closed_at IS NOT NULL AND counted_amount IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_cash_opening", "opening_amount >= 0");
+                        });
                 });
 
             modelBuilder.Entity("Nexora.Domain.Cashier.Payment", b =>
@@ -252,6 +265,12 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.Property<string>("ProviderRef")
                         .HasColumnType("text")
                         .HasColumnName("provider_ref");
+
+                    b.Property<int>("ReconciliationStatus")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("reconciliation_status");
 
                     b.Property<decimal?>("RefundAmount")
                         .HasColumnType("money_amount")
@@ -3174,6 +3193,24 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
 
+                    b.Property<decimal>("Discount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("money_amount")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("discount");
+
+                    b.Property<Guid?>("DiscountAppliedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("discount_applied_by");
+
+                    b.Property<Guid?>("DiscountAuthorizedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("discount_authorized_by");
+
+                    b.Property<string>("DiscountReason")
+                        .HasColumnType("text")
+                        .HasColumnName("discount_reason");
+
                     b.Property<DateTimeOffset?>("FireAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("fire_at");
@@ -3470,6 +3507,29 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasDefaultValue(0m)
                         .HasColumnName("discount_amount");
 
+                    b.Property<Guid?>("DiscountAppliedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("discount_applied_by");
+
+                    b.Property<Guid?>("DiscountAuthorizedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("discount_authorized_by");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("money_amount")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("discount_percent");
+
+                    b.Property<string>("DiscountReason")
+                        .HasColumnType("text")
+                        .HasColumnName("discount_reason");
+
+                    b.Property<string>("DiscountScope")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("discount_scope");
+
                     b.Property<short>("GuestCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("smallint")
@@ -3515,6 +3575,25 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("money_amount")
                         .HasDefaultValue(0m)
                         .HasColumnName("service_fee_amount");
+
+                    b.Property<string>("ServiceFeeWaiveReason")
+                        .HasColumnType("text")
+                        .HasColumnName("service_fee_waive_reason");
+
+                    b.Property<string>("ServiceFeeWaiveScope")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("service_fee_waive_scope");
+
+                    b.Property<bool>("ServiceFeeWaived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("service_fee_waived");
+
+                    b.Property<Guid?>("ServiceFeeWaivedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_fee_waived_by");
 
                     b.Property<string>("SplitMode")
                         .HasMaxLength(16)

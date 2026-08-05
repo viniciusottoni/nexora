@@ -1,0 +1,211 @@
+.cash-session-page {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 40rem;
+  margin: 0 auto;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) backwards;
+}
+
+.cash-session-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cash-session-eyebrow {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.cash-session-loading {
+  padding: 2rem;
+  text-align: center;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) backwards;
+}
+
+.cash-session-error {
+  color: var(--text-danger);
+  background: var(--surface-danger-subtle);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  animation: nx-slide-in var(--dur-base) var(--ease-out) backwards;
+}
+
+.cash-session-hint {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.cash-session-open-form,
+.cash-session-movements,
+.cash-session-close {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cash-session-amount-input {
+  font-variant-numeric: tabular-nums;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: var(--border-1) solid var(--border-default);
+  background: var(--surface-card);
+  transition: var(--transition-control);
+}
+
+.cash-session-amount-input:focus-visible {
+  border-color: var(--action-primary);
+  box-shadow: var(--shadow-focus-ring);
+}
+
+/* US-055 §10: "contagem informada em campo grande" — o valor mais importante da tela precisa ser lido de longe. */
+.cash-session-amount-input--lg {
+  font-size: 2rem;
+  font-weight: 700;
+  padding: 0.75rem 1rem;
+}
+
+.cash-session-expected__list {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+
+.cash-session-expected__list dt {
+  color: var(--text-muted);
+}
+
+.cash-session-expected__list dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cash-session-expected__total dt,
+.cash-session-expected__total dd {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: inherit;
+  border-top: var(--border-1) solid var(--border-subtle);
+  padding-top: 0.35rem;
+  margin-top: 0.15rem;
+}
+
+.cash-session-movement-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.cash-session-movement-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  animation: nx-slide-in var(--dur-base) var(--ease-out) backwards;
+}
+
+.cash-session-authorize {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  animation: nx-slide-in var(--dur-base) var(--ease-out) backwards;
+}
+
+.cash-session-feedback--success,
+.cash-session-feedback--error {
+  /* Confirmação de movimento/fechamento — entra suavemente em vez de "pipocar" (RNF-USA-13). */
+  animation: nx-scale-in var(--dur-base) var(--ease-out) backwards;
+}
+
+.cash-session-feedback--success {
+  color: var(--nx-success-600);
+}
+
+.cash-session-feedback--error {
+  color: var(--nx-danger-600);
+}
+
+.cash-session-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cash-session-history-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: 0.5rem;
+  transition: var(--transition-control);
+  animation: nx-slide-in var(--dur-base) var(--ease-out) backwards;
+}
+
+.cash-session-history-item__amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.cash-session-history-item__reason {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.cash-session-open-tables-list {
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
+}
+
+/* US-055 §10: "divergência exibida em destaque, com sinal e valor absoluto". */
+.cash-session-divergence {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: var(--transition-control);
+  animation: nx-scale-in var(--dur-base) var(--ease-out) backwards;
+}
+
+.cash-session-divergence--zero {
+  color: var(--nx-success-600);
+}
+
+.cash-session-divergence--positive {
+  color: var(--nx-success-600);
+}
+
+.cash-session-divergence--negative {
+  color: var(--nx-danger-600);
+}
+
+.cash-session-receipt__summary dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.cash-session-receipt__summary dt {
+  color: var(--text-muted);
+}
+
+.cash-session-receipt__summary dd {
+  margin: 0;
+  text-align: right;
+}
+
+@media print {
+  .cash-session-page__header button {
+    display: none;
+  }
+}

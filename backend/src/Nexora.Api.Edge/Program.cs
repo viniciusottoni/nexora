@@ -521,6 +521,40 @@ builder.Services.AddAuthorization(options =>
         return PermissionAuthorization.HasPermission(permissions, "order:cancel_queued")
                || PermissionAuthorization.HasPermission(permissions, "order:cancel_started");
     }));
+
+    // Abertura/fechamento de caixa (US-055) e sangria/suprimento (US-056) — "cash:open"/"cash:close"/
+    // "cash:movement" já existem no catálogo fechado (Nexora.Domain.Platform.PermissionCatalog) desde
+    // antes destas histórias. A elevação para divergência/mesa aberta/sangria acima do limite é
+    // verificada dentro do handler via X-Authorization-Token (ADR-023), nunca por policy estática —
+    // mesmo raciocínio de "OrderCancelItem" acima.
+    options.AddPolicy("CashOpen", policy => policy.RequireAssertion(context =>
+    {
+        var permissions = context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value).ToArray();
+        return PermissionAuthorization.HasPermission(permissions, "cash:open");
+    }));
+
+    options.AddPolicy("CashClose", policy => policy.RequireAssertion(context =>
+    {
+        var permissions = context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value).ToArray();
+        return PermissionAuthorization.HasPermission(permissions, "cash:close");
+    }));
+
+    options.AddPolicy("CashMovement", policy => policy.RequireAssertion(context =>
+    {
+        var permissions = context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value).ToArray();
+        return PermissionAuthorization.HasPermission(permissions, "cash:movement");
+    }));
+
+    // Leitura da sessão corrente e do histórico do turno — qualquer permissão de caixa já basta
+    // (quem abre, fecha ou movimenta plausivelmente também pode consultar), mesmo raciocínio de
+    // "TableRead"/"KdsQueueRead" acima.
+    options.AddPolicy("CashRead", policy => policy.RequireAssertion(context =>
+    {
+        var permissions = context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value).ToArray();
+        return PermissionAuthorization.HasPermission(permissions, "cash:open")
+               || PermissionAuthorization.HasPermission(permissions, "cash:close")
+               || PermissionAuthorization.HasPermission(permissions, "cash:movement");
+    }));
 });
 
 // ---------------------------------------------------------------------------

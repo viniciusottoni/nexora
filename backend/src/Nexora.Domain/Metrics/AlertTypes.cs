@@ -50,6 +50,14 @@ public static class AlertTypes
     public const string DiscountAboveThreshold = "DISCOUNT_ABOVE_THRESHOLD";
 
     /// <summary>
+    /// US-053 §4, cenário "Padrão anômalo de retirada": um operador retirou a taxa de serviço em
+    /// proporção muito acima do normal das contas do turno — avaliado diretamente por
+    /// <c>WaiveSessionServiceFeeCommandHandler</c> a cada retirada FULL, não pelo motor periódico
+    /// de US-080 (que hoje só olha <c>Order.DiscountAmount</c>, um agregado diferente do usado aqui).
+    /// </summary>
+    public const string ServiceFeeWaiveAboveThreshold = "SERVICE_FEE_WAIVE_ABOVE_THRESHOLD";
+
+    /// <summary>
     /// Todos os tipos avaliados pelo motor (US-080) — usados para validar chaves de configuração
     /// (thresholds/routing) e para os workers de avaliação periódica saberem o que escalonar.
     /// </summary>

@@ -254,8 +254,12 @@ export function TableMapPage({
                   waiterCalled={entry.flags.waiterCalled}
                   itemsReadyToServe={entry.flags.itemsReadyToServe}
                   aboveAvgDuration={entry.flags.aboveAvgDuration}
-                  onAcknowledgeCall={handleAcknowledgeCall}
-                  onRequestBill={handleRequestBill}
+                  onAcknowledgeCall={(tableId) => {
+                    void handleAcknowledgeCall(tableId);
+                  }}
+                  onRequestBill={(sessionId) => {
+                    void handleRequestBill(sessionId);
+                  }}
                   {...(onOpenBilling ? { onOpenBilling } : {})}
                   {...(onComposeOrder ? { onComposeOrder } : {})}
                   {...(onSelectTable && entry.status === 'FREE' ? { onSelect: onSelectTable } : {})}

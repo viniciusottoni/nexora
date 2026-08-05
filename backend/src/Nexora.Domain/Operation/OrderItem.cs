@@ -25,6 +25,12 @@ public sealed class OrderItem
     public decimal ModifiersTotal { get; private set; }
     public decimal TotalPrice { get; private set; }
     public decimal? UnitCost { get; private set; }
+
+    /// <summary>US-054 (Desconto com autorização) — desconto aplicado especificamente a este item (RN-011, escopo <c>ITEM</c>), já descontado de <see cref="TotalPrice"/>.</summary>
+    public decimal Discount { get; private set; }
+    public string? DiscountReason { get; private set; }
+    public Guid? DiscountAppliedBy { get; private set; }
+    public Guid? DiscountAuthorizedBy { get; private set; }
     public OrderItemStatus Status { get; private set; } = OrderItemStatus.Queued;
     public string? Notes { get; private set; }
     public DateTimeOffset PlacedAt { get; private set; }
@@ -352,10 +358,35 @@ public sealed class OrderItem
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// US-054 §4, cenário "Desconto por item": reduz só o valor deste item, nunca a sessão inteira
+    /// (esse é <see cref="TableSession.ApplyDiscount"/>) — a avaliação do limite/autorização acima
+    /// dele acontece na Application, antes de chamar isto (mesmo padrão de <paramref name="authorizedBy"/>
+    /// opcional usado em <see cref="Cancel"/>).
+    /// </summary>
+    public void ApplyDiscount(decimal amount, string reason, Guid appliedBy, Guid? authorizedBy = null)
+    {
+        if (amount < 0)
+            throw new DomainException("O desconto não pode ser negativo.");
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new DomainException("O motivo do desconto é obrigatório.");
+
+        var grossTotal = (UnitPrice * Quantity) + ModifiersTotal;
+        if (amount > grossTotal)
+            throw new DomainException("O desconto não pode ser maior que o valor do item.");
+
+        Discount = amount;
+        DiscountReason = reason;
+        DiscountAppliedBy = appliedBy;
+        DiscountAuthorizedBy = authorizedBy;
+        RecalculateTotal();
+    }
+
     private void RecalculateTotal()
     {
-        // ordem de cálculo normativa (ADR-017 §"Ordem das operações"): unitário × quantidade, + modificadores
-        TotalPrice = (UnitPrice * Quantity) + ModifiersTotal;
+        // ordem de cálculo normativa (ADR-017 §"Ordem das operações"): unitário × quantidade, + modificadores, - desconto do item
+        TotalPrice = (UnitPrice * Quantity) + ModifiersTotal - Discount;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 }

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DevicePreferencesApi } from './device-preferences-api.js';
 import { KdsQueueApi } from './kds-queue-api.js';
 import { KdsStationsApi } from './stations-api.js';

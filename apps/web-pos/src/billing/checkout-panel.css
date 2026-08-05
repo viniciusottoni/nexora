@@ -1,0 +1,89 @@
+/* US-052/US-053/US-054/US-057 — painel de fechamento completo da conta, motion e tokens
+   consistentes com billing.css/table-map (CLAUDE.md "Motion e microinterações"). */
+
+.checkout-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: nx-slide-in var(--dur-base) var(--ease-out) backwards;
+}
+
+.checkout-panel h2 {
+  margin: 0;
+}
+
+.checkout-panel h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--nx-text-secondary);
+}
+
+.checkout-panel__service-fee,
+.checkout-panel__discount,
+.checkout-panel__payments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--nx-border-subtle);
+}
+
+.checkout-panel__payment-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkout-panel__remaining {
+  margin: 4px 0;
+}
+
+.checkout-panel__error {
+  color: var(--nx-danger-600);
+}
+
+.checkout-panel__discount-authorize {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface-brand-subtle);
+  animation: nx-scale-in var(--dur-fast) var(--ease-out) backwards;
+}
+
+.checkout-panel--done {
+  animation: nx-scale-in var(--dur-base) var(--ease-out) backwards;
+}
+
+.checkout-panel__change {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.checkout-panel__receipt-note {
+  margin: 0;
+  color: var(--nx-warning-700, var(--color-text-muted));
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.checkout-panel__payments-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkout-panel,
+  .checkout-panel--done,
+  .checkout-panel__discount-authorize {
+    animation: none;
+  }
+}

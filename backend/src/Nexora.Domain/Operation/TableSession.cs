@@ -55,6 +55,29 @@ public sealed class TableSession
     public decimal DiscountAmount { get; private set; }
     public decimal ServiceFeeAmount { get; private set; }
     public decimal TotalAmount { get; private set; }
+
+    /// <summary>
+    /// US-054 (Desconto com autorização) — percentual de desconto vigente sobre o total da sessão
+    /// (RN-011, escopo <c>SESSION</c>; desconto por item vive em <see cref="OrderItem.Discount"/>).
+    /// Aplicado na montagem da conta (<c>BillQueryCoordinator</c>) antes de <see cref="MarkAsPaid"/>
+    /// congelar o valor definitivo.
+    /// </summary>
+    public decimal DiscountPercent { get; private set; }
+    public string? DiscountReason { get; private set; }
+    public Guid? DiscountAppliedBy { get; private set; }
+    public Guid? DiscountAuthorizedBy { get; private set; }
+    public string? DiscountScope { get; private set; }
+
+    /// <summary>
+    /// US-053 (Taxa de serviço com retirada registrada) — retirada da taxa no nível da SESSÃO
+    /// inteira (escopo <c>FULL</c>) ou de uma parte da divisão (escopo <c>PARTIAL</c>, RN-010). A
+    /// retirada por pessoa da US-027 (<c>WaiveServiceFeeCommand</c>) continua ephemeral/recalculada
+    /// a cada consulta — este campo é o registro AUTORITATIVO usado no fechamento (US-052).
+    /// </summary>
+    public bool ServiceFeeWaived { get; private set; }
+    public string? ServiceFeeWaiveReason { get; private set; }
+    public Guid? ServiceFeeWaivedBy { get; private set; }
+    public string? ServiceFeeWaiveScope { get; private set; }
     public short? Rating { get; private set; }
     public string? RatingComment { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
@@ -196,10 +219,64 @@ public sealed class TableSession
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// US-054 §4 — desconto sobre o TOTAL da sessão (RN-011, escopo <c>SESSION</c>). A avaliação do
+    /// limite configurado e a exigência de <c>X-Authorization-Token</c> acima dele acontecem na
+    /// Application (mesmo padrão de <c>PendingItemsClosePolicy</c>) ANTES de chamar este método —
+    /// aqui só se persiste o resultado já autorizado.
+    /// </summary>
+    public void ApplyDiscount(decimal percent, string reason, Guid appliedBy, Guid? authorizedBy = null)
+    {
+        if (percent is < 0 or > 100)
+            throw new DomainException("O percentual de desconto deve estar entre 0 e 100.");
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new DomainException("O motivo do desconto é obrigatório.");
+
+        if (Status is TableSessionStatus.Paid or TableSessionStatus.Closed)
+            throw new DomainException("Esta comanda já foi encerrada e não aceita mais desconto.");
+
+        DiscountPercent = percent;
+        DiscountReason = reason;
+        DiscountAppliedBy = appliedBy;
+        DiscountAuthorizedBy = authorizedBy;
+        DiscountScope = "SESSION";
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// US-053 §4 — retirada da taxa de serviço registrada no nível da sessão (RN-010). Diferente da
+    /// retirada por pessoa da US-027 (<c>WaiveServiceFeeCommand</c>, que só recalcula uma prévia
+    /// efêmera): este é o registro AUTORITATIVO que <c>BillQueryCoordinator</c>/pagamento (US-052)
+    /// respeitam. Não é reversível por design (RN-010: "a retirada é registrada e auditada" — é um
+    /// fato, não uma preferência que se desfaz).
+    /// </summary>
+    public void WaiveServiceFee(string reason, Guid waivedBy, string scope)
+    {
+        if (string.IsNullOrWhiteSpace(scope))
+            throw new DomainException("O escopo da retirada da taxa é obrigatório.");
+
+        if (Status is TableSessionStatus.Paid or TableSessionStatus.Closed)
+            throw new DomainException("Esta comanda já foi encerrada e não aceita mais retirada de taxa.");
+
+        ServiceFeeWaived = true;
+        ServiceFeeWaiveReason = reason;
+        ServiceFeeWaivedBy = waivedBy;
+        ServiceFeeWaiveScope = scope;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// US-052 (Múltiplas formas de pagamento) — aceita tanto <see cref="TableSessionStatus.Open"/>
+    /// quanto <see cref="TableSessionStatus.BillRequested"/>: o pagamento em si pode ser o que
+    /// fecha a conta, sem exigir um passo explícito prévio de "pedir a conta" (US-026), que continua
+    /// opcional (ex.: fluxo de balcão/expresso). Nenhum outro chamador restringia a
+    /// <c>BillRequested</c> antes desta história — só o comando de registro de pagamento (US-052, Application) a usa.
+    /// </summary>
     public void MarkAsPaid(decimal subtotal, decimal discountAmount, decimal serviceFeeAmount, decimal totalAmount)
     {
-        if (Status is not TableSessionStatus.BillRequested)
-            throw new DomainException("Só é possível pagar uma comanda com conta solicitada.");
+        if (Status is not (TableSessionStatus.Open or TableSessionStatus.BillRequested))
+            throw new DomainException("Só é possível pagar uma comanda aberta ou com conta solicitada.");
 
         Status = TableSessionStatus.Paid;
         Subtotal = subtotal;

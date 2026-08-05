@@ -8,7 +8,10 @@ internal sealed class CashMovementConfiguration : IEntityTypeConfiguration<CashM
 {
     public void Configure(EntityTypeBuilder<CashMovement> builder)
     {
-        builder.ToTable("cash_movement");
+        builder.ToTable("cash_movement", table =>
+        {
+            table.HasCheckConstraint("ck_movement_amount", "amount > 0");
+        });
 
         builder.HasKey(m => m.Id);
         builder.Property(m => m.Id).HasColumnName("id").ValueGeneratedNever();

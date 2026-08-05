@@ -46,8 +46,12 @@ const vibrateAlertMock = vi.fn();
 const playAlertChimeMock = vi.fn();
 
 vi.mock('../notifications/alert-sound.js', () => ({
-  vibrateAlert: (...args: unknown[]) => vibrateAlertMock(...args),
-  playAlertChime: (...args: unknown[]) => playAlertChimeMock(...args),
+  vibrateAlert: (...args: unknown[]) => {
+    vibrateAlertMock(...args);
+  },
+  playAlertChime: (...args: unknown[]) => {
+    playAlertChimeMock(...args);
+  },
 }));
 
 function tableFixture(overrides: Partial<Record<string, unknown>> = {}) {

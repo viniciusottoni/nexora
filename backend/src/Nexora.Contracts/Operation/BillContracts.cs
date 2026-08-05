@@ -17,7 +17,28 @@ public sealed record BillItemResponse(
     string Name,
     [property: JsonConverter(typeof(MoneyJsonConverter))] decimal Total,
     bool Pending,
-    int? AssignedPerson);
+    int? AssignedPerson,
+    // US-051 (Conta montada automaticamente) §4/§7 — discriminação de quantidade/preço unitário,
+    // modificadores, frações do meio a meio e sinalização de item cancelado (riscado, não oculto,
+    // para conferência). Todos com default para não quebrar nenhuma construção posicional
+    // existente de US-027 (BillingPage/testes), que não preenche estes campos.
+    int Quantity = 1,
+    [property: JsonConverter(typeof(MoneyJsonConverter))] decimal UnitPrice = 0,
+    IReadOnlyList<BillItemModifierResponse>? Modifiers = null,
+    IReadOnlyList<BillItemFractionResponse>? Fractions = null,
+    bool Cancelled = false,
+    [property: JsonConverter(typeof(MoneyJsonConverter))] decimal Discount = 0);
+
+/// <summary>Adicional discriminado no detalhamento do item (US-051 §4, cenário "Conta completa").</summary>
+public sealed record BillItemModifierResponse(
+    string Name,
+    [property: JsonConverter(typeof(MoneyJsonConverter))] decimal PriceDelta);
+
+/// <summary>Sabor do meio a meio discriminado no detalhamento do item (US-051 §4).</summary>
+public sealed record BillItemFractionResponse(string Name, decimal Weight);
+
+/// <summary>Metadados da sessão exibidos junto da conta (US-051 §7: <c>openedAt</c>/<c>minutesOpen</c>/<c>guestCount</c>).</summary>
+public sealed record BillSessionResponse(DateTimeOffset OpenedAt, int MinutesOpen, short GuestCount);
 
 /// <summary>Item ainda em produção no momento da divisão (US-027 §4, cenário "Item pendente durante a divisão").</summary>
 public sealed record BillPendingItemResponse(Guid Id, string Name, string Status);
@@ -56,7 +77,14 @@ public sealed record BillResponse(
     [property: JsonConverter(typeof(MoneyJsonConverter))] decimal? AmountPaid,
     [property: JsonConverter(typeof(MoneyJsonConverter))] decimal? RemainingAmount,
     IReadOnlyList<Guid> UnassignedItemIds,
-    string PendingItemsMode = "WARN");
+    string PendingItemsMode = "WARN",
+    // US-051/US-053/US-054 — campos adicionados por cima do contrato original de US-027, todos com
+    // default para preservar toda construção posicional existente.
+    [property: JsonConverter(typeof(MoneyJsonConverter))] decimal Discount = 0,
+    decimal ServiceFeePercent = 0,
+    bool ServiceFeeOptional = true,
+    bool ServiceFeeWaived = false,
+    BillSessionResponse? Session = null);
 
 /// <summary>Atribuição de um conjunto de itens a uma pessoa — elemento de <see cref="AssignBillItemsRequest"/>.</summary>
 public sealed record BillItemAssignmentRequest(int Person, IReadOnlyList<Guid> ItemIds);

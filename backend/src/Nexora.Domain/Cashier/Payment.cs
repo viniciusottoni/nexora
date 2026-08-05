@@ -33,6 +33,9 @@ public sealed class Payment
     public int Installments { get; private set; } = 1;
     public string? CardBrand { get; private set; }
     public string? AuthorizationCode { get; private set; }
+
+    /// <summary>US-058 — ver <see cref="PaymentReconciliationStatus"/>. <c>Pending</c> sempre que há <see cref="Provider"/> (maquininha), <c>NotApplicable</c> caso contrário (ex.: dinheiro).</summary>
+    public PaymentReconciliationStatus ReconciliationStatus { get; private set; } = PaymentReconciliationStatus.NotApplicable;
     public DateTimeOffset? PaidAt { get; private set; }
     public DateTimeOffset? RefundedAt { get; private set; }
     public decimal? RefundAmount { get; private set; }
@@ -100,6 +103,9 @@ public sealed class Payment
             ProviderRef = providerRef,
             Installments = installments,
             CardBrand = cardBrand,
+            ReconciliationStatus = string.IsNullOrWhiteSpace(provider)
+                ? PaymentReconciliationStatus.NotApplicable
+                : PaymentReconciliationStatus.Pending,
             CreatedAt = now,
             UpdatedAt = now,
             CreatedBy = createdBy

@@ -329,7 +329,6 @@ export function StationFilterBar({ filter }: Readonly<StationFilterBarProps>) {
 
   useEffect(() => {
     if (!pickerOpen) setDraft(currentSelection);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- currentSelectionKey representa currentSelection de forma estável
   }, [pickerOpen, currentSelectionKey]);
 
   if (filter.loading || filter.mode === 'single') return null;

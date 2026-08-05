@@ -41,7 +41,7 @@ describe('PosTablesApi', () => {
         ],
       }),
     );
-    const api = new PosTablesApi(identity, '', fetcher as unknown as typeof fetch);
+    const api = new PosTablesApi(identity, '', fetcher);
 
     const result = await api.listFreeTables();
 
@@ -70,7 +70,7 @@ describe('PosTablesApi', () => {
         201,
       );
     });
-    const api = new PosTablesApi(identity, '', fetcher as unknown as typeof fetch);
+    const api = new PosTablesApi(identity, '', fetcher);
 
     const session = await api.openSession(tableId, { guestCount: 4 });
 
@@ -86,7 +86,7 @@ describe('PosTablesApi', () => {
     const fetcher = vi.fn(async () =>
       jsonResponse({ detail: 'Esta mesa já tem uma comanda em aberto.', code: 'TABLE_ALREADY_OPEN', meta: { sessionId: 'abc' } }, 409),
     );
-    const api = new PosTablesApi(identity, '', fetcher as unknown as typeof fetch);
+    const api = new PosTablesApi(identity, '', fetcher);
 
     await expect(api.openSession(tableId, { guestCount: 2 })).rejects.toMatchObject({
       code: 'TABLE_ALREADY_OPEN',
@@ -95,7 +95,7 @@ describe('PosTablesApi', () => {
 
   it('devolve mensagem generica quando o corpo do erro nao e JSON valido', async () => {
     const fetcher = vi.fn(async () => new Response('erro interno', { status: 500 }));
-    const api = new PosTablesApi(identity, '', fetcher as unknown as typeof fetch);
+    const api = new PosTablesApi(identity, '', fetcher);
 
     await expect(api.openSession(tableId, { guestCount: 2 })).rejects.toBeInstanceOf(PosApiError);
   });

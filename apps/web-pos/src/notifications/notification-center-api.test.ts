@@ -56,7 +56,7 @@ describe('NotificationCenterApi (US-081/US-083)', () => {
   it('reconhece um alerta com Idempotency-Key e devolve o alerta atualizado', async () => {
     const acknowledged = alertFixture({ acknowledgedAt: '2026-08-04T12:05:00.000Z', acknowledgedBy: 'user-1' });
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(input.toString()).toBe('/v1/alerts/0198aabb-1111-7000-8000-000000000001/acknowledge');
+      expect(input).toBe('/v1/alerts/0198aabb-1111-7000-8000-000000000001/acknowledge');
       expect(init?.method).toBe('POST');
       expect(new Headers(init?.headers).get('Idempotency-Key')).toBeTruthy();
       return jsonResponse(acknowledged);

@@ -1,14 +1,30 @@
 import {
+  applyDiscountRequestSchema,
+  applyDiscountResponseSchema,
   assignBillItemsRequestSchema,
   billResponseSchema,
+  getReceiptResponseSchema,
   partialPaymentResponseSchema,
+  printReceiptResponseSchema,
   registerPartialPaymentRequestSchema,
+  registerPaymentsRequestSchema,
+  registerPaymentsResponseSchema,
   waiveServiceFeeRequestSchema,
+  waiveSessionServiceFeeRequestSchema,
+  waiveSessionServiceFeeResponseSchema,
+  type ApplyDiscountRequest,
+  type ApplyDiscountResponse,
   type AssignBillItemsRequest,
   type BillResponse,
+  type GetReceiptResponse,
   type PartialPaymentResponse,
+  type PrintReceiptResponse,
   type RegisterPartialPaymentRequest,
+  type RegisterPaymentsRequest,
+  type RegisterPaymentsResponse,
   type WaiveServiceFeeRequest,
+  type WaiveSessionServiceFeeRequest,
+  type WaiveSessionServiceFeeResponse,
 } from '@nexora/contracts';
 import { operationalAuthenticatedFetch, type OperationalRequestIdentity } from '@nexora/ui';
 
@@ -152,6 +168,156 @@ export class BillingApi {
     );
     await requireSuccess(response);
     return response.json() as Promise<AuthorizeCloseWithPendingResponse>;
+  }
+
+  /**
+   * US-054 §4 ("o gerente digita o PIN no próprio dispositivo do operador, sem trocar de sessão")
+   * — mesma elevação pontual (ADR-023) de `authorizeCloseWithPending`, ação `DISCOUNT_ABOVE_LIMIT`.
+   */
+  async authorizeDiscount(
+    identity: Readonly<OperationalRequestIdentity>,
+    input: { readonly sessionId: string; readonly pin: string; readonly reason?: string | undefined },
+  ): Promise<AuthorizeCloseWithPendingResponse> {
+    const response = await operationalAuthenticatedFetch(
+      `${this.baseUrl}/v1/auth/authorize`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'DISCOUNT_ABOVE_LIMIT',
+          pin: input.pin,
+          context: { sessionId: input.sessionId, reason: input.reason ?? null },
+        }),
+      },
+      identity,
+      this.fetcher,
+    );
+    await requireSuccess(response);
+    return response.json() as Promise<AuthorizeCloseWithPendingResponse>;
+  }
+
+  /**
+   * US-052 (Múltiplas formas de pagamento) / US-058 (Pagamento de maquininha externa) —
+   * confirmação ÚNICA do conjunto de pagamentos (US-052 §10), fecha a comanda por completo
+   * (diferente de `registerPartialPayment`, que é US-027 e mantém a sessão em aberto).
+   */
+  async registerPayments(
+    identity: Readonly<OperationalRequestIdentity>,
+    sessionId: string,
+    input: RegisterPaymentsRequest,
+  ): Promise<RegisterPaymentsResponse> {
+    const response = await operationalAuthenticatedFetch(
+      `${this.baseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/payments`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+        body: JSON.stringify(registerPaymentsRequestSchema.parse(input)),
+      },
+      identity,
+      this.fetcher,
+    );
+    await requireSuccess(response);
+    return registerPaymentsResponseSchema.parse(await response.json());
+  }
+
+  /** US-054 (Desconto com autorização) — acima do limite exige `authorizationToken` (ADR-023, ação DISCOUNT_ABOVE_LIMIT). */
+  async applyDiscount(
+    identity: Readonly<OperationalRequestIdentity>,
+    sessionId: string,
+    input: ApplyDiscountRequest,
+    authorizationToken?: string,
+  ): Promise<ApplyDiscountResponse> {
+    const response = await operationalAuthenticatedFetch(
+      `${this.baseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/discount`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': crypto.randomUUID(),
+          ...(authorizationToken ? { 'X-Authorization-Token': authorizationToken } : {}),
+        },
+        body: JSON.stringify(applyDiscountRequestSchema.parse(input)),
+      },
+      identity,
+      this.fetcher,
+    );
+    await requireSuccess(response);
+    return applyDiscountResponseSchema.parse(await response.json());
+  }
+
+  /**
+   * US-053 (Taxa de serviço com retirada registrada) — registro AUTORITATIVO no nível da sessão
+   * (RN-010), distinto de `waiveServiceFee` (US-027, prévia efêmera por pessoa).
+   */
+  async waiveSessionServiceFee(
+    identity: Readonly<OperationalRequestIdentity>,
+    sessionId: string,
+    input: WaiveSessionServiceFeeRequest,
+  ): Promise<WaiveSessionServiceFeeResponse> {
+    const response = await operationalAuthenticatedFetch(
+      `${this.baseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/service-fee/waive`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+        body: JSON.stringify(waiveSessionServiceFeeRequestSchema.parse(input)),
+      },
+      identity,
+      this.fetcher,
+    );
+    await requireSuccess(response);
+    return waiveSessionServiceFeeResponseSchema.parse(await response.json());
+  }
+
+  /** US-057 (Comprovante não fiscal) — só existe depois que a conta é paga. */
+  async getReceipt(identity: Readonly<OperationalRequestIdentity>, sessionId: string): Promise<GetReceiptResponse> {
+    const response = await operationalAuthenticatedFetch(
+      `${this.baseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/receipt`,
+      {},
+      identity,
+      this.fetcher,
+    );
+    await requireSuccess(response);
+    return getReceiptResponseSchema.parse(await response.json());
+  }
+
+  /** US-057 §4, cenário "Impressora indisponível" — nunca lança por falha de hardware, só por sessão inexistente. */
+  async printReceipt(
+    identity: Readonly<OperationalRequestIdentity>,
+    sessionId: string,
+    printerId?: string,
+  ): Promise<PrintReceiptResponse> {
+    const response = await operationalAuthenticatedFetch(
+      `${this.baseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/receipt/print`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ printerId: printerId ?? null }),
+      },
+      identity,
+      this.fetcher,
+    );
+    await requireSuccess(response);
+    return printReceiptResponseSchema.parse(await response.json());
+  }
+
+  /** US-057 §4, cenário "Reimpressão auditada" — registrada em `audit_log` com autor e horário. */
+  async reprintReceipt(
+    identity: Readonly<OperationalRequestIdentity>,
+    sessionId: string,
+    printerId?: string,
+  ): Promise<PrintReceiptResponse> {
+    const response = await operationalAuthenticatedFetch(
+      `${this.baseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/receipt/reprint`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ printerId: printerId ?? null }),
+      },
+      identity,
+      this.fetcher,
+    );
+    await requireSuccess(response);
+    return printReceiptResponseSchema.parse(await response.json());
   }
 }
 

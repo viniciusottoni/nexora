@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { act, render, screen, waitFor, fireEvent, within } from '@testing-library/react';
+import { act, render, waitFor, fireEvent, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type {
   AvailabilityApi,

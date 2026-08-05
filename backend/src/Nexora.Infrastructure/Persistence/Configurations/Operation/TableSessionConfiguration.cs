@@ -45,6 +45,19 @@ internal sealed class TableSessionConfiguration : IEntityTypeConfiguration<Table
         builder.Property(s => s.ServiceFeeAmount).HasColumnName("service_fee_amount").HasColumnType("money_amount").HasDefaultValue(0m);
         builder.Property(s => s.TotalAmount).HasColumnName("total_amount").HasColumnType("money_amount").HasDefaultValue(0m);
 
+        // US-054 (Desconto com autorização) — escopo SESSION (RN-011).
+        builder.Property(s => s.DiscountPercent).HasColumnName("discount_percent").HasColumnType("money_amount").HasDefaultValue(0m);
+        builder.Property(s => s.DiscountReason).HasColumnName("discount_reason");
+        builder.Property(s => s.DiscountAppliedBy).HasColumnName("discount_applied_by");
+        builder.Property(s => s.DiscountAuthorizedBy).HasColumnName("discount_authorized_by");
+        builder.Property(s => s.DiscountScope).HasColumnName("discount_scope").HasMaxLength(16);
+
+        // US-053 (Taxa de serviço com retirada registrada) — registro autoritativo no nível da sessão.
+        builder.Property(s => s.ServiceFeeWaived).HasColumnName("service_fee_waived").HasDefaultValue(false);
+        builder.Property(s => s.ServiceFeeWaiveReason).HasColumnName("service_fee_waive_reason");
+        builder.Property(s => s.ServiceFeeWaivedBy).HasColumnName("service_fee_waived_by");
+        builder.Property(s => s.ServiceFeeWaiveScope).HasColumnName("service_fee_waive_scope").HasMaxLength(16);
+
         builder.Property(s => s.Rating).HasColumnName("rating").HasColumnType("smallint");
         builder.Property(s => s.RatingComment).HasColumnName("rating_comment");
         builder.Property(s => s.CreatedAt).HasColumnName("created_at").HasColumnType("timestamptz");
