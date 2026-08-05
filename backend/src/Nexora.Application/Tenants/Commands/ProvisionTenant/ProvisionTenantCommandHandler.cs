@@ -5,6 +5,7 @@ using Nexora.Application.Abstractions.Notifications;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Provisioning;
+using Nexora.Application.Tenants.Support;
 using Nexora.Contracts.Tenants;
 using Nexora.Domain.Common;
 using Nexora.Domain.Finance;
@@ -74,10 +75,38 @@ internal sealed class ProvisionTenantCommandHandler
                 "Modelo de negócio não encontrado.", ApiErrorCodes.BusinessTemplateNotFound);
         }
 
+        // US-154 (Gestão de planos e configuração comercial) — o plano CONFIRMADO no formulário
+        // (request.Plan) precisa ser o que fica persistido e retornado; nenhuma camada pode
+        // substituí-lo silenciosamente por um default (§4, cenário "Provisionamento preserva o
+        // plano solicitado"). Validado contra o catálogo ativo (RN-016: código desativado/
+        // inexistente não pode ser atribuído a novo tenant) ANTES de qualquer INSERT — mesma
+        // convenção do businessTemplate acima, checagem de banco fica no handler, não no validator.
+        var normalizedPlanCode = request.Plan.Trim().ToUpperInvariant();
+        var platformPlan = await _db.PlatformPlans
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Code == normalizedPlanCode && p.IsActive, cancellationToken);
+
+        if (platformPlan is null)
+        {
+            return Result<ProvisionTenantResponse>.Failure(
+                "Plano comercial não disponível.", ApiErrorCodes.PlanNotAvailable);
+        }
+
         var template = BusinessTemplateDataMapper.ToProvisioningTemplate(businessTemplate);
         var now = DateTimeOffset.UtcNow;
 
         var tenant = Tenant.Create(request.Slug, request.Name, timezone: request.StoreTimezone);
+
+        // US-151 (Diretório de estabelecimentos) — espelha e-mail do dono e código do modelo na
+        // própria tenant (única tabela sem RLS) para o diretório de plataforma poder buscar/filtrar
+        // por eles sem precisar do papel platform_admin (ver docstring de Tenant.OwnerEmail).
+        tenant.SetOwnerEmail(request.OwnerEmail);
+        tenant.SetTemplateCode(businessTemplate.Code);
+
+        // US-154: substitui o "STANDARD" fixo que Tenant.Create sempre gravava — o plano validado
+        // acima é o único que chega a SaveChangesAsync.
+        tenant.SetPlan(platformPlan.Code);
+
         _db.Tenants.Add(tenant);
 
         // RLS (ADR-004): tenant_config/store/role/station/app_user/... têm a política
@@ -102,7 +131,9 @@ internal sealed class ProvisionTenantCommandHandler
             paymentsJson: JsonSerializer.Serialize(template.Config.Payments),
             maintenanceJson: JsonSerializer.Serialize(template.Config.Maintenance),
             templateCode: businessTemplate.Code,
-            templateVersion: businessTemplate.Version);
+            templateVersion: businessTemplate.Version,
+            planCapabilitiesJson: platformPlan.CapabilitiesJson,
+            appliedPlanVersion: platformPlan.Version);
         _db.TenantConfigs.Add(tenantConfig);
 
         var store = Store.Create(tenant.Id, request.StoreName, isDefault: true, timezone: request.StoreTimezone);
@@ -237,10 +268,11 @@ internal sealed class ProvisionTenantCommandHandler
             tenant.Id, tenant.Slug, template.Code);
 
         var response = new ProvisionTenantResponse(
-            // PROVISIONED descreve o resultado deste endpoint no contrato da plataforma. O estado
-            // persistido Trial pertence ao ciclo comercial do tenant e não deve vazar como "Trial"
-            // para o cliente, que valida os estados operacionais em caixa alta.
-            new ProvisionedTenantResponse(tenant.Id, tenant.Slug, "PROVISIONED"),
+            // US-153: "PROVISIONED" já é o próprio wire label do estado canônico persistido
+            // (tenant.Status == TenantStatus.Provisioned logo após Create) — mantido como literal
+            // aqui só porque é o único valor possível neste ponto do fluxo (nenhum outro handler
+            // observa o tenant entre Create e esta resposta).
+            new ProvisionedTenantResponse(tenant.Id, tenant.Slug, tenant.Status.ToWireLabel()),
             new ProvisionedStoreResponse(store.Id, store.Name),
             installTokenRaw,
             $"./install.sh --tenant={tenant.Id} --token={installTokenRaw}",

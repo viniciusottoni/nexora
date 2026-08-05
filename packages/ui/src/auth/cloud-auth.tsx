@@ -19,6 +19,34 @@ export function clearCloudSession(storage: Storage = localStorage): void {
   storage.removeItem(REFRESH_KEY);
 }
 
+export interface CloudSessionClaims {
+  /** `tid` — presente quando a sessão pertence a um tenant (ausente para operador de plataforma). */
+  readonly tenantId?: string;
+  /** `plt === 'admin'` — administrador da plataforma Replay (US-150, policy `PlatformAdmin`). */
+  readonly isPlatformAdmin: boolean;
+}
+
+/**
+ * Decodifica localmente as claims do access token já guardado pelo login — sem chamada de rede
+ * (o token é um JWT comum, header.payload.signature em base64url). Usada tanto para saber o
+ * PRÓPRIO tenant (painéis de estabelecimento) quanto para decidir, no cliente, se a sessão é de um
+ * administrador de plataforma (US-150: a proteção de rota real é sempre o backend — 401/403 —, esta
+ * leitura só evita renderizar navegação/dado de plataforma para quem claramente não tem a claim).
+ */
+export function readCloudSessionClaims(storage: Storage = localStorage): CloudSessionClaims | undefined {
+  const token = storage.getItem(ACCESS_KEY);
+  const payload = token?.split('.')[1];
+  if (!payload) return undefined;
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const json = atob(normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '='));
+    const claims = JSON.parse(json) as { tid?: string; plt?: string };
+    return { ...(claims.tid ? { tenantId: claims.tid } : {}), isPlatformAdmin: claims.plt === 'admin' };
+  } catch {
+    return undefined;
+  }
+}
+
 export async function cloudLogin(
   input: { email: string; password: string; otp?: string },
   baseUrl = '',

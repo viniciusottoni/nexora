@@ -2,21 +2,11 @@ import { expect, test, type Page } from '@playwright/test';
 
 /**
  * US-145 · Acesso de suporte auditado — cobre os dois lados do fluxo: concessão pela plataforma
- * (web-platform, :49174) e histórico/revogação pelo cliente (web-admin, :49173). Arquivo NOVO
- * (mesma convenção de `tests/e2e/tenant-provisioning.spec.ts`, para não colidir com outro agente
- * tocando `foundation.spec.ts` em paralelo) e mesmo padrão de mock de rede (`page.route`).
+ * (web-platform, :49174) e histórico/revogação pelo cliente (web-admin, :49173). Mesmo padrão de
+ * mock de rede (`page.route`) de `tests/e2e/tenant-provisioning.spec.ts`.
  *
- * DEPENDÊNCIA DE INTEGRAÇÃO AINDA PENDENTE (ver relatório da tarefa): nenhum dos dois apps navega
- * por URL (é estado de componente em `app.tsx`, não roteador) — só é possível chegar a estas
- * telas clicando no item de navegação correspondente. Este agente foi instruído a NÃO editar
- * `apps/web-platform/src/app.tsx` nem `apps/web-admin/src/app.tsx` diretamente (arquivos
- * compartilhados com outro trabalho em andamento no mesmo épico) — só a reportar os itens de nav
- * a adicionar. Os dois testes abaixo pressupõem exatamente os rótulos reportados:
- *   - web-platform: item "Solicitar acesso de suporte" (id `support-access`)
- *   - web-admin: item "Acessos de suporte" (id `support-access`)
- * Ficam VERMELHOS até essa integração (fora do escopo desta tarefa) acontecer — não é um defeito
- * do código novo, é o mesmo tipo de gap documentado para os códigos de erro não mapeados ainda em
- * ResultExtensions (ver SupportAccessResultMappingTests.cs).
+ * Navegação por item do menu — web-platform usa o item "Auditoria e suporte" (US-150, agrupa
+ * suporte e auditoria na navegação central); web-admin usa "Acessos de suporte".
  */
 
 const platformSession = {
@@ -44,15 +34,34 @@ async function mockLogin(page: Page, session: typeof platformSession) {
   });
 }
 
+/** US-150 — sonda de autorização do shell da plataforma (`GET /v1/platform/summary`), chamada antes de qualquer rota renderizar. */
+async function mockPlatformSummary(page: Page) {
+  await page.route('**/v1/platform/summary', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        tenants: { total: 1, active: 1, attention: 0 },
+        installations: { healthy: 0, degraded: 0, offline: 0 },
+        pendingInvites: 0,
+        generatedAt: new Date().toISOString(),
+      }),
+    });
+  });
+}
+
 test.describe('Concessão de acesso de suporte pela plataforma (US-145)', () => {
   test('solicita acesso, gera token de escopo especial e notifica o cliente', async ({ page }) => {
     await mockLogin(page, platformSession);
+    await mockPlatformSummary(page);
     await page.goto('http://127.0.0.1:49174');
     await page.getByLabel('E-mail').fill('admin@example.com');
     await page.getByLabel('Senha').fill('senha-segura');
     await page.getByRole('button', { name: 'Entrar' }).click();
 
-    await page.getByRole('button', { name: 'Solicitar acesso de suporte' }).click();
+    // US-150: item de navegação renomeado para "Auditoria e suporte" (agrupa suporte e auditoria).
+    // exact:true — a visão geral também tem um atalho "Ver auditoria e suporte" (substring ambígua sem exact).
+    await page.getByRole('button', { name: 'Auditoria e suporte', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Solicitar acesso de suporte' })).toBeVisible();
 
     let grantCalls = 0;

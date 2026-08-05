@@ -293,6 +293,11 @@ public static class ResultExtensions
         ApiErrorCodes.TenantSlugAlreadyTaken => (StatusCodes.Status422UnprocessableEntity, true, false),
         ApiErrorCodes.OwnerInviteInvalidCredentials => (StatusCodes.Status401Unauthorized, false, false),
 
+        // Ciclo de vida do estabelecimento (US-153).
+        ApiErrorCodes.TenantStatusTransitionInvalid => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.ConcurrencyConflict => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.ReasonRequired => (StatusCodes.Status422UnprocessableEntity, true, false),
+
         // Operação — ambientes e mesas do salão (US-020).
         ApiErrorCodes.AreaNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.AreaHasActiveTables => (StatusCodes.Status422UnprocessableEntity, true, false),

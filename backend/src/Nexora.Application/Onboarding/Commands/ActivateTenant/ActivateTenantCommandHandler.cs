@@ -4,6 +4,7 @@ using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Onboarding.Commands.RecalculateOnboardingSteps;
 using Nexora.Application.Tables.Support;
+using Nexora.Application.Tenants.Support;
 using Nexora.Contracts.Platform;
 using Nexora.Domain.Platform;
 using Nexora.Shared.Errors;
@@ -35,6 +36,23 @@ internal sealed class ActivateTenantCommandHandler : IRequestHandler<ActivateTen
             return Result.Failure("Estabelecimento não encontrado.", ApiErrorCodes.TenantNotFound);
         }
 
+        // US-153 · Ciclo de vida do estabelecimento — só PROVISIONED/INSTALLING podem chegar a
+        // ACTIVE por este caminho (ativação automática/assistida do roteiro de implantação);
+        // SUSPENDED exige a reativação explícita do administrador (POST .../status-transitions,
+        // com motivo), e CANCELLED é terminal. ACTIVE aqui é idempotente (nenhum passo extra) —
+        // reenviar não é erro do cliente.
+        if (tenant.Status == TenantStatus.Active)
+        {
+            return Result.Success();
+        }
+
+        if (tenant.Status != TenantStatus.Provisioned && tenant.Status != TenantStatus.Installing)
+        {
+            return Result.Failure(
+                "Este estabelecimento não pode ser ativado neste estado.",
+                ApiErrorCodes.TenantStatusTransitionInvalid);
+        }
+
         // Recalcula os passos derivados antes de checar — nested Send reaproveita a transação já
         // aberta por este comando (TransactionBehavior só abre uma nova quando não há uma corrente,
         // ver docstring da classe), então isto continua atômico com o restante do handler.
@@ -59,12 +77,56 @@ internal sealed class ActivateTenantCommandHandler : IRequestHandler<ActivateTen
         }
 
         var now = DateTimeOffset.UtcNow;
-        tenant.CompleteOnboarding(now);
+
+        // RLS (ADR-004): tenant_status_history/domain_event exigem app.tenant_id fixado — mesmo
+        // mecanismo de TransitionTenantStatusCommandHandler.
+        await _db.SetTenantContextAsync(tenant.Id, cancellationToken);
+
+        if (tenant.Status == TenantStatus.Provisioned)
+        {
+            // Instalação já confirmada pelo passo EDGE_INSTALL acima (senão "pending" teria
+            // bloqueado a checagem de pendências) — registra a transição intermediária mesmo
+            // quando o tenant "pulou" direto para cá sem passar por
+            // RegisterInstallationCommandHandler (ex.: EdgeInstallation.MarkInstalled chamado fora
+            // do protocolo de token), preservando um histórico canônico completo (ADR-006:
+            // nenhuma transição sem evento).
+            RecordTransition(tenant, TenantStatus.Installing, "Instalação registrada.", now);
+        }
+
+        RecordTransition(tenant, TenantStatus.Active, "Checklist de implantação concluído.", now);
 
         var activationStep = steps.SingleOrDefault(s => s.Key == OnboardingStepKey.Activation);
         activationStep?.Complete(now, _tenantContext.UserId);
 
         return Result.Success();
+    }
+
+    /// <summary>Aplica uma transição de status via a máquina canônica e grava histórico + evento (origem SYSTEM) na mesma transação — ver docstring da classe.</summary>
+    private void RecordTransition(Tenant tenant, TenantStatus target, string reason, DateTimeOffset now)
+    {
+        var previous = tenant.TransitionStatus(target, now);
+
+        var statusChangedEvent = DomainEvent.Create(
+            tenant.Id,
+            type: "tenant.status_changed",
+            aggregateType: "tenant",
+            aggregateId: tenant.Id,
+            payload: JsonSerializer.Serialize(new
+            {
+                tenantId = tenant.Id,
+                previousStatus = previous.ToWireLabel(),
+                status = target.ToWireLabel(),
+                reason,
+                effectiveAt = now,
+                actorId = (Guid?)null,
+            }),
+            origin: "CLOUD",
+            occurredAt: now);
+        _db.DomainEvents.Add(statusChangedEvent);
+
+        _db.TenantStatusHistories.Add(TenantStatusHistory.Create(
+            tenant.Id, previous, target, reason, origin: "SYSTEM", effectiveAt: now,
+            domainEventId: statusChangedEvent.Id));
     }
 
     /// <summary>

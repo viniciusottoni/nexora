@@ -368,8 +368,24 @@ GET   /v1/notifications?status=unread # E-08/US-081 — central de notificaçõe
 ### 6.4 Plataforma (Replay)
 
 ```http
+GET  /v1/platform/summary             # E-15/US-150 — resumo da raiz do painel de plataforma
+→ { "tenants": { "total", "active", "attention" }, "installations": { "healthy", "degraded", "offline" }, "pendingInvites", "generatedAt" }
+
 POST /v1/platform/tenants             { "name": "...", "slug": "...", "plan": "...", "template": "PIZZERIA" }
 → 201 { "tenant": {...}, "installToken": "...", "installCommand": "./install.sh --tenant=... --token=..." }
+
+GET  /v1/platform/tenants?query=betinha&status=ACTIVE&plan=COMPLETO&template=PIZZERIA&health=DEGRADED&createdFrom=...&createdTo=...&sort=attention&limit=25&cursor=...   # E-15/US-151 — diretório com busca/filtros/ordenação, paginado por cursor
+→ { "data": [ { id, name, slug, status: "PROVISIONED|INSTALLING|ACTIVE|SUSPENDED|CANCELLED", plan, ownerEmail, storesCount, installationsCount, health: "OK|DEGRADED|DOWN|UNKNOWN", createdAt, updatedAt } ], "nextCursor", "appliedFilters": { query, status: [...], plan: [...], template: [...], health: [...], createdFrom, createdTo, sort, limit } }
+# US-153 renomeou o estado interno TRIAL para PROVISIONED e acrescentou INSTALLING — ver §6.4.1.
+
+GET  /v1/platform/tenants/{id}/overview   # E-15/US-152 — visão 360 administrativa; nunca dado operacional (RN-015)
+→ { "tenant": { id, name, slug, status, plan, template, domain, createdAt, updatedAt, statusVersion, availableTransitions: [...] },
+    "owner": { name, email, inviteStatus: "PENDING|ACCEPTED|EXPIRED" } | null,
+    "stores": [ { id, name, timezone } ],
+    "installations": [ { id, label, status: "PENDING|ACTIVE|OFFLINE", health: "OK|DEGRADED|DOWN|UNKNOWN" } ],
+    "deployment": { completed, total, nextAction: "<OnboardingStepKey>" | null },
+    "links": { publicMenu, admin, health } }   # cada link nulo quando não configurado para o ambiente (§15 PENDÊNCIA)
+# statusVersion/availableTransitions — US-153, ver §6.4.1 (If-Match e máquina de estados).
 
 GET  /v1/platform/installations
 → [ { tenantName, storeName, version, lastSeenAt, syncLagSeconds, health: "OK|DEGRADED|DOWN" } ]
@@ -378,7 +394,29 @@ POST /v1/platform/tenants/{id}/support-access   { "reason": "...", "durationMinu
 → 201 { "token": "...", "expiresAt": "..." }     # gera EVT-074, visível ao cliente
 
 POST /v1/platform/tenants/{id}/import/menu      (multipart: planilha)
+
+POST /v1/platform/tenants/{id}/status-transitions   # E-15/US-153 — ciclo de vida do estabelecimento
+Idempotency-Key: <uuid>
+If-Match: "<statusVersion>"
+{ "targetStatus": "ACTIVE|SUSPENDED|CANCELLED", "reason": "...", "effectiveAt": "..." }   # effectiveAt opcional, default = agora
+→ 200 { "tenantId", "previousStatus", "status", "version", "changedAt" }
+→ 404 TENANT_NOT_FOUND · 409 TENANT_STATUS_TRANSITION_INVALID · 409 CONCURRENCY_CONFLICT (If-Match desatualizado) · 422 REASON_REQUIRED
 ```
+
+#### 6.4.1 Máquina de estados canônica do tenant (US-153)
+
+```
+PROVISIONED → INSTALLING → ACTIVE ⇄ SUSPENDED
+     ↓             ↓          ↓          ↓
+     └──────────── CANCELLED (terminal) ─┘
+```
+
+`PROVISIONED`→`INSTALLING` só ocorre pelo registro técnico da instalação edge (nunca por ação do
+administrador); `INSTALLING`→`ACTIVE` ocorre automática ou assistidamente quando o checklist de
+implantação e o proprietário estão prontos (`POST /v1/platform/tenants/{id}/activate`, US-141).
+`POST .../status-transitions` é a única porta ADMINISTRATIVA (`ACTIVE⇄SUSPENDED`, `*→CANCELLED`) —
+`availableTransitions` no overview é a fonte de verdade de quais alvos cabem a partir do status
+atual; o cliente nunca reimplementa esta matriz. `CANCELLED` é terminal.
 
 ---
 

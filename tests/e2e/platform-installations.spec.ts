@@ -2,16 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 /**
  * US-140 · Painel de instalações com saúde — mesmo padrão de mock de rede (`page.route`) de
- * tests/e2e/tenant-provisioning.spec.ts. Arquivo NOVO (não edita foundation.spec.ts nem
- * tenant-provisioning.spec.ts) para não colidir com outro agente em paralelo.
- *
- * DEPENDÊNCIA: o item de navegação "Instalações" (id `installations`) ainda não foi adicionado a
- * `apps/web-platform/src/app.tsx` — por convenção desta tarefa (US-140), a navegação central é
- * wireada por outro passo para não colidir com os demais agentes que também adicionam item de
- * menu à mesma tela. Este spec assume esse item (rótulo "Instalações", exatamente como sugerido no
- * relatório da história) já wireado; até lá, o teste falha no passo de navegação — não é um
- * defeito da tela em si (que os testes de componente em installations-panel-page.test.tsx já
- * cobrem isoladamente).
+ * tests/e2e/tenant-provisioning.spec.ts. Navegação via item "Instalações" do menu central
+ * (US-150).
  */
 
 const session = {
@@ -63,13 +55,32 @@ async function mockLogin(page: Page) {
   });
 }
 
+/** US-150 — sonda de autorização do shell (`GET /v1/platform/summary`), chamada antes de qualquer rota renderizar. */
+async function mockPlatformSummary(page: Page) {
+  await page.route('**/v1/platform/summary', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        tenants: { total: 1, active: 1, attention: 0 },
+        installations: { healthy: 0, degraded: 0, offline: 0 },
+        pendingInvites: 0,
+        generatedAt: new Date().toISOString(),
+      }),
+    });
+  });
+}
+
 async function loginAndOpenInstallations(page: Page) {
   await mockLogin(page);
+  await mockPlatformSummary(page);
   await page.goto('http://127.0.0.1:49174');
   await page.getByLabel('E-mail').fill('admin@example.com');
   await page.getByLabel('Senha').fill('senha-segura');
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await page.getByRole('link', { name: 'Instalações' }).or(page.getByRole('button', { name: 'Instalações' })).click();
+  // exact:true — a visão geral (US-150) tem um atalho "Ver instalações" cujo nome acessível
+  // também contém "Instalações" como substring; sem exact o locator vira ambíguo (item de nav + atalho).
+  await page.getByRole('button', { name: 'Instalações', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Instalações' })).toBeVisible();
 }
 

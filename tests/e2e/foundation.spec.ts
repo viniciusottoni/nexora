@@ -61,9 +61,24 @@ test('gestora autentica e acessa papéis no admin', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Proprietário' })).toBeVisible();
 });
 
-test('admin de plataforma autentica e abre provisionamento', async ({ page }) => {
+test('admin de plataforma autentica, vê a visão geral (US-150) e abre provisionamento', async ({ page }) => {
   await mockLogin(page);
+  await page.route('**/v1/platform/summary', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        tenants: { total: 1, active: 1, attention: 0 },
+        installations: { healthy: 0, degraded: 0, offline: 0 },
+        pendingInvites: 0,
+        generatedAt: new Date().toISOString(),
+      }),
+    });
+  });
   await page.goto('http://127.0.0.1:49174');
   await login(page);
+  // Raiz (US-150) é a visão geral, não mais o formulário — "Novo estabelecimento" é uma ação.
+  await expect(page.getByRole('heading', { name: 'Visão geral' })).toBeVisible();
+  await page.getByRole('button', { name: 'Novo estabelecimento' }).first().click();
   await expect(page.getByRole('heading', { name: 'Provisionar estabelecimento' })).toBeVisible();
 });

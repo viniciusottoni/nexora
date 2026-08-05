@@ -1,0 +1,92 @@
+/* US-154 · Gestão de planos e configuração comercial — casca/página/tabela vêm de console.css
+   (@nexora/ui); aqui só o que é específico deste componente: a grade de metadados, a lista de
+   capacidades e a comparação antes/depois do modal de mudança de plano. Só tokens já existentes
+   (sem cor/tamanho/duração "solta") — ver packages/ui/src/tokens/*.css e components/motion.css. */
+
+.tenant-plan__kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--sp-6);
+  margin: 0;
+}
+
+.tenant-plan__kv dt {
+  margin: 0 0 var(--sp-1);
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+
+.tenant-plan__kv dd {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+
+.tenant-plan__capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tenant-plan__capabilities li {
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--radius-full, 999px);
+  background: var(--surface-brand-subtle);
+  font: var(--type-caption);
+  color: var(--text-primary);
+}
+
+/* Comparação antes/depois no modal de mudança de plano — duas colunas lado a lado. */
+.tenant-plan__compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-6);
+  margin: var(--sp-5) 0;
+}
+
+.tenant-plan__compare-column h4 {
+  margin: 0 0 var(--sp-2);
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+
+.tenant-plan__compare-column ul {
+  display: grid;
+  gap: var(--sp-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tenant-plan__compare-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font: var(--type-body-sm, var(--type-body));
+}
+
+.tenant-plan__compare-item--gained {
+  color: var(--text-success);
+}
+
+.tenant-plan__compare-item--lost {
+  color: var(--text-danger);
+  text-decoration: line-through;
+}
+
+.tenant-plan__form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-5);
+}
+
+@media (max-width: 48rem) {
+  .tenant-plan__kv,
+  .tenant-plan__compare,
+  .tenant-plan__form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

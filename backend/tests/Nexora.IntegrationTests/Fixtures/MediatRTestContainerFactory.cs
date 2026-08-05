@@ -124,6 +124,14 @@ internal static class MediatRTestContainerFactory
         // reaproveita o mesmo LoggingPlatformAlertNotifier de produção (só log, nenhum I/O externo).
         services.AddSingleton(domainVerificationService ?? new FakeDomainVerificationService(result: true));
         services.AddSingleton<ICertificateIssuer>(certificateIssuer ?? new ManualCertificateIssuer());
+
+        // US-152 (Visão 360 e acesso aos módulos do estabelecimento): GetTenantOverviewQueryHandler
+        // depende de IPlatformLinksResolver — mesma implementação real de produção
+        // (Infrastructure.Platform.PlatformLinksResolver), com um sufixo de domínio de teste para
+        // que tenants sem domínio próprio ainda resolvam publicMenu/admin (nenhum mock de
+        // infraestrutura, mesmo espírito dos demais registros deste factory).
+        services.AddSingleton(Options.Create(new PlatformDomainOptions { DefaultDomainSuffix = "test.nexora.local" }));
+        services.AddSingleton<IPlatformLinksResolver, Nexora.Infrastructure.Platform.PlatformLinksResolver>();
         if (platformAlertNotifier is not null)
         {
             services.AddSingleton(platformAlertNotifier);

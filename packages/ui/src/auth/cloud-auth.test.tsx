@@ -2,7 +2,39 @@
 import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { authenticatedFetch, CloudLoginScreen } from './cloud-auth.js';
+import { authenticatedFetch, CloudLoginScreen, readCloudSessionClaims } from './cloud-auth.js';
+
+function base64UrlEncode(json: unknown): string {
+  return btoa(JSON.stringify(json)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function fakeJwt(payload: unknown): string {
+  return `${base64UrlEncode({ alg: 'none' })}.${base64UrlEncode(payload)}.assinatura`;
+}
+
+describe('readCloudSessionClaims', () => {
+  it('retorna undefined sem sessao', () => {
+    const storage = { getItem: () => null } as unknown as Storage;
+    expect(readCloudSessionClaims(storage)).toBeUndefined();
+  });
+
+  it('reconhece administrador de plataforma pela claim plt=admin (US-150)', () => {
+    const storage = {
+      getItem: () => fakeJwt({ plt: 'admin' }),
+    } as unknown as Storage;
+    expect(readCloudSessionClaims(storage)).toEqual({ tenantId: undefined, isPlatformAdmin: true });
+  });
+
+  it('nao reconhece usuario de tenant comum como administrador de plataforma', () => {
+    const storage = {
+      getItem: () => fakeJwt({ tid: '44444444-4444-4444-8444-000000000001' }),
+    } as unknown as Storage;
+    expect(readCloudSessionClaims(storage)).toEqual({
+      tenantId: '44444444-4444-4444-8444-000000000001',
+      isPlatformAdmin: false,
+    });
+  });
+});
 
 describe('CloudLoginScreen', () => {
   beforeEach(() => {

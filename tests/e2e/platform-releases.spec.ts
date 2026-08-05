@@ -4,15 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
  * US-146 · Atualização controlada do parque — cobre publicação de release + consulta de progresso
  * de rollout na tela `apps/web-platform/src/features/releases/publish-release-page.tsx`. Mesmo
  * padrão de mock de rede (`page.route`) de tests/e2e/tenant-provisioning.spec.ts/
- * platform-installations.spec.ts. Arquivo NOVO (não edita foundation.spec.ts nem os specs
- * existentes) para não colidir com outro agente em paralelo.
- *
- * DEPENDÊNCIA: o item de navegação "Versões" (rótulo sugerido no relatório desta história) ainda
- * não foi adicionado a `apps/web-platform/src/app.tsx` — mesma convenção já registrada por
- * platform-installations.spec.ts (US-140): a navegação central é wireada por outro passo para não
- * colidir com os demais agentes que também adicionam item de menu à mesma tela. Este spec assume
- * esse item já wireado; até lá, falha no passo de navegação — não é defeito da tela em si (os
- * testes de componente em publish-release-page.test.tsx já cobrem isso isoladamente).
+ * platform-installations.spec.ts. Navegação via item "Versões" do menu central (US-150).
  */
 
 const session = {
@@ -29,8 +21,25 @@ async function mockLogin(page: Page) {
   });
 }
 
+/** US-150 — sonda de autorização do shell (`GET /v1/platform/summary`), chamada antes de qualquer rota renderizar. */
+async function mockPlatformSummary(page: Page) {
+  await page.route('**/v1/platform/summary', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        tenants: { total: 1, active: 1, attention: 0 },
+        installations: { healthy: 0, degraded: 0, offline: 0 },
+        pendingInvites: 0,
+        generatedAt: new Date().toISOString(),
+      }),
+    });
+  });
+}
+
 async function loginAndOpenReleases(page: Page) {
   await mockLogin(page);
+  await mockPlatformSummary(page);
   await page.goto('http://127.0.0.1:49174');
   await page.getByLabel('E-mail').fill('admin@example.com');
   await page.getByLabel('Senha').fill('senha-segura');

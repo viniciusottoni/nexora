@@ -34,7 +34,7 @@ export const onboardingStepSchema = z.object({
 /** Porta de `GET /v1/platform/tenants/{id}/onboarding` (US-141 §7). */
 export const onboardingStatusResponseSchema = z.object({
   steps: z.array(onboardingStepSchema).length(9),
-  startedAt: z.string().datetime().nullable(),
+  startedAt: z.string().datetime({ offset: true }).nullable(),
   elapsedBusinessDays: z.number().int().nonnegative().nullable(),
 });
 

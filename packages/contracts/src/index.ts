@@ -30,5 +30,7 @@ export * from './alerts.js';
 export * from './onboarding.js';
 export * from './support-access.js';
 export * from './platform-installations.js';
+export * from './platform-summary.js';
+export * from './tenant-overview.js';
 export * from './business-templates.js';
 export * from './releases.js';

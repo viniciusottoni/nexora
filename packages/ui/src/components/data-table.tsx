@@ -9,6 +9,8 @@ export interface DataTableColumn<T> {
   readonly align?: 'left' | 'center' | 'right';
   readonly width?: string;
   readonly render?: (row: T) => ReactNode;
+  /** Some abaixo de ~60rem (mesmo corte de `.db-workbench` em console.css) — mantenha só as colunas essenciais visíveis nesse ponto. */
+  readonly hideCompact?: boolean;
 }
 
 export interface DataTableProps<T> extends HTMLAttributes<HTMLDivElement> {
@@ -54,6 +56,7 @@ export function DataTable<T = Record<string, unknown>>({
             {columns.map((column) => (
               <th
                 key={column.key}
+                className={column.hideCompact ? 'db-table__col--hide-compact' : undefined}
                 style={{
                   textAlign:
                     column.align === 'right'
@@ -78,7 +81,11 @@ export function DataTable<T = Record<string, unknown>>({
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={column.numeric ? 'db-table__numeric' : undefined}
+                    className={
+                      [column.numeric ? 'db-table__numeric' : '', column.hideCompact ? 'db-table__col--hide-compact' : '']
+                        .filter(Boolean)
+                        .join(' ') || undefined
+                    }
                     /* O `align` da coluna precisa valer na célula também, não só no cabeçalho:
                        com só o `th` alinhado, o rótulo ia para a direita e o valor ficava na
                        esquerda — a coluna deixava de ler como coluna. */

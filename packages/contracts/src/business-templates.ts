@@ -26,8 +26,8 @@ export const businessTemplateDetailResponseSchema = z.object({
   isActive: z.boolean(),
   configJson: z.string().min(1),
   seedsJson: z.string().min(1),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
 });
 
 /** Corpo de `PUT /v1/platform/templates/{code}` (US-142 §4, cenário "Atualização de modelo"). */

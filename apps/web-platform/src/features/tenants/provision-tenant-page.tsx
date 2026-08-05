@@ -8,6 +8,8 @@ import './provision-tenant-page.css';
 
 interface ProvisionTenantPageProps {
   readonly api?: TenantsApi;
+  /** US-150 §12 (E2E "novo estabelecimento → retorno à lista") — chamado pelo botão "Voltar aos estabelecimentos" após o provisionamento. */
+  readonly onDone?: () => void;
 }
 
 const INITIAL_FORM: CreateTenantRequest = {
@@ -31,7 +33,7 @@ const TIMEZONE_OPTIONS = [
   { value: 'America/Rio_Branco', label: 'Rio Branco (GMT−5)' },
 ];
 
-export function ProvisionTenantPage({ api: providedApi }: ProvisionTenantPageProps) {
+export function ProvisionTenantPage({ api: providedApi, onDone }: ProvisionTenantPageProps) {
   const nameFieldId = useId();
   const slugFieldId = useId();
   const planFieldId = useId();
@@ -185,6 +187,11 @@ export function ProvisionTenantPage({ api: providedApi }: ProvisionTenantPagePro
             <p key={copyCount} className="copy-status" role="status" aria-live="polite">
               {copyStatus}
             </p>
+            {onDone ? (
+              <Button type="button" variant="ghost" size="sm" onClick={onDone}>
+                Voltar aos estabelecimentos
+              </Button>
+            ) : null}
           </Card>
 
           <Card

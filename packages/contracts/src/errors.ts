@@ -77,6 +77,11 @@ export const errorCodeSchema = z.enum([
   // tarefa que introduziu estes dois códigos.
   'ONBOARDING_INCOMPLETE',
   'ONBOARDING_STEP_NOT_FOUND',
+
+  // Ciclo de vida do estabelecimento (US-153) — ver Nexora.Shared.Errors.ApiErrorCodes.Tenants.cs.
+  'TENANT_STATUS_TRANSITION_INVALID',
+  'CONCURRENCY_CONFLICT',
+  'REASON_REQUIRED',
 ]);
 
 export const problemDetailsSchema = z.object({

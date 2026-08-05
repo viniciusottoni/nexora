@@ -60,6 +60,16 @@ public sealed class EdgeInstallation
     /// <summary>Token de instalação já foi reservado/consumido (ver <see cref="ReserveInstallToken"/>).</summary>
     public bool IsTokenConsumed => TokenConsumedAt is not null;
 
+    /// <summary>
+    /// US-156 · Recuperação do provisionamento — verdadeiro enquanto a instalação ainda não
+    /// concluiu o pareamento (<see cref="IsInstalled"/> falso). Um administrador de plataforma só
+    /// pode reemitir/rotacionar o token de instalação nessa janela: uma vez pareada, a via correta
+    /// deixa de ser "recuperar o token perdido" e passa a ser o fluxo de manutenção do parque já
+    /// instalado (US-146) — reemitir um token para uma instalação já registrada não tem efeito
+    /// útil (o dispositivo já trocou de chave pública e nunca mais consultará este token).
+    /// </summary>
+    public bool CanReissueToken => !IsInstalled;
+
     public static EdgeInstallation Create(Guid tenantId, Guid storeId, string label)
     {
         if (string.IsNullOrWhiteSpace(label))
@@ -134,6 +144,27 @@ public sealed class EdgeInstallation
     public void ReserveInstallToken()
     {
         TokenConsumedAt = DateTimeOffset.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// US-156 · Revogação manual de credencial comprometida — invalida o token "corrente" (campos
+    /// legados <see cref="InstallTokenHash"/>/<see cref="TokenExpiresAt"/>) sem fingir que ele foi
+    /// de fato consumido por um registro real do edge. Usado só quando a credencial revogada pelo
+    /// administrador (<c>RevokeInstallationCredentialCommandHandler</c>) É a que os campos legados
+    /// ainda apontam (a rotação mais recente) — reaproveita o mesmo sinalizador que
+    /// <see cref="IsTokenConsumed"/> já expõe, porque <c>ConsumeInstallationTokenCommandHandler</c>/
+    /// <c>RegisterInstallationCommandHandler</c> só entendem "consumido ou não", sem um terceiro
+    /// estado "revogado" — o motivo real (revogação manual, não um pareamento de verdade) fica
+    /// registrado no <c>AuditLog</c> correspondente, nunca aqui no Domain. Idempotente.
+    /// </summary>
+    public void InvalidateInstallToken()
+    {
+        if (TokenConsumedAt is null)
+        {
+            TokenConsumedAt = DateTimeOffset.UtcNow;
+        }
+
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 

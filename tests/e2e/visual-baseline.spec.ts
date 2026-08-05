@@ -64,8 +64,22 @@ test.describe('visual baseline', () => {
 
   test('web-platform: provisionar estabelecimento', async ({ page }) => {
     await mockLogin(page);
+    await page.route('**/v1/platform/summary', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          tenants: { total: 1, active: 1, attention: 0 },
+          installations: { healthy: 0, degraded: 0, offline: 0 },
+          pendingInvites: 0,
+          generatedAt: new Date().toISOString(),
+        }),
+      });
+    });
     await page.goto('http://127.0.0.1:49174');
     await login(page);
+    // Raiz (US-150) é a visão geral; "Novo estabelecimento" leva ao mesmo formulário fotografado aqui.
+    await page.getByRole('button', { name: 'Novo estabelecimento' }).first().click();
     await expect(page.getByRole('heading', { name: 'Provisionar estabelecimento' })).toBeVisible();
     await expect(page).toHaveScreenshot('web-platform-provision.png', { fullPage: true, animations: 'disabled' });
   });

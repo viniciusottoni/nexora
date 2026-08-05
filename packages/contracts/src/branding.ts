@@ -113,7 +113,7 @@ export const uploadBrandingAssetResponseSchema = z.object({
   assetId: uuidSchema,
   uploadUrl: z.string().url(),
   publicUrl: assetUrlSchema,
-  expiresAt: z.string().datetime(),
+  expiresAt: z.string().datetime({ offset: true }),
 });
 
 export const brandingContrastSchema = z.object({

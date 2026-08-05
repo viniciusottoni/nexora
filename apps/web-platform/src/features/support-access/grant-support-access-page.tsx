@@ -31,7 +31,15 @@ export function GrantSupportAccessPage({ api: providedApi }: GrantSupportAccessP
   const durationFieldId = useId();
   const api = useMemo(() => providedApi ?? createSupportAccessApi(), [providedApi]);
 
-  const [tenantId, setTenantId] = useState('');
+  // US-152 §3.2 "Acessar módulos... nunca impersonar silenciosamente" — a ficha do estabelecimento
+  // só pode INICIAR este fluxo (via `?tenantId=...`), nunca preencher e enviar sozinha; motivo e
+  // duração continuam exigidos do administrador nesta tela.
+  const initialTenantId = useMemo(
+    () => new URLSearchParams(globalThis.location?.search ?? '').get('tenantId') ?? '',
+    [],
+  );
+
+  const [tenantId, setTenantId] = useState(initialTenantId);
   const [reason, setReason] = useState('');
   const [durationMinutes, setDurationMinutes] = useState('60');
   const [busy, setBusy] = useState(false);

@@ -284,6 +284,8 @@ builder.Services.AddSingleton<ICertificateIssuer, ManualCertificateIssuer>();
 builder.Services.Configure<PlatformDomainOptions>(builder.Configuration.GetSection(PlatformDomainOptions.SectionName));
 builder.Services.AddScoped<ITenantDomainRedirectResolver, TenantDomainRedirectResolver>();
 builder.Services.AddHostedService<TenantDomainCertificateRenewalWorker>();
+// US-152 — resolução de links (público/admin) da visão 360 do estabelecimento; pura, sem I/O.
+builder.Services.AddSingleton<IPlatformLinksResolver, PlatformLinksResolver>();
 
 // ---------------------------------------------------------------------------
 // Installations (cloud, plural) — registro/consumo de token de instalação,

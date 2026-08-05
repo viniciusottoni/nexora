@@ -317,6 +317,13 @@ public static class ResultExtensions
         ApiErrorCodes.TenantSlugAlreadyTaken => (StatusCodes.Status422UnprocessableEntity, true, false),
         ApiErrorCodes.OwnerInviteInvalidCredentials => (StatusCodes.Status401Unauthorized, false, false),
 
+        // Ciclo de vida do estabelecimento (US-153) — autoridade do dado é o cloud (só ele expõe
+        // TenantsController); mapeado aqui só para manter o catálogo idêntico ao gêmeo de
+        // Nexora.Api.Cloud, como a docstring desta classe pede.
+        ApiErrorCodes.TenantStatusTransitionInvalid => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.ConcurrencyConflict => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.ReasonRequired => (StatusCodes.Status422UnprocessableEntity, true, false),
+
         // Operação — ambientes e mesas do salão (US-020). Nenhum controller de escrita existe
         // hoje em Nexora.Api.Edge (autoridade do dado é a nuvem, US-020 cabeçalho "Aplicações:
         // web-admin, api-cloud") — mapeado aqui só para manter o catálogo de códigos idêntico ao

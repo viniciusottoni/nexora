@@ -86,6 +86,13 @@ public sealed class ProvisionTenantIntegrationTests
         var owner = await readDb.Users.SingleAsync(u => u.TenantId == tenantId && u.Email == ownerEmail);
         owner.Status.Should().Be(UserStatus.Invited); // gap corrigido: era Inactive.
 
+        // US-151 (Diretório de estabelecimentos) — OwnerEmail/TemplateCode espelhados no tenant
+        // (única tabela sem RLS) desde o provisionamento, para o diretório buscar/filtrar por eles
+        // sem depender do papel platform_admin (ver docstring de Tenant.OwnerEmail).
+        var provisionedTenant = await readDb.Tenants.AsNoTracking().SingleAsync(t => t.Id == tenantId);
+        provisionedTenant.OwnerEmail.Should().Be(ownerEmail.ToLowerInvariant());
+        provisionedTenant.TemplateCode.Should().Be("PIZZERIA");
+
         (await readDb.UserRoles.CountAsync(ur => ur.TenantId == tenantId && ur.UserId == owner.Id)).Should().Be(1);
         (await readDb.EdgeInstallations.CountAsync(e => e.TenantId == tenantId)).Should().Be(1);
         (await readDb.OwnerInvites.CountAsync(i => i.TenantId == tenantId && i.UserId == owner.Id)).Should().Be(1);

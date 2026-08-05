@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
+using System.Text.Json;
 using Nexora.Application.Abstractions.Idempotency;
 using Nexora.Application.Abstractions.Security;
 using Nexora.Contracts.Http;
@@ -186,7 +187,12 @@ public sealed class IdempotencyMiddleware
         }
         else
         {
-            await store.CompleteAsync(key, context.Response.StatusCode, responseText, CancellationToken.None);
+            // US-156 — ver IdempotencyRedactFieldsAttribute: o que é GRAVADO para um eventual
+            // reenvio pode divergir do que acabou de ser escrito em `responseBytes` (a resposta AO
+            // VIVO desta chamada, já em voo abaixo) — só a cópia persistida tem os campos marcados
+            // trocados por null, nunca a resposta que o cliente desta requisição está recebendo.
+            var storedResponseText = RedactForStorage(context, responseText);
+            await store.CompleteAsync(key, context.Response.StatusCode, storedResponseText, CancellationToken.None);
         }
 
         // Cabeçalhos precisam ser definidos antes do primeiro byte do corpo ser enviado.
@@ -194,6 +200,61 @@ public sealed class IdempotencyMiddleware
         // embora o comando e o commit no banco já tivessem sido concluídos.
         context.Response.Headers[ReplayHeaderName] = "false";
         await originalBody.WriteAsync(responseBytes, cancellationToken);
+    }
+
+    /// <summary>
+    /// Ver <see cref="IdempotencyRedactFieldsAttribute"/> — troca por <c>null</c> os campos de topo
+    /// nomeados no atributo da action corrente ANTES de gravar em <c>idempotency_key.response_body</c>
+    /// (ADR-020). Sem o atributo (a imensa maioria das actions), devolve o texto inalterado — zero
+    /// mudança de comportamento para quem não optou por isto. Corpo que não é um objeto JSON válido
+    /// (204 sem corpo, por exemplo) também passa inalterado — nada a redigir.
+    /// </summary>
+    private static string? RedactForStorage(HttpContext context, string? responseText)
+    {
+        if (responseText is null)
+        {
+            return null;
+        }
+
+        var redact = context.GetEndpoint()?.Metadata.GetMetadata<IdempotencyRedactFieldsAttribute>();
+        if (redact is null || redact.FieldNames.Count == 0)
+        {
+            return responseText;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(responseText);
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                return responseText;
+            }
+
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                writer.WriteStartObject();
+                foreach (var property in document.RootElement.EnumerateObject())
+                {
+                    if (redact.FieldNames.Contains(property.Name, StringComparer.Ordinal))
+                    {
+                        writer.WriteNull(property.Name);
+                        continue;
+                    }
+
+                    property.WriteTo(writer);
+                }
+                writer.WriteEndObject();
+            }
+
+            return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+        }
+        catch (JsonException)
+        {
+            // Corpo não é o JSON esperado — nada a redigir, grava como veio (mesma tolerância do
+            // restante do middleware, que também nunca assume um formato específico de corpo).
+            return responseText;
+        }
     }
 
     private static async Task ReplayAsync(HttpContext context, int statusCode, string? responseBody)
