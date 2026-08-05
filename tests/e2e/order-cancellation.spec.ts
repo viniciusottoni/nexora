@@ -242,7 +242,7 @@ test.describe('US-033 · cancelamento de item com autorização', () => {
     await page.getByRole('button', { name: 'Autorizar' }).click();
 
     // Autorizado: o cancelamento é repetido com o token e o item some da lista (US-033 §4/§10).
-    await expect(page.getByText('Pizza Margherita')).not.toBeVisible();
+    await expect(page.getByText('Pizza Margherita', { exact: true })).not.toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancelar item' })).not.toBeVisible();
   });
 });

@@ -13,6 +13,16 @@ namespace Nexora.Application.Catalog.Availability.Commands.MarkProductUnavailabl
 ///
 /// <see cref="AutoRestoreNextDay"/> é persistido em <c>product.auto_restore</c>. O worker da virada
 /// do dia operacional restaura somente produtos que mantiveram essa opção ativa.
+///
+/// <see cref="Reason"/> (US-044 §10) precisa ser um dos três valores fixos de
+/// <see cref="ProductUnavailableReasons.All"/> — validado por
+/// <see cref="MarkProductUnavailableCommandValidator"/>, nunca texto livre.
+///
+/// <see cref="OrderItemId"/> (US-044 §6) é preenchido só quando a marcação parte de um item
+/// específico já na fila do KDS (gatilho pelo cartão) — dispara o EVT-012
+/// <c>order.item.unavailable_flagged</c> além do EVT-051 <c>product.availability_changed</c>
+/// sempre emitido por este handler.
 /// </summary>
-public sealed record MarkProductUnavailableCommand(Guid ProductId, string Reason, bool AutoRestoreNextDay = true)
+public sealed record MarkProductUnavailableCommand(
+    Guid ProductId, string Reason, bool AutoRestoreNextDay = true, Guid? OrderItemId = null)
     : ICommand<ProductAvailabilityResponse>;

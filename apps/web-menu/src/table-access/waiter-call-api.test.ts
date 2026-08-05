@@ -8,16 +8,31 @@ function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
+function requestUrl(input: RequestInfo | URL) {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
+}
+
+async function captureError(action: () => Promise<unknown>) {
+  try {
+    await action();
+    return undefined;
+  } catch (cause: unknown) {
+    return cause;
+  }
+}
+
 describe('WaiterCallApi', () => {
   it('chama o garcom anexando o Bearer do sessionToken e uma Idempotency-Key', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(input.toString()).toContain('/v1/public/table/token-mesa-12/call-waiter');
+      expect(requestUrl(input)).toContain('/v1/public/table/token-mesa-12/call-waiter');
       const headers = init?.headers as Record<string, string>;
       expect(headers.Authorization).toBe('Bearer token-de-sessao');
       expect(headers['Idempotency-Key']).toBeTruthy();
       return jsonResponse({ acknowledged: true, alreadyPending: false });
     });
-    const api = new WaiterCallApi('token-mesa-12', 'token-de-sessao', '', fetcher as unknown as typeof fetch);
+    const api = new WaiterCallApi('token-mesa-12', 'token-de-sessao', '', fetcher);
 
     const result = await api.callWaiter();
 
@@ -27,7 +42,7 @@ describe('WaiterCallApi', () => {
 
   it('cenario "chamada repetida": devolve alreadyPending sem lancar erro', async () => {
     const fetcher = vi.fn(async () => jsonResponse({ acknowledged: true, alreadyPending: true }));
-    const api = new WaiterCallApi('token-mesa-12', 'token-de-sessao', '', fetcher as unknown as typeof fetch);
+    const api = new WaiterCallApi('token-mesa-12', 'token-de-sessao', '', fetcher);
 
     const result = await api.callWaiter();
 
@@ -36,9 +51,9 @@ describe('WaiterCallApi', () => {
 
   it('propaga o codigo de erro sem vazar detalhe (RN-015)', async () => {
     const fetcher = vi.fn(async () => jsonResponse({ detail: 'Não conseguimos reconhecer esta mesa.', code: 'INVALID_TABLE_TOKEN' }, 404));
-    const api = new WaiterCallApi('token-invalido', 'token-de-sessao', '', fetcher as unknown as typeof fetch);
+    const api = new WaiterCallApi('token-invalido', 'token-de-sessao', '', fetcher);
 
-    const error = await api.callWaiter().catch((cause) => cause);
+    const error = await captureError(() => api.callWaiter());
 
     expect(error).toBeInstanceOf(WaiterCallApiError);
     expect((error as WaiterCallApiError).code).toBe('INVALID_TABLE_TOKEN');
@@ -46,7 +61,7 @@ describe('WaiterCallApi', () => {
 
   it('pede a conta enviando splitMode e people no corpo', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(input.toString()).toContain('/request-bill');
+      expect(requestUrl(input)).toContain('/request-bill');
       const body = JSON.parse(init?.body as string) as { splitMode: string; people?: number };
       expect(body).toEqual({ splitMode: 'BY_PERSON', people: 4 });
       return jsonResponse({
@@ -68,7 +83,7 @@ describe('WaiterCallApi', () => {
         alreadyRequested: false,
       });
     });
-    const api = new WaiterCallApi('token-mesa-12', 'token-de-sessao', '', fetcher as unknown as typeof fetch);
+    const api = new WaiterCallApi('token-mesa-12', 'token-de-sessao', '', fetcher);
 
     const result = await api.requestBill('BY_PERSON', 4);
 
@@ -98,7 +113,7 @@ describe('WaiterCallApi', () => {
         alreadyRequested: false,
       });
     });
-    const api = new WaiterCallApi('token-mesa-12', 'token-de-sessao', '', fetcher as unknown as typeof fetch);
+    const api = new WaiterCallApi('token-mesa-12', 'token-de-sessao', '', fetcher);
 
     await api.requestBill('SINGLE');
 

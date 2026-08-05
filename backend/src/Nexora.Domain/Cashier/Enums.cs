@@ -40,3 +40,19 @@ public enum PaymentStatus
     Failed,
     Cancelled
 }
+
+/// <summary>
+/// US-058 (Registrar pagamento de maquininha externa) — estado de conciliação contra o extrato do
+/// provedor (RF-CXA-11, Fase 3, fora de escopo do MVP; aqui só a estrutura é preparada, ADR-024).
+/// </summary>
+public enum PaymentReconciliationStatus
+{
+    /// <summary>Pagamento sem provedor externo (dinheiro, ou forma sem conciliação aplicável) — nunca entra na fila de conciliação.</summary>
+    NotApplicable,
+
+    /// <summary>Pagamento com provedor externo (maquininha) aguardando conciliação contra o extrato.</summary>
+    Pending,
+
+    /// <summary>Conciliado contra o extrato do provedor (Fase 3 — nenhum fluxo desta wave marca este estado ainda).</summary>
+    Reconciled
+}

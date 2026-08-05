@@ -140,7 +140,6 @@ export function AuditLogPage({ auditApi = new AuditApi() }: Readonly<AuditLogPag
   // boot do CloudAdmin — ver nota de integração no topo do arquivo.
   useEffect(() => {
     void runQuery(toApiFilters(EMPTY_FORM), false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function applyFilters(): void {
@@ -505,7 +504,9 @@ function formatValue(key: string, value: unknown): string {
       .map(([nestedKey, nestedValue]) => `${humanizeKey(nestedKey)}: ${formatValue(nestedKey, nestedValue)}`)
       .join('; ');
   }
-  return String(value);
+  if (typeof value === 'bigint') return value.toString();
+  if (typeof value === 'symbol') return value.description ?? 'Símbolo';
+  return '—';
 }
 
 function formatBRL(amount: number): string {

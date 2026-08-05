@@ -10,6 +10,7 @@ using Nexora.Application.Catalog.Availability.Commands.MarkProductUnavailable;
 using Nexora.Application.Catalog.Availability.Commands.RestoreProductsPastBusinessDay;
 using Nexora.Application.Catalog.Availability.Queries.ListUnavailableProducts;
 using Nexora.Domain.Catalog;
+using Nexora.Domain.Operation;
 using Nexora.Domain.Platform;
 using Nexora.Infrastructure.Devices;
 using Nexora.IntegrationTests.Fakes;
@@ -63,15 +64,15 @@ public sealed class AvailabilityIntegrationTests
         await using var provider = BuildMediatRContainer(db, tenantContext, broadcaster);
         var sender = provider.GetRequiredService<ISender>();
 
-        var result = await sender.Send(new MarkProductUnavailableCommand(productId, "Acabou a calabresa", AutoRestoreNextDay: true));
+        var result = await sender.Send(new MarkProductUnavailableCommand(productId, "OUT_OF_STOCK", AutoRestoreNextDay: true));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.IsAvailable.Should().BeFalse();
-        result.Value!.UnavailableReason.Should().Be("Acabou a calabresa");
+        result.Value!.UnavailableReason.Should().Be("OUT_OF_STOCK");
 
         var persisted = await db.Products.AsNoTracking().SingleAsync(p => p.Id == productId);
         persisted.IsAvailable.Should().BeFalse();
-        persisted.UnavailableReason.Should().Be("Acabou a calabresa");
+        persisted.UnavailableReason.Should().Be("OUT_OF_STOCK");
         persisted.UnavailableSince.Should().NotBeNull();
 
         // EVT-051 product.availability_changed (US-015 §6), na mesma transação (ADR-006).
@@ -80,7 +81,69 @@ public sealed class AvailabilityIntegrationTests
 
         // Broadcast síncrono: ao terminar sender.Send, a chamada já está gravada — não foi
         // enfileirada para "depois" (ver docstring de IAvailabilityBroadcaster/RecordingAvailabilityBroadcaster).
-        broadcaster.UnavailableCalls.Should().ContainSingle(call => call.ProductId == productId && call.Reason == "Acabou a calabresa");
+        broadcaster.UnavailableCalls.Should().ContainSingle(call => call.ProductId == productId && call.Reason == "OUT_OF_STOCK");
+    }
+
+    /// <summary>
+    /// US-044 §6/§10: marcação disparada A PARTIR de um item específico já na fila (gatilho pelo
+    /// cartão, <c>OrderItemId</c> preenchido) grava o EVT-012 <c>order.item.unavailable_flagged</c>
+    /// ALÉM do EVT-051 <c>product.availability_changed</c> sempre emitido.
+    /// </summary>
+    [Fact]
+    public async Task Marcar_Indisponivel_A_Partir_De_Um_Item_Da_Fila_Emite_Evento_Order_Item_Unavailable_Flagged()
+    {
+        var tenantId = await SeedTenantAsync();
+        var (_, productId) = await SeedCategoryAndProductAsync(tenantId, "Pizza Calabresa");
+        var (_, orderItemId) = await SeedOrderWithItemAsync(tenantId, productId);
+        var tenantContext = new StaticTenantContext(tenantId, userId: Guid.NewGuid());
+
+        await using var db = _fixture.CreateAppDbContext(tenantContext);
+        var broadcaster = new RecordingAvailabilityBroadcaster();
+        await using var provider = BuildMediatRContainer(db, tenantContext, broadcaster);
+        var sender = provider.GetRequiredService<ISender>();
+
+        var result = await sender.Send(
+            new MarkProductUnavailableCommand(productId, "OUT_OF_STOCK", AutoRestoreNextDay: true, OrderItemId: orderItemId));
+
+        result.IsSuccess.Should().BeTrue();
+
+        var flaggedEvent = await db.DomainEvents.SingleAsync(
+            e => e.TenantId == tenantId && e.Type == "order.item.unavailable_flagged");
+        flaggedEvent.AggregateType.Should().Be("order_item");
+        flaggedEvent.AggregateId.Should().Be(orderItemId);
+        flaggedEvent.Payload.Should().Contain(productId.ToString()).And.Contain(orderItemId.ToString());
+
+        // EVT-051 continua sendo emitido do mesmo jeito, independente da origem da marcação.
+        (await db.DomainEvents.CountAsync(e => e.TenantId == tenantId && e.Type == "product.availability_changed"))
+            .Should().Be(1);
+    }
+
+    /// <summary>US-044 §7 (cenário "Pedidos já confirmados não mudam"): itens de pedido ainda ativos com o produto continuam na fila, e o retorno informa a contagem para o operador.</summary>
+    [Fact]
+    public async Task Marcar_Indisponivel_Nao_Altera_Itens_De_Pedido_Ja_Confirmados_E_Informa_A_Contagem()
+    {
+        var tenantId = await SeedTenantAsync();
+        var (_, productId) = await SeedCategoryAndProductAsync(tenantId, "Pizza Calabresa");
+        var (_, pendingItemId) = await SeedOrderWithItemAsync(tenantId, productId);
+        var (_, servedItemId) = await SeedOrderWithItemAsync(tenantId, productId, status: OrderItemStatus.Served);
+        var tenantContext = new StaticTenantContext(tenantId, userId: Guid.NewGuid());
+
+        await using var db = _fixture.CreateAppDbContext(tenantContext);
+        var broadcaster = new RecordingAvailabilityBroadcaster();
+        await using var provider = BuildMediatRContainer(db, tenantContext, broadcaster);
+        var sender = provider.GetRequiredService<ISender>();
+
+        var result = await sender.Send(new MarkProductUnavailableCommand(productId, "OUT_OF_STOCK", AutoRestoreNextDay: true));
+
+        result.IsSuccess.Should().BeTrue();
+        // Só o item Queued conta — o Served já está em estado final e não é mais "pendente".
+        result.Value!.AffectedPendingItems.Should().Be(1);
+
+        var pendingItem = await db.OrderItems.AsNoTracking().SingleAsync(i => i.Id == pendingItemId);
+        pendingItem.Status.Should().Be(OrderItemStatus.Queued, "a marcação de indisponibilidade nunca altera itens já confirmados na fila");
+
+        var servedItem = await db.OrderItems.AsNoTracking().SingleAsync(i => i.Id == servedItemId);
+        servedItem.Status.Should().Be(OrderItemStatus.Served);
     }
 
     /// <summary>Marcar de novo com motivo diferente atualiza o motivo (idempotente, não é erro) e propaga de novo.</summary>
@@ -96,11 +159,11 @@ public sealed class AvailabilityIntegrationTests
         await using var provider = BuildMediatRContainer(db, tenantContext, broadcaster);
         var sender = provider.GetRequiredService<ISender>();
 
-        await sender.Send(new MarkProductUnavailableCommand(productId, "Acabou o insumo", AutoRestoreNextDay: true));
-        var second = await sender.Send(new MarkProductUnavailableCommand(productId, "Praça fechada", AutoRestoreNextDay: true));
+        await sender.Send(new MarkProductUnavailableCommand(productId, "OUT_OF_STOCK", AutoRestoreNextDay: true));
+        var second = await sender.Send(new MarkProductUnavailableCommand(productId, "EQUIPMENT", AutoRestoreNextDay: true));
 
         second.IsSuccess.Should().BeTrue();
-        second.Value!.UnavailableReason.Should().Be("Praça fechada");
+        second.Value!.UnavailableReason.Should().Be("EQUIPMENT");
         broadcaster.UnavailableCalls.Should().HaveCount(2);
     }
 
@@ -117,7 +180,7 @@ public sealed class AvailabilityIntegrationTests
         await using var provider = BuildMediatRContainer(db, tenantContext, broadcaster);
         var sender = provider.GetRequiredService<ISender>();
 
-        await sender.Send(new MarkProductUnavailableCommand(productId, "Acabou o insumo", AutoRestoreNextDay: true));
+        await sender.Send(new MarkProductUnavailableCommand(productId, "OUT_OF_STOCK", AutoRestoreNextDay: true));
         var result = await sender.Send(new MarkProductAvailableCommand(productId));
 
         result.IsSuccess.Should().BeTrue();
@@ -145,7 +208,7 @@ public sealed class AvailabilityIntegrationTests
         await using var provider = BuildMediatRContainer(db, tenantContext, broadcaster);
         var sender = provider.GetRequiredService<ISender>();
 
-        await sender.Send(new MarkProductUnavailableCommand(unavailableProductId, "Acabou o insumo", AutoRestoreNextDay: true));
+        await sender.Send(new MarkProductUnavailableCommand(unavailableProductId, "OUT_OF_STOCK", AutoRestoreNextDay: true));
 
         var listResult = await sender.Send(new ListUnavailableProductsQuery());
 
@@ -170,9 +233,9 @@ public sealed class AvailabilityIntegrationTests
         await using var provider = BuildMediatRContainer(db, tenantContext, broadcaster);
         var sender = provider.GetRequiredService<ISender>();
 
-        await sender.Send(new MarkProductUnavailableCommand(oldProductId, "Acabou o insumo", AutoRestoreNextDay: true));
-        await sender.Send(new MarkProductUnavailableCommand(recentProductId, "Acabou o insumo", AutoRestoreNextDay: true));
-        await sender.Send(new MarkProductUnavailableCommand(manualProductId, "Fora de temporada", AutoRestoreNextDay: false));
+        await sender.Send(new MarkProductUnavailableCommand(oldProductId, "OUT_OF_STOCK", AutoRestoreNextDay: true));
+        await sender.Send(new MarkProductUnavailableCommand(recentProductId, "OUT_OF_STOCK", AutoRestoreNextDay: true));
+        await sender.Send(new MarkProductUnavailableCommand(manualProductId, "QUALITY", AutoRestoreNextDay: false));
 
         // Recua unavailable_since do primeiro produto para 2 dias atrás — simula que ficou
         // indisponível num dia operacional anterior ao atual (Domain não tem mutador público para
@@ -221,7 +284,7 @@ public sealed class AvailabilityIntegrationTests
         await using (var providerA = BuildMediatRContainer(dbA, contextA, new RecordingAvailabilityBroadcaster()))
         {
             await providerA.GetRequiredService<ISender>().Send(
-                new MarkProductUnavailableCommand(productA, "Acabou o insumo", AutoRestoreNextDay: true));
+                new MarkProductUnavailableCommand(productA, "OUT_OF_STOCK", AutoRestoreNextDay: true));
         }
 
         var contextB = new StaticTenantContext(tenantB, userId: Guid.NewGuid());
@@ -260,6 +323,49 @@ public sealed class AvailabilityIntegrationTests
         return (category.Id, product.Id);
     }
 
+    /// <summary>
+    /// Semeia loja + variante + pedido + item de pedido em estado ativo (ou terminal, via
+    /// <paramref name="status"/>) referenciando <paramref name="productId"/> — usado pelos cenários
+    /// de US-044 §6/§7 (EVT-012 e <c>affectedPendingItems</c>). Vai direto pelos factories de
+    /// Domain (mesmo espírito de <see cref="SeedCategoryAndProductAsync"/>), não pelo comando
+    /// <c>CreateOrderCommand</c> real (fora do escopo de arquivo permitido desta tarefa —
+    /// <c>Nexora.Application/Orders/**</c> não deve ser editado, e usar o comando aqui exigiria
+    /// abrir sessão/mesa só para este teste).
+    /// </summary>
+    private async Task<(Guid VariantId, Guid OrderItemId)> SeedOrderWithItemAsync(
+        Guid tenantId, Guid productId, OrderItemStatus status = OrderItemStatus.Queued)
+    {
+        await using var db = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId));
+
+        // isDefault: false — evita "uq_store_default" (uma loja padrão por tenant) quando o
+        // mesmo teste chama este helper mais de uma vez para o mesmo tenant (ex.: um item pendente
+        // + um item já servido); nenhum cenário aqui depende de a loja ser a padrão do tenant.
+        var store = Store.Create(tenantId, $"Loja de teste {Guid.NewGuid():N}", isDefault: false);
+        db.Stores.Add(store);
+
+        var variant = ProductVariant.Create(tenantId, productId, "Único");
+        db.ProductVariants.Add(variant);
+
+        var order = Order.Create(tenantId, store.Id, Channel.DineIn, "A1", DateOnly.FromDateTime(DateTime.UtcNow));
+        db.Orders.Add(order);
+
+        var item = OrderItem.Create(tenantId, order.Id, variant.Id, unitPrice: 40m);
+        if (status == OrderItemStatus.Served)
+        {
+            var actorId = Guid.NewGuid();
+            item.Fire(actorId);
+            item.SendToOven(ovenSlot: null);
+            item.TakeOutOfOven();
+            item.MarkReady(actorId);
+            item.MarkServed(actorId);
+        }
+        db.OrderItems.Add(item);
+
+        await db.SaveChangesAsync();
+
+        return (variant.Id, item.Id);
+    }
+
     private static ServiceProvider BuildMediatRContainer(
         IApplicationDbContext db, ICurrentTenantContext tenantContext, IAvailabilityBroadcaster broadcaster)
     {
@@ -269,8 +375,15 @@ public sealed class AvailabilityIntegrationTests
         services.AddSingleton(tenantContext);
         services.AddSingleton<IEventOriginProvider, EdgeEventOriginProvider>();
         services.AddSingleton(broadcaster);
-        services.AddSingleton<Nexora.Application.Abstractions.Realtime.IAlertsBroadcaster, RecordingAlertsBroadcaster>();
-        services.AddScoped<IAlertRaiser, AlertRaiser>();
+        // US-044 (E-08/US-080 §2 "produto indisponível"): MarkProductUnavailableCommandHandler
+        // ganhou a dependência de IAlertRaiser nesta história (alerta a garçom/caixa/gestor) — sem
+        // este registro, TODO comando desta suíte que dispara o handler quebra a resolução de DI.
+        // Mesmo par de registros que Fixtures/MediatRTestContainerFactory.cs já usa para as demais
+        // suites; não delega para lá porque este container é local ao arquivo (ver docstring da
+        // classe) e o factory compartilhado registra bem mais serviço (Auth/JWT/Installations) do
+        // que este arquivo precisa.
+        services.AddSingleton<IAlertRaiser, AlertRaiser>();
+        services.AddSingleton<IAlertsBroadcaster>(new RecordingAlertsBroadcaster());
 
         services.AddMediatR(cfg =>
         {

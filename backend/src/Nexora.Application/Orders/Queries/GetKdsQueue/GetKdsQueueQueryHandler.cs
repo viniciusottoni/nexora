@@ -1,6 +1,7 @@
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Security;
+using Nexora.Application.Catalog.PrepTime;
 using Nexora.Application.Orders.Support;
 using Nexora.Contracts.Operation;
 using Nexora.Domain.Operation;
@@ -61,24 +62,55 @@ internal sealed class GetKdsQueueQueryHandler : IRequestHandler<GetKdsQueueQuery
             .Where(i => i.StationId == request.StationId && i.Status != OrderItemStatus.Served && i.Status != OrderItemStatus.Cancelled)
             .Include(i => i.Variant).ThenInclude(v => v.Product)
             .Include(i => i.Modifiers)
+            .Include(i => i.Fractions).ThenInclude(f => f.Variant).ThenInclude(v => v.Product)
             .Include(i => i.Order).ThenInclude(o => o.Session).ThenInclude(s => s!.Table)
             .OrderBy(i => i.PlacedAt)
             .ToListAsync(cancellationToken);
 
         var now = DateTimeOffset.UtcNow;
 
-        var responses = items.Select(item => new KdsQueueItemResponse(
-            item.Id,
-            item.Order.ShortCode,
-            $"{item.Variant.Product.Name} {item.Variant.Name}".Trim(),
-            item.Quantity,
-            item.Modifiers.Select(m => m.NameSnapshot).ToArray(),
-            item.Notes,
-            OrderItemStatusLabels.ToWireStatus(item.Status),
-            item.PlacedAt,
-            Math.Max(0, (int)(now - item.PlacedAt).TotalSeconds),
-            item.Order.Session?.Table.Label,
-            item.Order.Channel.ToString())).ToList();
+        // US-040 §5 — limiar efetivo por item, mesma resolução (variação → padrão do tenant) de
+        // GetVariantPrepTimeAnalysisQueryHandler (US-016). Um único SELECT por chamada: o volume de
+        // itens ativos por praça é pequeno (mesma premissa documentada acima para o snapshot
+        // completo), então buscar o tenant_config uma vez fora do loop é suficiente.
+        var tenantConfig = await _db.TenantConfigs.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.TenantId == tenantId, cancellationToken);
+        var (defaultWarn, defaultCritical) = TenantPrepTimeDefaults.Resolve(tenantConfig?.Thresholds);
+
+        var responses = items.Select(item =>
+        {
+            var elapsedSeconds = Math.Max(0, (int)(now - item.PlacedAt).TotalSeconds);
+            var warnMinutes = item.Variant.WarnMinutes ?? defaultWarn;
+            var criticalMinutes = item.Variant.CriticalMinutes ?? defaultCritical;
+            var elapsedMinutes = elapsedSeconds / 60.0;
+            var thresholdState = elapsedMinutes >= criticalMinutes
+                ? "CRITICAL"
+                : elapsedMinutes >= warnMinutes
+                    ? "WARNING"
+                    : "NORMAL";
+
+            return new KdsQueueItemResponse(
+                item.Id,
+                item.OrderId,
+                item.Order.ShortCode,
+                item.Variant.ProductId,
+                $"{item.Variant.Product.Name} {item.Variant.Name}".Trim(),
+                item.Quantity,
+                item.Modifiers.Select(m => m.NameSnapshot).ToArray(),
+                item.Notes,
+                OrderItemStatusLabels.ToWireStatus(item.Status),
+                item.PlacedAt,
+                elapsedSeconds,
+                thresholdState,
+                warnMinutes * 60,
+                criticalMinutes * 60,
+                item.Order.Session?.Table.Label,
+                item.Order.Channel.ToString(),
+                item.Fractions
+                    .OrderBy(f => f.SortOrder)
+                    .Select(f => new KdsQueueItemFractionResponse($"{f.Variant.Product.Name} {f.Variant.Name}".Trim(), f.Weight))
+                    .ToList());
+        }).ToList();
 
         return Result<GetKdsQueueResponse>.Success(new GetKdsQueueResponse(responses, now.ToString("O")));
     }

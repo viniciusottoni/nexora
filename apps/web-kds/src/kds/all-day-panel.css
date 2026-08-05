@@ -1,0 +1,79 @@
+/* US-043 (Contagem consolidada all-day) — painel lateral estreito, dark (mesmo `[data-surface="kds"]`
+   de kds-queue.css), sem competir com a fila principal pela atenção (US-043 §10). */
+.all-day-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 18rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, white 12%, transparent);
+  background: color-mix(in srgb, white 6%, transparent);
+  color: var(--text-inverse, #fff);
+}
+
+.all-day-panel__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: color-mix(in srgb, white 75%, transparent);
+}
+
+.all-day-panel__title {
+  margin: 0;
+  font: 700 0.95rem/1.2 var(--brand-font-display, inherit);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.all-day-panel__empty {
+  margin: 0;
+  padding: 1rem 0;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, white 60%, transparent);
+  text-align: center;
+}
+
+.all-day-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.all-day-panel__item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, white 4%, transparent);
+  transition: background var(--dur-fast, 120ms) var(--ease-standard);
+}
+
+/* Números grandes, texto curto (US-043 §10) — mesmo tratamento de número-herói do resto do KDS. */
+.all-day-panel__name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: color-mix(in srgb, white 92%, transparent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.all-day-panel__count {
+  flex: 0 0 auto;
+  font: 700 1.35rem/1 var(--brand-font-display, inherit);
+  color: var(--text-inverse, #fff);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 960px) {
+  .all-day-panel {
+    max-width: none;
+  }
+}

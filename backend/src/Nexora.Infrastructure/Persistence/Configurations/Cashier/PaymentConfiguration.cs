@@ -41,6 +41,9 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.RefundReason).HasColumnName("refund_reason");
         builder.Property(p => p.AuthorizedBy).HasColumnName("authorized_by");
 
+        // US-058 — conciliação contra o extrato do provedor (Fase 3 usa; aqui só a estrutura).
+        builder.Property(p => p.ReconciliationStatus).HasColumnName("reconciliation_status").HasDefaultValue(PaymentReconciliationStatus.NotApplicable);
+
         builder.Property(p => p.CreatedAt).HasColumnName("created_at").HasColumnType("timestamptz");
         builder.Property(p => p.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamptz");
         builder.Property(p => p.CreatedBy).HasColumnName("created_by");

@@ -7,9 +7,19 @@ import { orderItemWireStatusSchema } from './operation-orders.js';
  * `Nexora.Contracts.Operation.KdsContracts` (backend/src/Nexora.Contracts/Operation/KdsContracts.cs)
  * e do payload `kdsEvent` emitido pelo `KdsHub`/`SignalRStationBroadcaster` (ADR-011).
  */
+export const kdsQueueItemFractionSchema = z.object({
+  productName: z.string(),
+  weight: z.string(),
+});
+
+/** US-040 §5 — "NORMAL"/"WARNING"/"CRITICAL", já resolvido pelo servidor (ver `KdsContracts.cs`). */
+export const kdsThresholdStateSchema = z.enum(['NORMAL', 'WARNING', 'CRITICAL']);
+
 export const kdsQueueItemSchema = z.object({
   orderItemId: z.string().uuid(),
+  orderId: z.string().uuid(),
   orderCode: z.string(),
+  productId: z.string().uuid(),
   productName: z.string(),
   quantity: z.number().int(),
   modifiers: z.array(z.string()),
@@ -17,8 +27,12 @@ export const kdsQueueItemSchema = z.object({
   status: orderItemWireStatusSchema,
   placedAt: z.string(),
   elapsedSeconds: z.number().int(),
+  thresholdState: kdsThresholdStateSchema,
+  warnSeconds: z.number().int(),
+  criticalSeconds: z.number().int(),
   table: z.string().nullable(),
   channel: catalogChannelSchema,
+  fractions: z.array(kdsQueueItemFractionSchema),
 });
 
 /** Porta de `GET /v1/kds/queue?stationId=...&since=...` (US-031 §7, fallback de polling do ADR-011). */
@@ -26,6 +40,30 @@ export const getKdsQueueResponseSchema = z.object({
   items: z.array(kdsQueueItemSchema),
   lastEventId: z.string(),
 });
+
+/** Porta de `OrderItemResponse` (backend/src/Nexora.Contracts/Operation/OrderContracts.cs) — usado pelo retorno de avanço/desfazer do KDS (US-041). */
+export const kdsOrderItemResponseSchema = z.object({
+  id: z.string().uuid(),
+  orderId: z.string().uuid(),
+  variantId: z.string().uuid(),
+  name: z.string(),
+  quantity: z.number().int(),
+  unitPrice: z.string(),
+  totalPrice: z.string(),
+  status: orderItemWireStatusSchema,
+  notes: z.string().nullable(),
+  stationId: z.string().uuid().nullable(),
+  repeatedFromItemId: z.string().uuid().nullable(),
+});
+
+/** Porta de `POST /v1/kds/orders/{shortCode}/advance` (US-041). */
+export const advanceKdsOrderResponseSchema = z.object({
+  advanced: z.array(kdsOrderItemResponseSchema),
+});
+
+export type KdsOrderItemResponse = z.infer<typeof kdsOrderItemResponseSchema>;
+export type AdvanceKdsOrderResponse = z.infer<typeof advanceKdsOrderResponseSchema>;
+export type KdsThresholdState = z.infer<typeof kdsThresholdStateSchema>;
 
 /**
  * Mensagem recebida via SignalR (`kdsEvent`, `KdsHub`) — `order.placed` (pedido novo, `items[]` com

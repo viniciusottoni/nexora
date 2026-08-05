@@ -14,12 +14,32 @@ const moneyStringSchema = z.string().regex(/^-?\d+(\.\d+)?$/, 'Valor monetário 
  */
 export const billSplitModeWithAmountSchema = z.enum(['BY_PERSON', 'BY_ITEM', 'SINGLE', 'BY_AMOUNT']);
 
+/** Adicional discriminado no detalhamento do item (US-051 §4). */
+export const billItemModifierSchema = z.object({
+  name: z.string(),
+  priceDelta: moneyStringSchema,
+});
+
+/** Sabor do meio a meio discriminado no detalhamento do item (US-051 §4). */
+export const billItemFractionSchema = z.object({
+  name: z.string(),
+  weight: z.number(),
+});
+
 export const billItemSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   total: moneyStringSchema,
   pending: z.boolean(),
   assignedPerson: z.number().int().positive().nullable(),
+  // US-051 (Conta montada automaticamente) — opcionais para não quebrar fixtures/mocks de US-027
+  // anteriores a esta história (ausência tratada como "sem detalhamento adicional").
+  quantity: z.number().int().positive().optional(),
+  unitPrice: moneyStringSchema.optional(),
+  modifiers: z.array(billItemModifierSchema).nullable().optional(),
+  fractions: z.array(billItemFractionSchema).nullable().optional(),
+  cancelled: z.boolean().optional(),
+  discount: moneyStringSchema.optional(),
 });
 
 /** Item ainda em produção no momento da divisão (US-027 §4, cenário "Item pendente durante a divisão"). */
@@ -45,6 +65,13 @@ export const billSplitPartSchema = z.object({
  */
 export const pendingItemsModeSchema = z.enum(['BLOCK', 'WARN', 'IGNORE']);
 
+/** Metadados da sessão exibidos junto da conta (US-051 §7). */
+export const billSessionSchema = z.object({
+  openedAt: z.string(),
+  minutesOpen: z.number().int().nonnegative(),
+  guestCount: z.number().int().positive(),
+});
+
 /**
  * Porta de `GET /v1/sessions/{id}/bill` (staff) e `GET /v1/public/sessions/current/bill`
  * (cliente, pré-visualização) — mesmo formato para as duas audiências (US-027 §10).
@@ -64,6 +91,12 @@ export const billResponseSchema = z.object({
   // Opcional (sem `.default()`) para não exigir o campo em fixtures/mocks anteriores a esta
   // história — ausente é tratado como `'WARN'` pelo consumidor (mesmo default do backend).
   pendingItemsMode: pendingItemsModeSchema.optional(),
+  // US-051/US-053/US-054 — opcionais pelo mesmo motivo dos campos de item acima.
+  discount: moneyStringSchema.optional(),
+  serviceFeePercent: z.number().optional(),
+  serviceFeeOptional: z.boolean().optional(),
+  serviceFeeWaived: z.boolean().optional(),
+  session: billSessionSchema.nullable().optional(),
 });
 
 export const billItemAssignmentRequestSchema = z.object({
@@ -123,6 +156,9 @@ export const partialPaymentResponseSchema = z.object({
 
 export type BillSplitModeWithAmount = z.infer<typeof billSplitModeWithAmountSchema>;
 export type PendingItemsMode = z.infer<typeof pendingItemsModeSchema>;
+export type BillItemModifierDto = z.infer<typeof billItemModifierSchema>;
+export type BillItemFractionDto = z.infer<typeof billItemFractionSchema>;
+export type BillSessionDto = z.infer<typeof billSessionSchema>;
 export type BillItemDto = z.infer<typeof billItemSchema>;
 export type BillPendingItemDto = z.infer<typeof billPendingItemSchema>;
 export type BillSplitPartDto = z.infer<typeof billSplitPartSchema>;

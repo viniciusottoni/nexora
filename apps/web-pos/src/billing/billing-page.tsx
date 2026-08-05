@@ -4,6 +4,7 @@ import { Badge, Button, Card, EmptyState, QuantityStepper, SegmentedControl } fr
 import type { OperationalRequestIdentity } from '@nexora/ui';
 import { formatMoneyBrl } from '../table-map/table-map-signals.js';
 import { BillingApi, BillingApiError } from './billing-api.js';
+import { CheckoutPanel } from './checkout-panel.js';
 import './billing.css';
 
 export interface BillingPageProps {
@@ -332,6 +333,17 @@ export function BillingPage({
           </div>
         </dl>
       </Card>
+
+      {!blockedByPendingItems ? (
+        <CheckoutPanel
+          identity={identity}
+          sessionId={sessionId}
+          bill={bill}
+          api={api}
+          onBillChanged={(patch) => setBill((current) => (current ? { ...current, ...patch } : current))}
+          onPaid={() => void load()}
+        />
+      ) : null}
 
       {mode === 'BY_PERSON' ? (
         <Card as="section" className="billing-mode-panel">

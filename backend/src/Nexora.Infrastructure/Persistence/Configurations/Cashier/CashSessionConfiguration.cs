@@ -8,7 +8,13 @@ internal sealed class CashSessionConfiguration : IEntityTypeConfiguration<CashSe
 {
     public void Configure(EntityTypeBuilder<CashSession> builder)
     {
-        builder.ToTable("cash_session");
+        builder.ToTable("cash_session", table =>
+        {
+            table.HasCheckConstraint("ck_cash_opening", "opening_amount >= 0");
+            table.HasCheckConstraint(
+                "ck_cash_closed",
+                "status <> 2 OR (closed_at IS NOT NULL AND counted_amount IS NOT NULL)");
+        });
 
         builder.HasKey(c => c.Id);
         builder.Property(c => c.Id).HasColumnName("id").ValueGeneratedNever(); // UUIDv7 na origem — ADR-016
@@ -37,5 +43,16 @@ internal sealed class CashSessionConfiguration : IEntityTypeConfiguration<CashSe
         builder.HasMany(c => c.Movements).WithOne().HasForeignKey(m => m.CashSessionId).OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(c => new { c.TenantId, c.BusinessDay });
+
+        // uq_cash_open (docs/domain/04-Caixa-e-Pagamento.md §"Regras de integridade" #1): um caixa
+        // aberto por operador e loja — backstop de banco contra a corrida de duas aberturas
+        // simultâneas (a checagem de aplicação vive em OpenCashSessionCommandHandler, US-055 §4,
+        // cenário "Um caixa por operador e turno"). Filtro por inteiro (não por rótulo de enum
+        // nativo): CashSessionStatus ainda é gravado como integer nesta solution — Closed = 2 (ver
+        // mesma convenção documentada em OrderItemConfiguration, "status IN (0,1,2,3)").
+        builder.HasIndex(c => new { c.StoreId, c.OperatorId })
+            .IsUnique()
+            .HasDatabaseName("uq_cash_open")
+            .HasFilter("status <> 2");
     }
 }

@@ -1,0 +1,109 @@
+.kds-history {
+  min-height: 100vh;
+  padding: 1rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  background: var(--brand-surface-dark, #14181f);
+  color: var(--text-inverse, #fff);
+}
+.kds-history__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0 1.25rem;
+  position: sticky;
+  top: 0;
+  background: inherit;
+  z-index: 5;
+}
+.kds-history__heading h1 {
+  margin: 0;
+  font: 700 clamp(1.4rem, 3vw, 1.9rem)/1.1 var(--brand-font-display, inherit);
+}
+.kds-history__lead {
+  margin: 0.15rem 0 0;
+  color: var(--text-inverse-muted, #9aa3b2);
+  font-size: 0.9rem;
+}
+.kds-history__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.kds-history__toolbar .db-input {
+  max-width: 24rem;
+  flex: 1 1 16rem;
+}
+.kds-history__summary {
+  display: flex;
+  gap: 1.25rem;
+  color: var(--text-inverse-muted, #9aa3b2);
+  font-size: 0.9rem;
+}
+.kds-history__summary-item strong {
+  color: var(--text-inverse, #fff);
+  font-weight: 700;
+}
+.kds-history__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.kds-history__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, white 6%, transparent);
+  border: 1px solid color-mix(in srgb, white 12%, transparent);
+  animation: nx-slide-in var(--dur-base, 200ms) var(--ease-out) backwards;
+}
+.kds-history__item-main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.kds-history__code {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.kds-history__product {
+  color: var(--text-inverse, #fff);
+}
+.kds-history__table {
+  color: var(--text-inverse-muted, #9aa3b2);
+  font-size: 0.85rem;
+}
+.kds-history__item-stamps {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  color: var(--text-inverse-muted, #9aa3b2);
+  font-size: 0.85rem;
+}
+.kds-history__empty,
+.kds-history__loading,
+.kds-history__no-station {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--text-inverse-muted, #9aa3b2);
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) backwards;
+}
+.kds-history__error {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, var(--color-danger, #dc2626) 20%, transparent);
+  color: var(--color-danger, #fca5a5);
+  font-weight: 600;
+}

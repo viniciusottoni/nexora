@@ -25,6 +25,12 @@ public sealed class OrderItem
     public decimal ModifiersTotal { get; private set; }
     public decimal TotalPrice { get; private set; }
     public decimal? UnitCost { get; private set; }
+
+    /// <summary>US-054 (Desconto com autorização) — desconto aplicado especificamente a este item (RN-011, escopo <c>ITEM</c>), já descontado de <see cref="TotalPrice"/>.</summary>
+    public decimal Discount { get; private set; }
+    public string? DiscountReason { get; private set; }
+    public Guid? DiscountAppliedBy { get; private set; }
+    public Guid? DiscountAuthorizedBy { get; private set; }
     public OrderItemStatus Status { get; private set; } = OrderItemStatus.Queued;
     public string? Notes { get; private set; }
     public DateTimeOffset PlacedAt { get; private set; }
@@ -279,6 +285,70 @@ public sealed class OrderItem
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// US-041 §3 ("Desfazer avanço acidental") — horário do carimbo que corresponde ao estado
+    /// ATUAL do item, usado pela Application para checar a janela de 10 s sem precisar conhecer o
+    /// mapeamento status→campo (o mesmo motivo de <see cref="UndoLastTransition"/> viver aqui).
+    /// </summary>
+    public DateTimeOffset? LastTransitionAt => Status switch
+    {
+        OrderItemStatus.Fired => FiredAt,
+        OrderItemStatus.InOven => OvenInAt,
+        OrderItemStatus.OutOfOven => OvenOutAt,
+        OrderItemStatus.Ready => ReadyAt,
+        OrderItemStatus.Served => ServedAt,
+        _ => null,
+    };
+
+    /// <summary>
+    /// US-041 §3/§4 ("Desfazer avanço acidental") — reverte um passo a última transição, limpando
+    /// o carimbo/autor/dispositivo correspondente. Não é o inverso de <see cref="Cancel"/> (item
+    /// cancelado não tem "undo") nem apaga histórico algum sozinho — a Application grava um evento
+    /// de CORREÇÃO ao lado do original (RN "correção sem apagar o evento original"), este método só
+    /// cuida do estado atual do agregado.
+    /// </summary>
+    public void UndoLastTransition()
+    {
+        switch (Status)
+        {
+            case OrderItemStatus.Fired:
+                Status = OrderItemStatus.Queued;
+                FiredAt = null;
+                FiredBy = null;
+                FiredDeviceId = null;
+                break;
+            case OrderItemStatus.InOven:
+                Status = OrderItemStatus.Fired;
+                OvenInAt = null;
+                OvenInBy = null;
+                OvenInDeviceId = null;
+                OvenSlot = null;
+                break;
+            case OrderItemStatus.OutOfOven:
+                Status = OrderItemStatus.InOven;
+                OvenOutAt = null;
+                OvenOutBy = null;
+                OvenOutDeviceId = null;
+                break;
+            case OrderItemStatus.Ready:
+                Status = OrderItemStatus.OutOfOven;
+                ReadyAt = null;
+                ReadyBy = null;
+                ReadyDeviceId = null;
+                break;
+            case OrderItemStatus.Served:
+                Status = OrderItemStatus.Ready;
+                ServedAt = null;
+                ServedBy = null;
+                ServedDeviceId = null;
+                break;
+            default:
+                throw new DomainException("Não há avanço para desfazer neste item.");
+        }
+
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     public void UpdateUnitCost(decimal unitCost)
     {
         if (unitCost < 0)
@@ -288,10 +358,35 @@ public sealed class OrderItem
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// US-054 §4, cenário "Desconto por item": reduz só o valor deste item, nunca a sessão inteira
+    /// (esse é <see cref="TableSession.ApplyDiscount"/>) — a avaliação do limite/autorização acima
+    /// dele acontece na Application, antes de chamar isto (mesmo padrão de <paramref name="authorizedBy"/>
+    /// opcional usado em <see cref="Cancel"/>).
+    /// </summary>
+    public void ApplyDiscount(decimal amount, string reason, Guid appliedBy, Guid? authorizedBy = null)
+    {
+        if (amount < 0)
+            throw new DomainException("O desconto não pode ser negativo.");
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new DomainException("O motivo do desconto é obrigatório.");
+
+        var grossTotal = (UnitPrice * Quantity) + ModifiersTotal;
+        if (amount > grossTotal)
+            throw new DomainException("O desconto não pode ser maior que o valor do item.");
+
+        Discount = amount;
+        DiscountReason = reason;
+        DiscountAppliedBy = appliedBy;
+        DiscountAuthorizedBy = authorizedBy;
+        RecalculateTotal();
+    }
+
     private void RecalculateTotal()
     {
-        // ordem de cálculo normativa (ADR-017 §"Ordem das operações"): unitário × quantidade, + modificadores
-        TotalPrice = (UnitPrice * Quantity) + ModifiersTotal;
+        // ordem de cálculo normativa (ADR-017 §"Ordem das operações"): unitário × quantidade, + modificadores, - desconto do item
+        TotalPrice = (UnitPrice * Quantity) + ModifiersTotal - Discount;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 }

@@ -30,7 +30,7 @@ describe('urlBase64ToUint8Array', () => {
 describe('PushSubscriptionApi (US-081 §7 — cloud-only)', () => {
   it('envia endpoint + keys para POST /v1/notifications/subscribe com Idempotency-Key', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(input.toString()).toBe('/cloud/v1/notifications/subscribe');
+      expect(input).toBe('/cloud/v1/notifications/subscribe');
       expect(init?.method).toBe('POST');
       expect(new Headers(init?.headers).get('Idempotency-Key')).toBeTruthy();
       expect(JSON.parse(init?.body as string)).toEqual({

@@ -1,0 +1,115 @@
+/* US-042 — barra de filtro por praça de produção. Segue a mesma paleta escura de kds-queue-page.css
+   (var(--brand-surface-dark)/var(--text-inverse)) — este componente vive dentro do cabeçalho do
+   KDS, nunca isolado com fundo próprio. */
+.kds-station-filter {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.kds-station-filter__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 0.6rem;
+  border: 1px solid color-mix(in srgb, white 20%, transparent);
+  background: color-mix(in srgb, white 8%, transparent);
+  color: var(--text-inverse, #fff);
+  font: 600 1rem/1.2 inherit;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.kds-station-filter__summary:hover {
+  background: color-mix(in srgb, white 16%, transparent);
+}
+.kds-station-filter__summary:active {
+  background: color-mix(in srgb, white 22%, transparent);
+}
+
+.kds-station-filter__dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.kds-station-filter__dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  display: inline-block;
+  box-shadow: 0 0 0 1px color-mix(in srgb, white 40%, transparent);
+}
+
+.kds-station-filter__label {
+  font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+  white-space: nowrap;
+}
+
+.kds-station-filter__others {
+  margin: 0;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, white 65%, transparent);
+  white-space: nowrap;
+}
+
+.kds-station-filter__picker {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 15rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, white 18%, transparent);
+  background: var(--brand-surface-dark, #14181f);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.kds-station-filter__option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text-inverse, #fff);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-height: 2.75rem;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.kds-station-filter__option:hover {
+  background: color-mix(in srgb, white 10%, transparent);
+}
+.kds-station-filter__option input[type='checkbox'] {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--brand-primary, #6fbe2c);
+}
+
+.kds-station-filter__error {
+  margin: 0;
+  max-width: 22rem;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--nx-warning-400, #f2b93d);
+}
+
+@media (max-width: 640px) {
+  .kds-station-filter {
+    align-items: stretch;
+  }
+  .kds-station-filter__picker {
+    right: auto;
+    left: 0;
+    min-width: 100%;
+  }
+}

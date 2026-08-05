@@ -4,7 +4,7 @@
 // verdade; os demais nunca falham por rede, então nunca enfileiram nada.
 import 'fake-indexeddb/auto';
 import '@testing-library/jest-dom/vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OrderCompositionPage } from './order-composition-page.js';
 

@@ -19,6 +19,12 @@ function jsonResponse(body: unknown, ok = true, status = 200): Response {
   } as unknown as Response;
 }
 
+function requestUrl(input: RequestInfo | URL) {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
+}
+
 describe('urlBase64ToUint8Array', () => {
   it('converte uma chave VAPID base64url para Uint8Array sem lançar', () => {
     // "AAECAw" (base64url, sem padding) → bytes [0, 1, 2, 3].
@@ -30,7 +36,7 @@ describe('urlBase64ToUint8Array', () => {
 describe('PushSubscriptionApi (US-081 §7 — cloud-only)', () => {
   it('envia endpoint + keys para POST /v1/notifications/subscribe com Idempotency-Key', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(input.toString()).toBe('/cloud/v1/notifications/subscribe');
+      expect(requestUrl(input)).toBe('/cloud/v1/notifications/subscribe');
       expect(init?.method).toBe('POST');
       expect(new Headers(init?.headers).get('Idempotency-Key')).toBeTruthy();
       expect(JSON.parse(init?.body as string)).toEqual({

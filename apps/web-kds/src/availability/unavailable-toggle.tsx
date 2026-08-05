@@ -1,10 +1,15 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Button, Card, Field, Input, StatusPill } from '@nexora/ui';
+import { Button, Card, StatusPill } from '@nexora/ui';
+import {
+  PRODUCT_UNAVAILABLE_REASON_LABELS,
+  PRODUCT_UNAVAILABLE_REASONS,
+} from '@nexora/contracts';
 import {
   AvailabilityApi,
   subscribeToAvailability,
   type AvailabilitySubscription,
   type ProductAvailabilityChangedEvent,
+  type ProductUnavailableReason,
 } from './availability-api.js';
 import './unavailable-toggle.css';
 
@@ -44,10 +49,8 @@ export function UnavailableToggle({
   subscribeFn = subscribeToAvailability,
 }: Readonly<UnavailableToggleProps>) {
   const dialogTitleId = useId();
-  const reasonFieldId = useId();
   const [isAvailable, setIsAvailable] = useState(initialIsAvailable);
   const [reason, setReason] = useState<string | null>(initialReason ?? null);
-  const [reasonDraft, setReasonDraft] = useState('');
   const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
@@ -88,7 +91,6 @@ export function UnavailableToggle({
     const client = api ?? new AvailabilityApi();
 
     if (isAvailable) {
-      setReasonDraft('');
       setReasonDialogOpen(true);
       return;
     }
@@ -106,17 +108,12 @@ export function UnavailableToggle({
     }
   }
 
-  async function confirmUnavailable(): Promise<void> {
-    const enteredReason = reasonDraft.trim();
-    if (!enteredReason) return;
-
+  /** US-044 §10 — o toque no motivo JÁ confirma (nenhum passo extra), mantendo a marcação em "um toque" na prática. */
+  async function confirmUnavailable(selectedReason: ProductUnavailableReason): Promise<void> {
     setError(undefined);
     setBusy(true);
     try {
-      const updated = await (api ?? new AvailabilityApi()).markUnavailable(
-        productId,
-        enteredReason,
-      );
+      const updated = await (api ?? new AvailabilityApi()).markUnavailable(productId, selectedReason);
       setIsAvailable(updated.isAvailable);
       setReason(updated.unavailableReason);
       setReasonDialogOpen(false);
@@ -157,18 +154,33 @@ export function UnavailableToggle({
           role="dialog"
           aria-modal="true"
           aria-labelledby={dialogTitleId}
+          onKeyDown={(event) => {
+            // US-044 §10 — "motivo escolhido por número (1 acabou, 2 equipamento, 3 qualidade),
+            // não por texto": aceita a tecla física, sem exigir toque na grade.
+            const index = ['1', '2', '3'].indexOf(event.key);
+            if (index === -1 || busy) return;
+            const selected = PRODUCT_UNAVAILABLE_REASONS[index];
+            if (selected) void confirmUnavailable(selected);
+          }}
         >
           <Card className="kds-availability-dialog__card nx-anim-scale-in">
             <h2 id={dialogTitleId}>Marcar produto indisponível</h2>
-            <p>Informe o motivo para a equipe entender o que está em falta.</p>
-            <Field label="Motivo" htmlFor={reasonFieldId}>
-              <Input
-                id={reasonFieldId}
-                value={reasonDraft}
-                autoFocus
-                onChange={(event) => setReasonDraft(event.target.value)}
-              />
-            </Field>
+            <p>Escolha o motivo — a equipe toda vê na hora.</p>
+            <div className="kds-availability-dialog__reasons">
+              {PRODUCT_UNAVAILABLE_REASONS.map((reasonCode, index) => (
+                <Button
+                  key={reasonCode}
+                  type="button"
+                  variant="danger"
+                  size="touch"
+                  busy={busy}
+                  onClick={() => void confirmUnavailable(reasonCode)}
+                >
+                  <span className="kds-availability-dialog__reason-key">{index + 1}</span>
+                  {PRODUCT_UNAVAILABLE_REASON_LABELS[reasonCode]}
+                </Button>
+              ))}
+            </div>
             <div className="kds-availability-dialog__actions">
               <Button
                 type="button"
@@ -177,15 +189,6 @@ export function UnavailableToggle({
                 onClick={() => setReasonDialogOpen(false)}
               >
                 Cancelar
-              </Button>
-              <Button
-                type="button"
-                variant="danger"
-                busy={busy}
-                disabled={!reasonDraft.trim()}
-                onClick={() => void confirmUnavailable()}
-              >
-                Confirmar indisponibilidade
               </Button>
             </div>
           </Card>

@@ -16,5 +16,18 @@ public sealed record SetProductAvailabilityRequest(bool IsAvailable, string? Rea
 /// precisa caber em um toque"). Só marca indisponível; o retorno manual à disponibilidade no KDS é
 /// <c>POST /v1/kds/products/:id/available</c>, sem corpo (mesmo padrão de
 /// <c>ActivateProductCommand</c>).
+///
+/// <para>
+/// <see cref="Reason"/> (US-044 §10) precisa ser um dos três valores de
+/// <see cref="ProductUnavailableReasons.All"/> — validado por
+/// <c>MarkProductUnavailableCommandValidator</c>, não aqui (contrato não referencia FluentValidation).
+/// </para>
+/// <para>
+/// <see cref="OrderItemId"/> (US-044 §6, EVT-012 <c>order.item.unavailable_flagged</c>) é
+/// preenchido só quando a marcação parte de um item específico já na fila do KDS (gatilho pelo
+/// cartão) — distingue essa origem de uma marcação feita pela lista avulsa de "produtos
+/// indisponíveis" (US-015), que não referencia nenhum item de pedido em particular. Nulo é o caso
+/// comum; quando presente, dispara o evento adicional além do EVT-051 sempre emitido.
+/// </para>
 /// </summary>
-public sealed record MarkProductUnavailableRequest(string Reason, bool AutoRestoreNextDay = true);
+public sealed record MarkProductUnavailableRequest(string Reason, bool AutoRestoreNextDay = true, Guid? OrderItemId = null);

@@ -1,0 +1,12 @@
+/* US-047 §4/§10 — banner de modo pico, sempre no topo da fila, acima da grade de cartões. */
+.kds-peak-mode-banner {
+  margin-bottom: 1rem;
+}
+.kds-peak-mode-banner .db-alert-banner__actions {
+  flex-shrink: 0;
+}
+/* Estado "desativado manualmente": mesmo componente, tom neutro e discreto — não deve competir
+   visualmente com o banner ativo (laranja) nem com um cartão atrasado (vermelho) da fila. */
+.kds-peak-mode-banner--muted {
+  opacity: 0.85;
+}

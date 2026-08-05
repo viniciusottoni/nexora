@@ -73,7 +73,7 @@ describe('TableMapApi', () => {
 
   it('US-025 §7: confirma o atendimento com Idempotency-Key e devolve resolved/responseSeconds', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(input.toString()).toBe('/v1/tables/mesa-12/acknowledge-call');
+      expect(input).toBe('/v1/tables/mesa-12/acknowledge-call');
       expect(init?.method).toBe('POST');
       expect(new Headers(init?.headers).get('Idempotency-Key')).toBeTruthy();
       return jsonResponse({ resolved: true, responseSeconds: 12 });
@@ -87,7 +87,7 @@ describe('TableMapApi', () => {
 
   it('US-026 §4: pede a conta pelo garçom enviando splitMode no corpo', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(input.toString()).toBe('/v1/sessions/sessao-1/request-bill');
+      expect(input).toBe('/v1/sessions/sessao-1/request-bill');
       expect(JSON.parse(init?.body as string)).toEqual({ splitMode: 'SINGLE' });
       return jsonResponse({
         session: {

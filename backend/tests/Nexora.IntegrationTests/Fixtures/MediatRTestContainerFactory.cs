@@ -66,6 +66,9 @@ internal static class MediatRTestContainerFactory
         // AddOrderItemCommand (gap de US-030, reaproveitado pelo cenário "Novo pedido após
         // solicitar a conta" da US-026) também depende de IOrderConsumptionBroadcaster.
         services.AddSingleton<IOrderConsumptionBroadcaster>(new RecordingOrderConsumptionBroadcaster());
+        // US-015/US-044: handlers de disponibilidade publicam SignalR de forma síncrona; no
+        // container de integração usamos o mesmo duplo determinístico das suites dedicadas.
+        services.AddSingleton<IAvailabilityBroadcaster>(new RecordingAvailabilityBroadcaster());
         // US-031 (Roteamento simultâneo para cozinha e caixa): CreateOrderCommand/AddOrderItemCommand/
         // AdvanceOrderItemStatusCommand também dependem de IStationBroadcaster — sem este registro,
         // TODO teste que despacha esses três comandos por este factory quebraria a resolução de DI.

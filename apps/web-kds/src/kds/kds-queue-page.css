@@ -20,10 +20,102 @@
   margin: 0;
   font: 700 clamp(1.4rem, 3vw, 1.9rem)/1.1 var(--brand-font-display, inherit);
 }
+.kds-queue__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+/* US-040 §10 — modo quiosque em tela cheia: botão discreto, alvo grande o bastante pra tocar com a
+   luva de forno, mas fora do fluxo visual principal (não compete com a fila). */
+.kds-queue__fullscreen {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid color-mix(in srgb, white 20%, transparent);
+  background: color-mix(in srgb, white 8%, transparent);
+  color: var(--text-inverse, #fff);
+  cursor: pointer;
+  transition: background var(--dur-fast, 120ms) var(--ease-standard);
+}
+.kds-queue__fullscreen:hover {
+  background: color-mix(in srgb, white 16%, transparent);
+}
+/* US-045 §10 — indicador de modo silencioso no próprio botão de som, discreto (cor, não badge). */
+.kds-queue__fullscreen--muted {
+  color: var(--nx-warning-400, #fbbf24);
+}
+
+/* US-042/US-043 — corpo com a fila principal e o painel all-day lado a lado; empilha em telas
+   estreitas (o painel all-day é conteúdo secundário, cede espaço primeiro). */
+.kds-queue__body {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+.kds-queue__main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* US-042 §4 ("visão de supervisão... agrupada por praça") — uma seção por praça, com o nome e a
+   cor cadastrada da praça como cabeçalho leve (não compete com o cartão mais antigo). */
+.kds-queue__station-section + .kds-queue__station-section {
+  margin-top: 1.5rem;
+}
+.kds-queue__station-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  font: 700 1rem/1.2 var(--brand-font-display, inherit);
+  color: var(--text-inverse-muted, #9aa3b2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.kds-queue__station-section-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--nx-brand-500, #6366f1);
+}
+
+/* US-047 §10 — botão "ver observações" do modo pico: some no fluxo normal da linha do rodapé do
+   ticket, alvo confortável mesmo compacto. */
+.kds-queue__ticket-expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  transition: var(--transition-control, opacity 120ms ease);
+}
+.kds-queue__ticket-expand:hover {
+  opacity: 0.8;
+}
+
 .kds-queue__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
   gap: 1rem;
+  padding-bottom: 14rem; /* espaço pro teclado fixo não cobrir o último cartão */
+}
+/* US-040 §3 ("Fila crescente ... cartões devem reduzir de tamanho mantendo a legibilidade
+   mínima") — grade mais densa a partir de DENSE_QUEUE_THRESHOLD pedidos; nunca menor que
+   14rem, o piso de legibilidade a 1,5 m validado na US. */
+.kds-queue__grid--dense {
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.65rem;
+}
+.kds-queue__grid--dense .db-order-ticket {
+  padding: 0.65rem;
 }
 
 /* Critério de aceite (US-031 §4, "Pedido de delivery"): borda de acento distingue o canal a

@@ -42,7 +42,15 @@ public sealed class FinancialEntry
         DateOnly competenceDate,
         Guid? storeId = null,
         Guid? accountId = null,
-        Guid? categoryId = null)
+        Guid? categoryId = null,
+        // US-052 (Múltiplas formas de pagamento) — vínculo ao fato de origem (ex.: "table_session",
+        // id da comanda), exigido pelo cenário Gherkin "Receita registrada automaticamente": "deve
+        // estar vinculado ao canal e à forma de pagamento". Canal/forma em si vivem em Description
+        // (texto livre) até existir um relatório dedicado que precise deles estruturados.
+        string? referenceType = null,
+        Guid? referenceId = null,
+        Guid? createdBy = null,
+        DateTimeOffset? paidAt = null)
     {
         if (string.IsNullOrWhiteSpace(description))
             throw new DomainException("A descrição do lançamento financeiro é obrigatória.");
@@ -60,9 +68,13 @@ public sealed class FinancialEntry
             Amount = amount,
             Description = description,
             CompetenceDate = competenceDate,
+            ReferenceType = referenceType,
+            ReferenceId = referenceId,
             IsRecurring = false,
             CreatedAt = now,
-            UpdatedAt = now
+            UpdatedAt = now,
+            CreatedBy = createdBy,
+            PaidAt = paidAt
         };
     }
 

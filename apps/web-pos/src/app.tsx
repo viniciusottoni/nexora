@@ -5,6 +5,7 @@ import {
   createNeutralBrandingResponse,
   CreatedByFooter,
   DevicePairingScreen,
+  Icon,
   NotificationCenter,
   OperatorBar,
   OperationalAuthClient,
@@ -17,6 +18,8 @@ import {
   type OperationalSession,
 } from '@nexora/ui';
 import { BillingPage } from './billing/billing-page.js';
+import { CashPanelPage } from './cash-panel/cash-panel-page.js';
+import { CashSessionPage } from './cash-session/cash-session-page.js';
 import { useNotificationCenter } from './notifications/use-notification-center.js';
 import { configurePosOrderQueue, posOrderQueue } from './offline/pos-order-queue.js';
 import { OrderCompositionPage } from './order-composition/order-composition-page.js';
@@ -27,6 +30,17 @@ import './styles.css';
 export interface PosHomeProps {
   readonly tenantName: string;
   readonly logo?: string;
+}
+
+type PosOperationalView = 'tables' | 'cash-panel' | 'cash-session';
+
+export interface PosOperationalWorkAreaProps {
+  readonly identity: {
+    readonly accessToken: string;
+    readonly deviceId: string;
+    readonly deviceSecret: string;
+  };
+  readonly onOrderQueued?: () => void;
 }
 
 export function PosHome({ tenantName, logo }: Readonly<PosHomeProps>) {
@@ -52,6 +66,81 @@ export function PosHome({ tenantName, logo }: Readonly<PosHomeProps>) {
   );
 }
 
+export function PosOperationalWorkArea({ identity, onOrderQueued }: Readonly<PosOperationalWorkAreaProps>) {
+  const [activeView, setActiveView] = useState<PosOperationalView>('tables');
+  const [openingTableId, setOpeningTableId] = useState<string>();
+  const [billingSessionId, setBillingSessionId] = useState<string>();
+  const [composingSessionId, setComposingSessionId] = useState<string>();
+
+  function changeView(view: PosOperationalView) {
+    setActiveView(view);
+    setOpeningTableId(undefined);
+    setBillingSessionId(undefined);
+    setComposingSessionId(undefined);
+  }
+
+  return (
+    <>
+      <nav className="pos-view-nav nx-anim-in" aria-label="Navegação do POS">
+        <Button
+          type="button"
+          size="sm"
+          variant={activeView === 'tables' ? 'primary' : 'ghost'}
+          aria-pressed={activeView === 'tables'}
+          onClick={() => changeView('tables')}
+        >
+          <Icon name="table_restaurant" size={16} />
+          Mapa
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={activeView === 'cash-panel' ? 'primary' : 'ghost'}
+          aria-pressed={activeView === 'cash-panel'}
+          onClick={() => changeView('cash-panel')}
+        >
+          <Icon name="point_of_sale" size={16} />
+          Painel do caixa
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={activeView === 'cash-session' ? 'primary' : 'ghost'}
+          aria-pressed={activeView === 'cash-session'}
+          onClick={() => changeView('cash-session')}
+        >
+          <Icon name="payments" size={16} />
+          Caixa
+        </Button>
+      </nav>
+
+      {openingTableId ? (
+        <OpenTablePage identity={identity} preselectedTableId={openingTableId} onExit={() => setOpeningTableId(undefined)} />
+      ) : billingSessionId ? (
+        <BillingPage identity={identity} sessionId={billingSessionId} onExit={() => setBillingSessionId(undefined)} />
+      ) : composingSessionId ? (
+        <OrderCompositionPage
+          identity={identity}
+          sessionId={composingSessionId}
+          onExit={() => setComposingSessionId(undefined)}
+          {...(onOrderQueued ? { onOrderQueued } : {})}
+        />
+      ) : activeView === 'cash-panel' ? (
+        <CashPanelPage identity={identity} onOpenBilling={setBillingSessionId} />
+      ) : activeView === 'cash-session' ? (
+        <CashSessionPage identity={identity} onExit={() => changeView('cash-panel')} />
+      ) : (
+        <TableMapPage
+          identity={identity}
+          onSelectTable={setOpeningTableId}
+          onOpenBilling={setBillingSessionId}
+          onComposeOrder={setComposingSessionId}
+        />
+      )}
+    </>
+  );
+}
+
 function BrandedPos() {
   const { tenant, branding } = useRuntimeBranding();
   const logo = branding.logo.dark ?? branding.logo.light;
@@ -62,15 +151,6 @@ function BrandedPos() {
   const [error, setError] = useState<string>();
   const [retryAfterSeconds, setRetryAfterSeconds] = useState<number>();
   const [intentionId, setIntentionId] = useState(() => crypto.randomUUID());
-  // US-023: o mapa de mesas é a tela inicial do garçom; "abrir mesa" (US-022) é uma ação disparada
-  // ao tocar numa mesa livre no mapa, não mais uma tela própria de entrada.
-  const [openingTableId, setOpeningTableId] = useState<string>();
-  // US-027 §10: sessão cuja conta está sendo dividida — acionada a partir do card de mesa com
-  // `billRequested=true` no mapa, mesmo padrão de `openingTableId` acima.
-  const [billingSessionId, setBillingSessionId] = useState<string>();
-  // US-030 §7, cenário "Pedido pelo celular do garçom": sessão cuja comanda está sendo composta —
-  // acionada a partir do botão "Lançar pedido" de uma mesa ocupada no mapa, mesmo padrão acima.
-  const [composingSessionId, setComposingSessionId] = useState<string>();
   // US-034 §8/§10 — contador da fila local de pedidos (queda de LAN), lido no shell autenticado
   // (não numa tela específica) porque o indicador precisa ser PERMANENTE mesmo quando o garçom sai
   // da tela de composição de pedido para o mapa de mesas.
@@ -194,36 +274,10 @@ function BrandedPos() {
           </span>
         </div>
       ) : null}
-      {/* US-023: o mapa de mesas é a tela inicial do garçom/caixa, não um menu (§10) — substitui o
-          placeholder estático de PosHome (ainda exportado/testado à parte) assim que autenticado.
-          US-022 ("abrir mesa") passa a ser uma ação disparada ao tocar numa mesa livre no mapa. */}
-      {openingTableId ? (
-        <OpenTablePage
-          identity={{ accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret }}
-          preselectedTableId={openingTableId}
-          onExit={() => setOpeningTableId(undefined)}
-        />
-      ) : billingSessionId ? (
-        <BillingPage
-          identity={{ accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret }}
-          sessionId={billingSessionId}
-          onExit={() => setBillingSessionId(undefined)}
-        />
-      ) : composingSessionId ? (
-        <OrderCompositionPage
-          identity={{ accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret }}
-          sessionId={composingSessionId}
-          onExit={() => setComposingSessionId(undefined)}
-          onOrderQueued={refreshQueuedOrderCount}
-        />
-      ) : (
-        <TableMapPage
-          identity={{ accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret }}
-          onSelectTable={setOpeningTableId}
-          onOpenBilling={setBillingSessionId}
-          onComposeOrder={setComposingSessionId}
-        />
-      )}
+      <PosOperationalWorkArea
+        identity={{ accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret }}
+        onOrderQueued={refreshQueuedOrderCount}
+      />
       <CreatedByFooter />
     </div>
   );

@@ -111,6 +111,28 @@
   margin-top: 0;
 }
 
+/* US-044 §10 — três motivos fixos, um toque cada, alvo grande (mesma exigência da cozinha do
+   resto do KDS). Empilha em telas estreitas, três colunas a partir do breakpoint do teclado. */
+.kds-availability-dialog__reasons {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3, 0.75rem);
+  margin-top: var(--space-4, 1rem);
+}
+@media (min-width: 30rem) {
+  .kds-availability-dialog__reasons {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.kds-availability-dialog__reasons .db-button {
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.kds-availability-dialog__reason-key {
+  font: 700 1.4rem/1 var(--brand-font-display, inherit);
+  opacity: 0.85;
+}
+
 .kds-availability-dialog__actions {
   display: flex;
   justify-content: flex-end;
