@@ -21,6 +21,7 @@ internal sealed class DeviceConfiguration : IEntityTypeConfiguration<Device>
         builder.Property(d => d.SecretHash).HasColumnName("secret_hash");
         builder.Property(d => d.StationId).HasColumnName("station_id");
         builder.Property(d => d.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        builder.Property(d => d.Preferences).HasColumnName("preferences").HasColumnType("jsonb").HasDefaultValue("{}").IsRequired();
         builder.Property(d => d.LastSeenAt).HasColumnName("last_seen_at").HasColumnType("timestamptz");
         builder.Property(d => d.CreatedAt).HasColumnName("created_at").HasColumnType("timestamptz");
         builder.Property(d => d.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamptz");

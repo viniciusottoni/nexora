@@ -279,6 +279,70 @@ public sealed class OrderItem
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// US-041 §3 ("Desfazer avanço acidental") — horário do carimbo que corresponde ao estado
+    /// ATUAL do item, usado pela Application para checar a janela de 10 s sem precisar conhecer o
+    /// mapeamento status→campo (o mesmo motivo de <see cref="UndoLastTransition"/> viver aqui).
+    /// </summary>
+    public DateTimeOffset? LastTransitionAt => Status switch
+    {
+        OrderItemStatus.Fired => FiredAt,
+        OrderItemStatus.InOven => OvenInAt,
+        OrderItemStatus.OutOfOven => OvenOutAt,
+        OrderItemStatus.Ready => ReadyAt,
+        OrderItemStatus.Served => ServedAt,
+        _ => null,
+    };
+
+    /// <summary>
+    /// US-041 §3/§4 ("Desfazer avanço acidental") — reverte um passo a última transição, limpando
+    /// o carimbo/autor/dispositivo correspondente. Não é o inverso de <see cref="Cancel"/> (item
+    /// cancelado não tem "undo") nem apaga histórico algum sozinho — a Application grava um evento
+    /// de CORREÇÃO ao lado do original (RN "correção sem apagar o evento original"), este método só
+    /// cuida do estado atual do agregado.
+    /// </summary>
+    public void UndoLastTransition()
+    {
+        switch (Status)
+        {
+            case OrderItemStatus.Fired:
+                Status = OrderItemStatus.Queued;
+                FiredAt = null;
+                FiredBy = null;
+                FiredDeviceId = null;
+                break;
+            case OrderItemStatus.InOven:
+                Status = OrderItemStatus.Fired;
+                OvenInAt = null;
+                OvenInBy = null;
+                OvenInDeviceId = null;
+                OvenSlot = null;
+                break;
+            case OrderItemStatus.OutOfOven:
+                Status = OrderItemStatus.InOven;
+                OvenOutAt = null;
+                OvenOutBy = null;
+                OvenOutDeviceId = null;
+                break;
+            case OrderItemStatus.Ready:
+                Status = OrderItemStatus.OutOfOven;
+                ReadyAt = null;
+                ReadyBy = null;
+                ReadyDeviceId = null;
+                break;
+            case OrderItemStatus.Served:
+                Status = OrderItemStatus.Ready;
+                ServedAt = null;
+                ServedBy = null;
+                ServedDeviceId = null;
+                break;
+            default:
+                throw new DomainException("Não há avanço para desfazer neste item.");
+        }
+
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     public void UpdateUnitCost(decimal unitCost)
     {
         if (unitCost < 0)

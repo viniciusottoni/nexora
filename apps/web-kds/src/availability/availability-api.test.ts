@@ -18,7 +18,7 @@ describe('AvailabilityApi', () => {
             productId,
             productName: 'Pizza Calabresa',
             isAvailable: false,
-            unavailableReason: 'Acabou o insumo',
+            unavailableReason: 'OUT_OF_STOCK',
             unavailableSince: '2026-08-02T20:00:00.000Z',
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
@@ -26,14 +26,14 @@ describe('AvailabilityApi', () => {
     );
     const api = new AvailabilityApi('/api', fetcher);
 
-    const result = await api.markUnavailable(productId, 'Acabou o insumo');
+    const result = await api.markUnavailable(productId, 'OUT_OF_STOCK');
 
     expect(result.isAvailable).toBe(false);
     expect(fetcher.mock.calls[0]?.[0]).toBe(`/api/v1/kds/products/${productId}/unavailable`);
     const init = fetcher.mock.calls[0]?.[1];
     expect(new Headers(init?.headers).get('Idempotency-Key')).toBeTruthy();
     expect(JSON.parse(typeof init?.body === 'string' ? init.body : '')).toMatchObject({
-      reason: 'Acabou o insumo',
+      reason: 'OUT_OF_STOCK',
       autoRestoreNextDay: true,
     });
   });
@@ -256,6 +256,79 @@ describe('subscribeToAvailability', () => {
         type: 'product.available',
         data: { productId },
       });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('tenta reconectar o WebSocket com backoff 1s, 2s, 4s, 8s, 16s e teto de 30s', async () => {
+    vi.useFakeTimers();
+    try {
+      const sockets: FakeWebSocket[] = [];
+
+      subscribeToAvailability(vi.fn(), {
+        webSocketFactory: () => {
+          const socket = new FakeWebSocket();
+          sockets.push(socket);
+          return socket;
+        },
+        api: { listUnavailable: vi.fn().mockResolvedValue({ items: [] }) } as unknown as import('./availability-api.js').AvailabilityApi,
+      });
+
+      sockets[0]!.onclose?.();
+      await vi.advanceTimersByTimeAsync(999);
+      expect(sockets).toHaveLength(1);
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(sockets).toHaveLength(2);
+
+      sockets[1]!.onclose?.();
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(sockets).toHaveLength(3);
+
+      sockets[2]!.onclose?.();
+      await vi.advanceTimersByTimeAsync(4000);
+      expect(sockets).toHaveLength(4);
+
+      sockets[3]!.onclose?.();
+      await vi.advanceTimersByTimeAsync(8000);
+      expect(sockets).toHaveLength(5);
+
+      sockets[4]!.onclose?.();
+      await vi.advanceTimersByTimeAsync(16000);
+      expect(sockets).toHaveLength(6);
+
+      sockets[5]!.onclose?.();
+      await vi.advanceTimersByTimeAsync(30000);
+      expect(sockets).toHaveLength(7);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('encerra o polling quando o WebSocket reconecta', async () => {
+    vi.useFakeTimers();
+    try {
+      const sockets: FakeWebSocket[] = [];
+      const listUnavailable = vi.fn().mockResolvedValue({ items: [] });
+
+      subscribeToAvailability(vi.fn(), {
+        pollIntervalMs: 5000,
+        webSocketFactory: () => {
+          const socket = new FakeWebSocket();
+          sockets.push(socket);
+          return socket;
+        },
+        api: { listUnavailable } as unknown as import('./availability-api.js').AvailabilityApi,
+      });
+
+      sockets[0]!.onclose?.();
+      await vi.advanceTimersByTimeAsync(1000);
+      sockets[1]!.onopen?.();
+
+      await vi.advanceTimersByTimeAsync(5000);
+
+      expect(listUnavailable).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }

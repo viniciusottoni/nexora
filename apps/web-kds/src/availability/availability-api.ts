@@ -4,12 +4,14 @@ import {
   unavailableProductsResponseSchema,
   type ProductAvailabilityChangedEvent,
   type ProductAvailabilityDto,
+  type ProductUnavailableReason,
   type UnavailableProductsResponse,
 } from '@nexora/contracts';
 
 export type {
   ProductAvailabilityChangedEvent,
   ProductAvailabilityDto,
+  ProductUnavailableReason,
   UnavailableProductsResponse,
 };
 
@@ -36,12 +38,13 @@ export class AvailabilityApi {
 
   async markUnavailable(
     productId: string,
-    reason: string,
+    reason: ProductUnavailableReason,
     autoRestoreNextDay = true,
+    orderItemId?: string,
   ): Promise<ProductAvailabilityDto> {
     return this.write(`/v1/kds/products/${encodeURIComponent(productId)}/unavailable`, {
       method: 'POST',
-      body: JSON.stringify({ reason, autoRestoreNextDay }),
+      body: JSON.stringify({ reason, autoRestoreNextDay, ...(orderItemId ? { orderItemId } : {}) }),
     });
   }
 
@@ -161,6 +164,8 @@ export interface AvailabilitySubscriptionOptions {
   readonly webSocketFactory?: (url: string) => WebSocketLike;
   readonly setIntervalFn?: typeof setInterval;
   readonly clearIntervalFn?: typeof clearInterval;
+  readonly setTimeoutFn?: typeof setTimeout;
+  readonly clearTimeoutFn?: typeof clearTimeout;
   readonly api?: AvailabilityApi;
 }
 
@@ -186,23 +191,27 @@ function defaultWebSocketFactory(url: string): WebSocketLike {
  * Assina as mudancas de disponibilidade em tempo real (US-015 §4: "em ate 2 segundos"). Tenta o
  * WebSocket do hub primeiro; se a conexao cair ou nao puder ser aberta, cai automaticamente para
  * polling a cada `pollIntervalMs` (padrao 5000 - US-015 §9/ADR-011: "se o WebSocket cair, o
- * dispositivo faz polling a cada 5 segundos"). Nao tenta reconectar o WebSocket depois de cair -
- * [PROXIMO PASSO] reconexao com backoff fica para quando este modulo tiver mais tempo de forno;
- * o polling ja garante a entrega da mudanca, so nao e "em tempo real".
+ * dispositivo faz polling a cada 5 segundos") e tenta reconectar com o mesmo backoff da fila do
+ * KDS (1s, 2s, 4s, 8s, 16s e teto de 30s). Ao WebSocket voltar, o polling cessa.
  */
 export function subscribeToAvailability(
   onChange: (event: ProductAvailabilityChangedEvent) => void,
   options: AvailabilitySubscriptionOptions = {},
 ): AvailabilitySubscription {
+  const reconnectDelaysMs = [1000, 2000, 4000, 8000, 16000, 30000] as const;
   const pollIntervalMs = options.pollIntervalMs ?? 5000;
   const api =
     options.api ?? new AvailabilityApi(options.baseUrl ?? '', browserFetch, options.accessToken);
   const setIntervalFn = options.setIntervalFn ?? setInterval;
   const clearIntervalFn = options.clearIntervalFn ?? clearInterval;
+  const setTimeoutFn = options.setTimeoutFn ?? setTimeout;
+  const clearTimeoutFn = options.clearTimeoutFn ?? clearTimeout;
   const webSocketFactory = options.webSocketFactory ?? defaultWebSocketFactory;
 
   let closed = false;
   let pollTimer: ReturnType<typeof setInterval> | undefined;
+  let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+  let reconnectAttempt = 0;
   let socket: WebSocketLike | undefined;
   let buffer = '';
   let polledUnavailableIds = new Set<string>();
@@ -239,6 +248,22 @@ export function subscribeToAvailability(
     }, pollIntervalMs);
   }
 
+  function stopPolling(): void {
+    if (!pollTimer) return;
+    clearIntervalFn(pollTimer);
+    pollTimer = undefined;
+  }
+
+  function scheduleReconnect(): void {
+    if (closed || reconnectTimer) return;
+    const delay = reconnectDelaysMs[Math.min(reconnectAttempt, reconnectDelaysMs.length - 1)];
+    reconnectAttempt += 1;
+    reconnectTimer = setTimeoutFn(() => {
+      reconnectTimer = undefined;
+      connect();
+    }, delay);
+  }
+
   function handleMessage(event: { readonly data: string }): void {
     buffer += event.data;
     const { messages, remainder } = splitHubFrames(buffer);
@@ -262,11 +287,18 @@ export function subscribeToAvailability(
       return;
     }
 
-    socket.onopen = () => socket?.send(buildHandshakeFrame());
+    socket.onopen = () => {
+      reconnectAttempt = 0;
+      stopPolling();
+      socket?.send(buildHandshakeFrame());
+    };
     socket.onmessage = handleMessage;
     socket.onclose = () => {
       socket = undefined;
-      if (!closed) startPolling();
+      if (!closed) {
+        startPolling();
+        scheduleReconnect();
+      }
     };
     socket.onerror = () => socket?.close();
   }
@@ -276,7 +308,8 @@ export function subscribeToAvailability(
   return {
     close() {
       closed = true;
-      if (pollTimer) clearIntervalFn(pollTimer);
+      stopPolling();
+      if (reconnectTimer) clearTimeoutFn(reconnectTimer);
       socket?.close();
     },
   };

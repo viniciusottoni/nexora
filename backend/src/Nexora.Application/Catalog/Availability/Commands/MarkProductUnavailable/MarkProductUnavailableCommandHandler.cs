@@ -7,6 +7,7 @@ using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Alerts.Support;
 using Nexora.Contracts.Catalog;
 using Nexora.Domain.Metrics;
+using Nexora.Domain.Operation;
 using Nexora.Domain.Platform;
 using Nexora.Shared.Errors;
 using MediatR;
@@ -22,7 +23,16 @@ namespace Nexora.Application.Catalog.Availability.Commands.MarkProductUnavailabl
 /// dentro deste <c>Handle</c>, nunca enfileirada (ver docstring de <see cref="IAvailabilityBroadcaster"/>).
 /// Marcar de novo um produto já indisponível ATUALIZA o motivo (não é erro) — mesmo espírito
 /// idempotente de <c>SetVariantPriceCommandHandler</c>, mas aqui sempre grava evento/auditoria
-/// porque o motivo pode ter mudado (ex.: "acabou o insumo" → "praça fechada").
+/// porque o motivo pode ter mudado (ex.: "OUT_OF_STOCK" → "EQUIPMENT").
+///
+/// US-044 acrescenta: (1) <see cref="MarkProductUnavailableCommand.Reason"/> restrito aos três
+/// motivos fixos de <see cref="ProductUnavailableReasons"/> (validado no
+/// <c>MarkProductUnavailableCommandValidator</c>); (2) alerta a garçom/caixa/gestor via
+/// <see cref="IAlertRaiser"/> abaixo, roteado pela matriz padrão de
+/// <c>AlertRoutingConfig.Defaults[AlertTypes.ProductUnavailable]</c> (US-080/US-082); (3) EVT-012
+/// <c>order.item.unavailable_flagged</c> adicional quando a marcação partiu de um item específico
+/// da fila (<see cref="MarkProductUnavailableCommand.OrderItemId"/>); (4)
+/// <see cref="ProductAvailabilityResponse.AffectedPendingItems"/> no retorno.
 /// </summary>
 internal sealed class MarkProductUnavailableCommandHandler
     : IRequestHandler<MarkProductUnavailableCommand, Result<ProductAvailabilityResponse>>
@@ -121,7 +131,44 @@ internal sealed class MarkProductUnavailableCommandHandler
                 storeId: _tenantContext.StoreId,
                 actorId: actorId,
                 deviceId: _tenantContext.DeviceId));
+
+            // EVT-012 order.item.unavailable_flagged (US-044 §6) — só quando a marcação partiu de
+            // um item específico já na fila do KDS (gatilho pelo cartão, request.OrderItemId
+            // preenchido), distinto do EVT-051 acima (sempre emitido, qualquer origem da marcação:
+            // lista avulsa de indisponíveis OU cartão da fila). [DESVIO DOCUMENTADO] o doc da US-015/
+            // US-044 usa "variantId" no payload — mesmo desvio já registrado no controller/no Command:
+            // esta solution modela disponibilidade por Product, não por ProductVariant, então o campo
+            // abaixo é "productId" (o mesmo id que o resto deste handler já usa).
+            if (request.OrderItemId is { } orderItemId)
+            {
+                _db.DomainEvents.Add(DomainEvent.Create(
+                    tenantId,
+                    type: "order.item.unavailable_flagged",
+                    aggregateType: "order_item",
+                    aggregateId: orderItemId,
+                    payload: JsonSerializer.Serialize(new
+                    {
+                        productId = product.Id,
+                        orderItemId,
+                        reason = product.UnavailableReason
+                    }),
+                    origin: _eventOrigin.Origin,
+                    occurredAt: now,
+                    storeId: _tenantContext.StoreId,
+                    actorId: actorId,
+                    deviceId: _tenantContext.DeviceId));
+            }
         }
+
+        // US-044 §7/§4 (cenário "Pedidos já confirmados não mudam"): quantidade de itens de pedido
+        // ainda em estado não final que já continham este produto — informativo para o operador
+        // decidir se trata pelo fluxo de cancelamento; a marcação NUNCA altera esses itens.
+        var affectedPendingItems = await _db.OrderItems
+            .Where(i => i.TenantId == tenantId
+                && i.Variant.ProductId == product.Id
+                && i.Status != OrderItemStatus.Served
+                && i.Status != OrderItemStatus.Cancelled)
+            .CountAsync(cancellationToken);
 
         // SaveChangesAsync é feito pelo TransactionBehavior — mas o broadcast abaixo roda ANTES
         // dele terminar, aguardado de forma síncrona dentro deste Handle (não é enfileirado para
@@ -137,6 +184,6 @@ internal sealed class MarkProductUnavailableCommandHandler
             "product", product.Id), cancellationToken);
 
         return Result<ProductAvailabilityResponse>.Success(new ProductAvailabilityResponse(
-            product.Id, product.Name, product.IsAvailable, product.UnavailableReason, product.UnavailableSince));
+            product.Id, product.Name, product.IsAvailable, product.UnavailableReason, product.UnavailableSince, affectedPendingItems));
     }
 }

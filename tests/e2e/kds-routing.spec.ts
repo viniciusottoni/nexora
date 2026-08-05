@@ -85,7 +85,9 @@ test.describe('US-031 · roteamento para o KDS', () => {
         ? [
             {
               orderItemId: '0198aabb-1111-7000-8000-000000000060',
+              orderId: '0198aabb-1111-7000-8000-0000000000f0',
               orderCode: 'A47',
+              productId: '0198aabb-1111-7000-8000-0000000000c7',
               productName: 'Pizza Calabresa Grande',
               quantity: 1,
               modifiers: ['sem cebola'],
@@ -93,8 +95,12 @@ test.describe('US-031 · roteamento para o KDS', () => {
               status: 'QUEUED',
               placedAt: new Date().toISOString(),
               elapsedSeconds: 2,
+              thresholdState: 'NORMAL',
+              warnSeconds: 720,
+              criticalSeconds: 1080,
               table: '12',
               channel: 'DineIn',
+              fractions: [],
             },
           ]
         : [];
@@ -121,7 +127,8 @@ test.describe('US-031 · roteamento para o KDS', () => {
     // Cenário Gherkin "Queda do WebSocket no KDS": em no máximo 5 segundos, via polling — margem
     // generosa contra o timeout padrão do Playwright (30s, playwright.config.ts).
     await expect(page.getByText('A47')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText('Pizza Calabresa Grande')).toBeVisible();
+    // "Pizza Calabresa Grande" também aparece no painel all-day (US-043) — escopa ao cartão.
+    await expect(page.getByTestId('kds-ticket').getByText('Pizza Calabresa Grande')).toBeVisible();
     await expect(page.getByText('Mesa 12')).toBeVisible();
   });
 
@@ -136,7 +143,9 @@ test.describe('US-031 · roteamento para o KDS', () => {
           items: [
             {
               orderItemId: '0198aabb-1111-7000-8000-000000000061',
+              orderId: '0198aabb-1111-7000-8000-0000000000f1',
               orderCode: 'A48',
+              productId: '0198aabb-1111-7000-8000-0000000000c8',
               productName: 'Pizza Marguerita',
               quantity: 1,
               modifiers: [],
@@ -144,12 +153,18 @@ test.describe('US-031 · roteamento para o KDS', () => {
               status: 'QUEUED',
               placedAt: new Date().toISOString(),
               elapsedSeconds: 5,
+              thresholdState: 'NORMAL',
+              warnSeconds: 720,
+              criticalSeconds: 1080,
               table: '5',
               channel: 'DineIn',
+              fractions: [],
             },
             {
               orderItemId: '0198aabb-1111-7000-8000-000000000062',
+              orderId: '0198aabb-1111-7000-8000-0000000000f2',
               orderCode: 'A49',
+              productId: '0198aabb-1111-7000-8000-0000000000c9',
               productName: 'Pizza Portuguesa',
               quantity: 1,
               modifiers: [],
@@ -157,8 +172,12 @@ test.describe('US-031 · roteamento para o KDS', () => {
               status: 'QUEUED',
               placedAt: new Date().toISOString(),
               elapsedSeconds: 3,
+              thresholdState: 'NORMAL',
+              warnSeconds: 720,
+              criticalSeconds: 1080,
               table: null,
               channel: 'Delivery',
+              fractions: [],
             },
           ],
           lastEventId: new Date().toISOString(),

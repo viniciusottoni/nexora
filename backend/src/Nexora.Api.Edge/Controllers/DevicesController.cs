@@ -5,6 +5,7 @@ using Nexora.Application.Devices.Commands.DeleteDevice;
 using Nexora.Application.Devices.Commands.PairDevice;
 using Nexora.Application.Devices.Commands.RenameDevice;
 using Nexora.Application.Devices.Commands.RevokeDevice;
+using Nexora.Application.Devices.Commands.UpdateDevicePreferences;
 using Nexora.Application.Devices.Queries.ListDevices;
 using Nexora.Contracts.Devices;
 using Nexora.Contracts.Errors;
@@ -117,6 +118,29 @@ public sealed class DevicesController : ControllerBase
         // tenant), não só no caminho de sucesso.
         Activity.Current?.SetTag("device.id", id);
         var result = await _sender.Send(new RenameDeviceCommand(id, request.Label), cancellationToken);
+        return result.ToActionResult(HttpContext);
+    }
+
+    /// <summary>
+    /// US-042/US-045/US-047 — grava preferência "por dispositivo" do KDS (praça filtrada, som,
+    /// modo pico), mesclando com o que já existe. Sem <c>[Authorize(Policy=...)]</c> de escrita
+    /// aqui: a regra "autoatendimento sempre permitido, dispositivo alheio exige device:manage"
+    /// mora no Handler (ver sua docstring) — só <c>[Authorize]</c> do controller (linha 26) já
+    /// garante um tenant autenticado.
+    /// </summary>
+    [HttpPatch("{id:guid}/preferences")]
+    [ProducesResponseType(typeof(DevicePreferencesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdatePreferences(
+        [FromRoute] Guid id,
+        [FromBody] UpdateDevicePreferencesRequest request,
+        CancellationToken cancellationToken)
+    {
+        Activity.Current?.SetTag("device.id", id);
+        var result = await _sender.Send(
+            new UpdateDevicePreferencesCommand(id, request.Preferences.GetRawText()),
+            cancellationToken);
         return result.ToActionResult(HttpContext);
     }
 

@@ -62,8 +62,9 @@ public sealed class PriceTests
     [Fact]
     public void Close_Encerra_A_Vigencia_Preenchendo_ValidTo()
     {
-        var price = Price.Create(TenantId, VariantId, Channel.DineIn, 45.00m);
-        var validTo = DateTimeOffset.UtcNow;
+        var validFrom = new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        var validTo = validFrom.AddSeconds(1);
+        var price = Price.Create(TenantId, VariantId, Channel.DineIn, 45.00m, validFrom: validFrom);
 
         price.Close(validTo);
 
@@ -73,10 +74,11 @@ public sealed class PriceTests
     [Fact]
     public void Close_Chamado_Duas_Vezes_Lanca_DomainException()
     {
-        var price = Price.Create(TenantId, VariantId, Channel.DineIn, 45.00m);
-        price.Close(DateTimeOffset.UtcNow);
+        var validFrom = new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        var price = Price.Create(TenantId, VariantId, Channel.DineIn, 45.00m, validFrom: validFrom);
+        price.Close(validFrom.AddSeconds(1));
 
-        var act = () => price.Close(DateTimeOffset.UtcNow);
+        var act = () => price.Close(validFrom.AddSeconds(2));
 
         act.Should().Throw<DomainException>("um preço já encerrado não pode ser encerrado de novo — a mudança de preço sempre cria uma linha nova (US-011 §15)");
     }

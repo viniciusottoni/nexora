@@ -1,0 +1,25 @@
+.kds-mark-unavailable-from-item__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: var(--nx-danger-400, #f87171);
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+.kds-mark-unavailable-from-item__trigger:hover {
+  background: color-mix(in srgb, var(--nx-danger-500, #ef4444) 18%, transparent);
+}
+
+.kds-mark-unavailable-from-item__done {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--nx-danger-400, #f87171);
+  font-weight: 600;
+  font-size: 0.8rem;
+}

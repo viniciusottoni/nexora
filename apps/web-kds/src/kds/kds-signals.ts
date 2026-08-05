@@ -1,4 +1,4 @@
-import type { CatalogChannel } from '@nexora/contracts';
+import type { CatalogChannel, KdsQueueItem } from '@nexora/contracts';
 
 /** Vocabulário de canal de `OrderTicket` (packages/ui) — diferente do vocabulário do contrato (`CatalogChannel`). */
 export type OrderTicketChannel = 'DINE_IN' | 'DELIVERY' | 'COUNTER';
@@ -29,4 +29,61 @@ export function formatRelativeSync(lastSyncAt: Date, now = new Date()): string {
   const seconds = Math.max(0, Math.round((now.getTime() - lastSyncAt.getTime()) / 1000));
   if (seconds < 60) return `há ${seconds} s`;
   return `há ${Math.round(seconds / 60)} min`;
+}
+
+/**
+ * US-040 §3 ("Grade de cartões, um por pedido") — um cartão por PEDIDO, não por item: a fila que
+ * `GetKdsQueueQuery` devolve é sempre por item (mesma decisão de US-031), então o agrupamento é
+ * responsabilidade do cliente. Um pedido com item no forno e item em bebidas nesta MESMA praça
+ * (ex.: duas pizzas) vira um cartão só, com uma linha por item.
+ */
+export interface KdsOrderGroup {
+  readonly orderId: string;
+  readonly orderCode: string;
+  readonly table: string | null;
+  readonly channel: CatalogChannel;
+  /** ISO do item mais antigo do pedido — "o cartão mais antigo sempre visível" usa este valor pra ordenar. */
+  readonly oldestPlacedAt: string;
+  /** Limiar mais urgente entre os itens do pedido — o cartão fica amarelo/vermelho assim que QUALQUER item precisar de atenção. */
+  readonly warnSeconds: number;
+  readonly criticalSeconds: number;
+  readonly items: readonly KdsQueueItem[];
+}
+
+export function groupItemsByOrder(items: readonly KdsQueueItem[]): readonly KdsOrderGroup[] {
+  const groups = new Map<string, KdsQueueItem[]>();
+  for (const item of items) {
+    const existing = groups.get(item.orderId);
+    if (existing) {
+      existing.push(item);
+    } else {
+      groups.set(item.orderId, [item]);
+    }
+  }
+
+  const result: KdsOrderGroup[] = [];
+  for (const [orderId, groupItems] of groups) {
+    const sorted = [...groupItems].sort(
+      (a, b) => new Date(a.placedAt).getTime() - new Date(b.placedAt).getTime(),
+    );
+    const first = sorted[0]!;
+    result.push({
+      orderId,
+      orderCode: first.orderCode,
+      table: first.table,
+      channel: first.channel,
+      oldestPlacedAt: first.placedAt,
+      warnSeconds: Math.min(...sorted.map((i) => i.warnSeconds)),
+      criticalSeconds: Math.min(...sorted.map((i) => i.criticalSeconds)),
+      items: sorted,
+    });
+  }
+
+  return result.sort((a, b) => new Date(a.oldestPlacedAt).getTime() - new Date(b.oldestPlacedAt).getTime());
+}
+
+/** US-040 §4 ("meio a meio no cartão") — combina o nome-base do item com os sabores da fração: "Pizza G · Mussarela / Calabresa". */
+export function formatItemName(item: Pick<KdsQueueItem, 'productName' | 'fractions'>): string {
+  if (item.fractions.length === 0) return item.productName;
+  return `${item.productName} · ${item.fractions.map((f) => f.productName).join(' / ')}`;
 }

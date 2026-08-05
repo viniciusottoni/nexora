@@ -25,6 +25,7 @@ export * from './catalog-products.js';
 export * from './catalog-stations.js';
 export * from './catalog-variants.js';
 export * from './kds.js';
+export * from './kds-history.js';
 export * from './audit.js';
 export * from './alerts.js';
 export * from './onboarding.js';

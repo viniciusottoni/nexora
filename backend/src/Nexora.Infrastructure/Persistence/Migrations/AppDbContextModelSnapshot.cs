@@ -3890,6 +3890,13 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("last_seen_at");
 
+                    b.Property<string>("Preferences")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValue("{}")
+                        .HasColumnName("preferences");
+
                     b.Property<string>("SecretHash")
                         .HasColumnType("text")
                         .HasColumnName("secret_hash");

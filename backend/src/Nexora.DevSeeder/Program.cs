@@ -145,7 +145,7 @@ for (var index = 0; index < roles.Length; index++)
 var users = new[]
 {
     new UserSeed("Admin Plataforma", "plataforma@nexora.local", "PLATFORM_ADMIN", null, true),
-    new UserSeed("Dona Betinha", "proprietario@nexora.local", "OWNER", "2101"),
+    new UserSeed("Proprietário Teste", "proprietario@nexora.local", "OWNER", "2101"),
     new UserSeed("Gerente Teste", "gerente@nexora.local", "MANAGER", "2102"),
     new UserSeed("Caixa Teste", "caixa@nexora.local", "CASHIER", "2103"),
     new UserSeed("Garçom Teste", "garcom@nexora.local", "WAITER", "2104"),
