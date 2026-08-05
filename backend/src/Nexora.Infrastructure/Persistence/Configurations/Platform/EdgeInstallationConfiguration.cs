@@ -30,6 +30,9 @@ internal sealed class EdgeInstallationConfiguration : IEntityTypeConfiguration<E
         builder.Property(e => e.TokenExpiresAt).HasColumnName("token_expires_at").HasColumnType("timestamptz");
         builder.Property(e => e.TokenConsumedAt).HasColumnName("token_consumed_at").HasColumnType("timestamptz");
         builder.Property(e => e.InstalledAt).HasColumnName("installed_at").HasColumnType("timestamptz");
+        builder.Property(e => e.TargetVersion).HasColumnName("target_version").HasMaxLength(20); // US-146
+        builder.Property(e => e.LastUpdateAt).HasColumnName("last_update_at").HasColumnType("timestamptz");
+        builder.Property(e => e.LastUpdateStatus).HasColumnName("last_update_status").HasMaxLength(20);
         builder.Property(e => e.CreatedAt).HasColumnName("created_at").HasColumnType("timestamptz");
         builder.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamptz");
 

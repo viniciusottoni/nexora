@@ -15,7 +15,7 @@ public sealed class FakeDbCommand : DbCommand
 {
     public int ExecuteNonQueryCallCount { get; private set; }
 
-    public override string CommandText { get; set; } = string.Empty;
+    public override string? CommandText { get; set; }
     public override int CommandTimeout { get; set; }
     public override CommandType CommandType { get; set; } = CommandType.Text;
     public override UpdateRowSource UpdatedRowSource { get; set; }
@@ -89,9 +89,9 @@ public sealed class FakeDbCommand : DbCommand
         public override DbType DbType { get; set; }
         public override ParameterDirection Direction { get; set; }
         public override bool IsNullable { get; set; }
-        public override string ParameterName { get; set; } = string.Empty;
+        public override string? ParameterName { get; set; }
         public override int Size { get; set; }
-        public override string SourceColumn { get; set; } = string.Empty;
+        public override string? SourceColumn { get; set; }
         public override bool SourceColumnNullMapping { get; set; }
         public override object? Value { get; set; }
 

@@ -384,6 +384,29 @@ public static class ResultExtensions
         ApiErrorCodes.AlertAlreadyResolved => (StatusCodes.Status409Conflict, true, false),
         ApiErrorCodes.PushSubscriptionInvalid => (StatusCodes.Status400BadRequest, true, false),
 
+        // E-14 · Plataforma em Escala — painel de instalações (US-140) reusa InstallationNotFound,
+        // já mapeado acima. Os demais módulos abaixo entram nesta tarefa de integração final.
+        ApiErrorCodes.SupportAccessNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.SupportAccessTokenNotFound => (StatusCodes.Status401Unauthorized, false, false),
+        ApiErrorCodes.SupportAccessTokenExpired => (StatusCodes.Status401Unauthorized, false, false),
+        ApiErrorCodes.SupportAccessTokenRevoked => (StatusCodes.Status401Unauthorized, false, false),
+
+        ApiErrorCodes.OnboardingIncomplete => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OnboardingStepNotFound => (StatusCodes.Status404NotFound, false, false),
+
+        ApiErrorCodes.CatalogImportInvalidFile => (StatusCodes.Status400BadRequest, true, false),
+        ApiErrorCodes.CatalogImportValidationFailed => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        ApiErrorCodes.TenantDomainAlreadyRegistered => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.TenantDomainVerificationFailed => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.TenantDomainNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.TenantDomainCertificateIssuanceFailed => (StatusCodes.Status503ServiceUnavailable, true, false),
+
+        ApiErrorCodes.BusinessTemplateNotFound => (StatusCodes.Status404NotFound, false, false),
+
+        ApiErrorCodes.ReleaseNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ReleaseRolloutCannotDecrease => (StatusCodes.Status422UnprocessableEntity, true, false),
+
         // Legados do cloud (placeholders de módulos ainda não portados — mantidos do arquivo
         // anterior a esta tarefa; nenhum handler emite hoje, mas preservam o comportamento
         // pré-existente caso algo dependa deles em Swagger/testes).

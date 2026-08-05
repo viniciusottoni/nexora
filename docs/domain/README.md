@@ -41,6 +41,7 @@ Em caso de divergência entre os dois, **prevalece este conjunto**.
 | **11** | [Views e funções](11-Views-e-Funcoes.md) | Funções de negócio, views de leitura, triggers |
 | **12** | [Seeds e dados iniciais](12-Seeds-e-Dados-Iniciais.md) | Unidades, papéis padrão, modelo de pizzaria |
 | **13** | [Mapeamento EF Core](13-Mapeamento-EFCore.md) | `DbContext`, `IEntityTypeConfiguration<T>` equivalentes e notas de integração |
+| **14** | [Plataforma em escala](14-Plataforma-em-Escala.md) | `installation_incident`, `tenant_domain`, `support_access`, `onboarding_step`, `release`, `business_template` (E-14) |
 | **ERD** | [ERD consolidado](ERD-Consolidado.md) | Visão geral e por contexto |
 
 ---
@@ -63,6 +64,7 @@ A ordem importa por causa das chaves estrangeiras:
 10  RLS, papéis, grants, índices
 11  views, funções de negócio, triggers
 12  seeds
+14  plataforma em escala (E-14 — instalações/saúde, domínio próprio, suporte, onboarding, releases, modelos)
 ```
 
 No repositório, isso vira migrations do EF Core (`dotnet ef migrations add`) na mesma sequência (ADR-019).

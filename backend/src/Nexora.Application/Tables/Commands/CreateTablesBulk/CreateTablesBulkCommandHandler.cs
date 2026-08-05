@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
@@ -52,7 +53,7 @@ internal sealed class CreateTablesBulkCommandHandler : IRequestHandler<CreateTab
         }
 
         var labels = Enumerable.Range(request.From, request.To - request.From + 1)
-            .Select(n => n.ToString())
+            .Select(n => n.ToString(CultureInfo.InvariantCulture))
             .ToList();
 
         var existingLabels = await _db.DiningTables

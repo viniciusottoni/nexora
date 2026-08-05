@@ -63,7 +63,7 @@ describe('StationManagementPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Nova praça' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Nova praça' }).at(-1)!);
     const dialog = screen.getByRole('dialog', { name: 'Criar praça' });
     fireEvent.change(within(dialog).getByLabelText('Nome'), { target: { value: 'Bebidas' } });
     fireEvent.change(within(dialog).getByRole('textbox', { name: /C.digo/ }), {
@@ -89,10 +89,12 @@ describe('StationManagementPage', () => {
     );
 
     // Seleciona "Montagem" (não é o gargalo) e marca o switch — deve avisar sobre o Forno.
-    fireEvent.click(screen.getByText('Montagem'));
-    fireEvent.click(screen.getByLabelText('Marcar como gargalo'));
+    fireEvent.click(screen.getAllByText('Montagem', { selector: 'td' }).at(-1)!);
+    const selectedCardTitle = screen.getAllByText('Montagem', { selector: 'div.db-card__title' }).at(-1)!;
+    const selectedCard = selectedCardTitle.closest('section');
+    fireEvent.click(within(selectedCard!).getByRole('switch', { name: 'Marcar como gargalo' }));
 
-    expect(screen.getByText('Forno deixará de ser o gargalo.')).toBeInTheDocument();
+    expect(within(selectedCard!).getByText(/deixará de ser o gargalo/)).toBeInTheDocument();
   });
 
   it('salva alteracoes da praca selecionada', async () => {
@@ -106,10 +108,10 @@ describe('StationManagementPage', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('Nome da praça'), {
+    fireEvent.change(screen.getAllByLabelText('Nome da praça').at(-1)!, {
       target: { value: 'Forno a lenha' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar praça' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Salvar praça' }).at(-1)!);
 
     await waitFor(() =>
       expect(onUpdate).toHaveBeenCalledWith(
@@ -129,10 +131,15 @@ describe('StationManagementPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByText('Montagem'));
+    fireEvent.click(screen.getAllByText('Montagem', { selector: 'td' }).at(-1)!);
 
-    expect(screen.getByText(/3 produto\(s\) vinculado\(s\)/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Excluir praça' })).not.toBeInTheDocument();
+    const selectedCardTitle = screen.getAllByText('Montagem', { selector: 'div.db-card__title' }).at(-1)!;
+    const selectedCard = selectedCardTitle.closest('section');
+
+    expect(
+      within(selectedCard!).getByText(/3 produto\(s\) vinculado\(s\)/),
+    ).toBeInTheDocument();
+    expect(within(selectedCard!).queryByRole('button', { name: 'Excluir praça' })).not.toBeInTheDocument();
   });
 
   it('exclui a praca apos confirmacao quando nao ha produtos vinculados', async () => {
@@ -146,7 +153,7 @@ describe('StationManagementPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Excluir praça' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Excluir praça' }).at(-1)!);
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar exclusão' }));
 
     await waitFor(() => expect(onDelete).toHaveBeenCalledWith(stations[0]!.id));

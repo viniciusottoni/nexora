@@ -18,6 +18,7 @@ using Nexora.Application.Alerts.Support;
 using Nexora.Application.Auth.Shared;
 using Nexora.Application.Devices.Abstractions;
 using Nexora.Application.Installation.Abstractions;
+using Nexora.Application.Abstractions.Storage;
 using Nexora.Contracts.Catalog;
 using Nexora.Contracts.Http;
 using Nexora.Infrastructure.Auth;
@@ -27,6 +28,7 @@ using Nexora.Infrastructure.Installation;
 using Nexora.Infrastructure.Persistence;
 using Nexora.Infrastructure.Persistence.Interceptors;
 using Nexora.Infrastructure.Platform;
+using Nexora.Infrastructure.Storage;
 using Nexora.Shared.Security;
 using FluentValidation;
 using MediatR;
@@ -114,6 +116,11 @@ builder.Services.Configure<EdgeInstallationOptions>(builder.Configuration.GetSec
 builder.Services.Configure<EdgeInstallationIdentityOptions>(builder.Configuration.GetSection(EdgeInstallationIdentityOptions.SectionName));
 builder.Services.Configure<AppVersionOptions>(builder.Configuration.GetSection(AppVersionOptions.SectionName));
 builder.Services.Configure<RedisHealthCheckOptions>(builder.Configuration.GetSection(RedisHealthCheckOptions.SectionName));
+// US-146: backup pré-atualização (ADR-033) do edge reaproveita a MESMA opção/implementação já
+// testada em Nexora.Api.Cloud (armazenamento em disco do dump recebido periodicamente do edge) —
+// aqui é o PRÓPRIO edge gravando seu backup local antes da migration, mesmo mecanismo de
+// hash/retenção, diretório configurado separadamente (Edge:BackupStorage) do da nuvem.
+builder.Services.Configure<FileSystemBackupStorageOptions>(builder.Configuration.GetSection("Edge:BackupStorage"));
 
 // ---------------------------------------------------------------------------
 // Segurança / Auth — só os consumidores que o Api.Edge realmente expõe (login
@@ -171,6 +178,22 @@ builder.Services.AddHttpClient<ISyncHealthPoller, SyncHealthPoller>();
 // SyncOutboxWorker (BackgroundService) — só no edge; dispara PollSyncHealthCommand
 // em intervalo configurável, resolvendo ISender por escopo a cada tick.
 builder.Services.AddHostedService<SyncOutboxWorker>();
+
+// ---------------------------------------------------------------------------
+// US-146 (Atualização controlada do parque) — backup pré-atualização (ADR-033) reaproveita o
+// MESMO IBackupStorage/FileSystemBackupStorage já testado em Nexora.Api.Cloud (ver comentário do
+// Configure<FileSystemBackupStorageOptions> acima); SimulatedEdgeUpdateExecutor documenta com
+// precisão o que é real (backup, health check) versus simulado (download/migration/rollback) —
+// ver docstring da classe. EdgeUpdateCycleWorker roda no intervalo configurado e só age dentro da
+// janela de manutenção do tenant (ADR-019: o edge decide, a nuvem nunca empurra).
+// ---------------------------------------------------------------------------
+builder.Services.AddSingleton<IBackupStorage, FileSystemBackupStorage>();
+builder.Services.AddScoped<IEdgeUpdateExecutor, SimulatedEdgeUpdateExecutor>();
+// IPlatformAlertNotifier (US-140) não era registrado aqui antes desta história — nenhum handler
+// despachado pelo Api.Edge precisava dele até RunEdgeUpdateCycleCommandHandler (rollback/adiamento
+// alertam a plataforma). Mesma implementação de fallback (log estruturado) do Api.Cloud.
+builder.Services.AddSingleton<Nexora.Application.Abstractions.Notifications.IPlatformAlertNotifier, Nexora.Infrastructure.Notifications.LoggingPlatformAlertNotifier>();
+builder.Services.AddHostedService<EdgeUpdateCycleWorker>();
 
 // ---------------------------------------------------------------------------
 // SignalR (US-015) — propagação em tempo real de product.unavailable/product.available na LAN da
@@ -507,9 +530,10 @@ builder.Services.AddOpenTelemetry()
 
 // ValidateOnBuild (ligado por padrão só em Development) validaria eagerly TODO handler MediatR
 // registrado a partir do assembly compartilhado Nexora.Application — inclusive os que pertencem
-// só ao Api.Cloud (IEmailSender, IOtpVerifier, IBackupStorage etc.) e que este processo nunca
-// despacha. Desligar aqui reproduz o comportamento que este host já tem em produção (onde
-// ValidateOnBuild é false por padrão), sem esconder nenhum problema novo.
+// só ao Api.Cloud (IEmailSender, IOtpVerifier etc.) e que este processo nunca despacha.
+// IBackupStorage deixou de estar nessa lista com US-146 (agora registrado acima também no Edge,
+// para o backup pré-atualização). Desligar aqui reproduz o comportamento que este host já tem em
+// produção (onde ValidateOnBuild é false por padrão), sem esconder nenhum problema novo.
 builder.Host.UseDefaultServiceProvider(options => options.ValidateOnBuild = false);
 
 var app = builder.Build();

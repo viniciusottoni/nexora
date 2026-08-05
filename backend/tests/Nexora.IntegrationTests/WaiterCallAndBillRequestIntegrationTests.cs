@@ -51,7 +51,8 @@ public sealed class WaiterCallAndBillRequestIntegrationTests
         await using var db = _fixture.CreateAppDbContext(tenantContext);
         var alertsBroadcaster = new RecordingAlertsBroadcaster();
         var tableMapBroadcaster = new RecordingTableMapBroadcaster();
-        await using var provider = MediatRTestContainerFactory.Build(db, tenantContext, alertsBroadcaster, tableMapBroadcaster);
+        await using var provider = MediatRTestContainerFactory.Build(
+            db, tenantContext, alertsBroadcaster, tableMapBroadcaster: tableMapBroadcaster);
         var sender = provider.GetRequiredService<ISender>();
 
         var result = await sender.Send(new CallWaiterCommand(qrToken, sessionId, tableId));

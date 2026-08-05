@@ -64,6 +64,21 @@
     <PackageVersion Include="QRCoder" Version="1.6.0" />
     <PackageVersion Include="QuestPDF" Version="2024.12.3" />
 
+    <!--
+      US-143: consulta de registro DNS TXT (verificação de posse de domínio próprio) — o BCL do
+      .NET (System.Net.Dns) não expõe consulta de TXT nativamente, só A/AAAA/PTR via
+      GetHostEntry. DnsClient.NET (MIT), só Nexora.Infrastructure referencia.
+    -->
+    <PackageVersion Include="DnsClient" Version="1.8.0" />
+
+    <!--
+      US-144: leitura/geração de planilha .xlsx para a importação de cardápio em massa
+      (Nexora.Infrastructure.Catalog.ClosedXmlSpreadsheetParser). ClosedXML é gerenciado (sem
+      dependência nativa), MIT-licensed — só Infrastructure referencia (ADR-039: Application só
+      conhece a porta ISpreadsheetParser).
+    -->
+    <PackageVersion Include="ClosedXML" Version="0.104.2" />
+
     <!-- BackgroundService/IHostedService (SyncOutboxWorker, ADR-037) fora de um SDK Web -->
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Nexora.Application.Abstractions.Behaviors;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
@@ -57,7 +58,7 @@ public sealed class OperationTablesIntegrationTests
 
         var tables = await db.DiningTables.Where(t => t.AreaId == areaId).ToListAsync();
         tables.Should().HaveCount(20);
-        tables.Select(t => t.Label).Should().BeEquivalentTo(Enumerable.Range(1, 20).Select(n => n.ToString()));
+        tables.Select(t => t.Label).Should().BeEquivalentTo(Enumerable.Range(1, 20).Select(n => n.ToString(CultureInfo.InvariantCulture)));
         tables.Select(t => t.QrToken).Distinct().Should().HaveCount(20, "cada mesa precisa de um qr_token único e opaco");
     }
 

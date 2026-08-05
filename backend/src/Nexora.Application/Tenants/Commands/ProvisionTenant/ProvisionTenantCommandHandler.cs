@@ -4,6 +4,7 @@ using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Notifications;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Security;
+using Nexora.Application.Provisioning;
 using Nexora.Contracts.Tenants;
 using Nexora.Domain.Common;
 using Nexora.Domain.Finance;
@@ -56,7 +57,24 @@ internal sealed class ProvisionTenantCommandHandler
                 new Dictionary<string, string[]> { ["slug"] = new[] { "Este endereço já está em uso." } });
         }
 
-        var template = ProvisioningTemplates.Get(request.Template);
+        // US-142: o catálogo estático (ProvisioningTemplates, switch em código) deixou de ser o
+        // caminho vivo do provisionamento — o modelo agora é dado editável pela Replay
+        // (business_template), aplicação direta do ADR-013 ("regra específica é configuração,
+        // nunca código"). A checagem de existência/ativação mora aqui (não no validator) porque é
+        // consulta ao banco — mesma convenção de RecordSupportAccessCommandHandler.
+        var normalizedTemplateCode = request.Template.Trim().ToUpperInvariant();
+        var businessTemplate = await _db.BusinessTemplates
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                t => t.Code == normalizedTemplateCode && t.IsActive, cancellationToken);
+
+        if (businessTemplate is null)
+        {
+            return Result<ProvisionTenantResponse>.Failure(
+                "Modelo de negócio não encontrado.", ApiErrorCodes.BusinessTemplateNotFound);
+        }
+
+        var template = BusinessTemplateDataMapper.ToProvisioningTemplate(businessTemplate);
         var now = DateTimeOffset.UtcNow;
 
         var tenant = Tenant.Create(request.Slug, request.Name, timezone: request.StoreTimezone);
@@ -82,11 +100,17 @@ internal sealed class ProvisionTenantCommandHandler
             fiscalJson: JsonSerializer.Serialize(template.Config.Fiscal),
             printersJson: JsonSerializer.Serialize(template.Config.Printers),
             paymentsJson: JsonSerializer.Serialize(template.Config.Payments),
-            maintenanceJson: JsonSerializer.Serialize(template.Config.Maintenance));
+            maintenanceJson: JsonSerializer.Serialize(template.Config.Maintenance),
+            templateCode: businessTemplate.Code,
+            templateVersion: businessTemplate.Version);
         _db.TenantConfigs.Add(tenantConfig);
 
         var store = Store.Create(tenant.Id, request.StoreName, isDefault: true, timezone: request.StoreTimezone);
         _db.Stores.Add(store);
+
+        // US-141 (Provisionamento autoatendido) — semeia os nove passos do roteiro de implantação já
+        // na criação do tenant, com TENANT_CREATED nascendo concluído (OnboardingStep.SeedAll).
+        _db.OnboardingSteps.AddRange(OnboardingStep.SeedAll(tenant.Id, now));
 
         Guid? ownerRoleId = null;
         var roleEvents = new List<(Guid RoleId, IReadOnlyList<string> Permissions)>();
@@ -105,6 +129,14 @@ internal sealed class ProvisionTenantCommandHandler
         if (ownerRoleId is null)
             throw new DomainException("O template de provisionamento precisa definir o papel OWNER.");
 
+        // US-017 §4 / US-142: a praça-gargalo é a que o MODELO configurar em
+        // operation.bottleneck.resource — nunca um tipo de praça fixo em código. O hardcode antigo
+        // (StationType.Oven) só reconhecia o gargalo da pizzaria; hamburgueria/restaurante/
+        // lanchonete têm cada um o seu (GRILL/ASSEMBLY/GRILL), então precisavam desta leitura
+        // genérica para não ficarem sem nenhuma praça marcada como gargalo (ADR-013: diferença de
+        // negócio é configuração, nunca condicional por tipo).
+        var bottleneckResource = BusinessTemplateDataMapper.ExtractBottleneckResource(template.Config.Operation);
+
         short sortOrder = 0;
         foreach (var stationTemplate in template.Stations)
         {
@@ -118,10 +150,8 @@ internal sealed class ProvisionTenantCommandHandler
                 sortOrder: stationTemplate.SortOrder);
             station.UpdateCapacity(stationTemplate.CapacitySlots, stationTemplate.AvgCookSeconds);
 
-            // US-017 §4 (cenário "Praças padrão do modelo pizzaria"): o forno é o gargalo por
-            // definição de negócio (RF-CAT-09) — cada template decide sua própria praça-gargalo
-            // aqui, nunca por condicional de tenant (ADR-013).
-            if (stationTemplate.Type == StationType.Oven)
+            if (bottleneckResource is not null &&
+                string.Equals(stationTemplate.Type.ToString(), bottleneckResource, StringComparison.OrdinalIgnoreCase))
             {
                 station.MarkAsBottleneck();
             }

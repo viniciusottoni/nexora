@@ -3,7 +3,6 @@ using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Tenants.Commands.ProvisionTenant;
 using Nexora.Application.Tenants.Commands.RecordCrossTenantAccessAttempt;
-using Nexora.Application.Tenants.Commands.RecordSupportAccess;
 using Nexora.Application.Tenants.Queries.CheckTenantSlugAvailability;
 using Nexora.Application.Tenants.Queries.GetTenantById;
 using Nexora.Application.Tenants.Queries.ListTenants;
@@ -128,27 +127,6 @@ public sealed class TenantsController : ControllerBase
         }
 
         var result = await _sender.Send(new GetTenantByIdQuery(id), cancellationToken);
-        return result.ToActionResult(HttpContext);
-    }
-
-    /// <summary>
-    /// E-09/US-090, cenário Gherkin "Acesso de suporte da plataforma" — registra (EVT-074
-    /// <c>support.access.granted</c>) que a Replay acessou dados do tenant informado. Só a policy
-    /// <c>PlatformAdmin</c> pode chamar; o registro fica no tenant ALVO para ficar visível ao
-    /// cliente quando ele consultar a própria trilha (US-091).
-    /// </summary>
-    [HttpPost("{id:guid}/support-access")]
-    [Authorize(Policy = "PlatformAdmin")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RecordSupportAccess(
-        [FromRoute] Guid id,
-        [FromBody] RecordSupportAccessRequest request,
-        CancellationToken cancellationToken)
-    {
-        var command = new RecordSupportAccessCommand(id, _tenantContext.UserId, request.Reason, request.DurationMinutes);
-        var result = await _sender.Send(command, cancellationToken);
         return result.ToActionResult(HttpContext);
     }
 }

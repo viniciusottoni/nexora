@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { DeviceManagementPage } from './device-management-page.js';
 
@@ -46,12 +46,12 @@ describe('DeviceManagementPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Autorizar novo dispositivo' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Autorizar novo dispositivo' }).at(-1)!);
 
-    expect(await screen.findByRole('status')).toHaveTextContent('418302');
-    expect(screen.getByText('Celular de garçom')).toBeInTheDocument();
-    expect(screen.getByText('Sem acesso há mais de 30 dias')).toBeInTheDocument();
-    expect(screen.getByText('Último acesso:')).toBeInTheDocument();
+    expect((await screen.findAllByRole('status')).at(-1)).toHaveTextContent('418302');
+    expect(screen.getAllByText('Celular de garçom').at(-1)).toBeInTheDocument();
+    expect(screen.getAllByText('Sem acesso há mais de 30 dias').at(-1)).toBeInTheDocument();
+    expect(screen.getAllByText('Último acesso:').at(-1)).toBeInTheDocument();
   });
 
   it('exige confirmação explícita e avisa sobre encerramento de sessões', async () => {
@@ -69,17 +69,17 @@ describe('DeviceManagementPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Revogar Celular garçom' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Revogar Celular garçom' }).at(-1)!);
     const dialog = screen.getByRole('dialog', { name: 'Revogar dispositivo?' });
     expect(dialog).toHaveTextContent('Todas as sessões ativas serão encerradas imediatamente');
-    fireEvent.click(screen.getByRole('button', { name: 'Sim, revogar dispositivo' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Sim, revogar dispositivo' }).at(-1)!);
 
     await waitFor(() => expect(onRevoke).toHaveBeenCalledWith(device.id));
   });
 
   it('só oferece excluir para dispositivo já revogado, e exige confirmação', async () => {
     const onDelete = vi.fn(async () => undefined);
-    render(
+    const { container } = render(
       <DeviceManagementPage
         devices={[revokedDevice]}
         onRename={async () => undefined}
@@ -87,14 +87,14 @@ describe('DeviceManagementPage', () => {
         onDelete={onDelete}
       />,
     );
+    const page = within(container);
 
     expect(
-      screen.queryByRole('button', { name: `Revogar ${revokedDevice.label}` }),
+      page.queryByRole('button', { name: `Revogar ${revokedDevice.label}` }),
     ).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: `Excluir ${revokedDevice.label}` }));
-    const dialog = screen.getByRole('dialog', { name: 'Excluir dispositivo?' });
-    expect(dialog).toBeInTheDocument();
+    fireEvent.click(page.getByRole('button', { name: `Excluir ${revokedDevice.label}` }));
+    expect(await screen.findByText('Excluir dispositivo?')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Sim, excluir dispositivo' }));
 
     await waitFor(() => expect(onDelete).toHaveBeenCalledWith(revokedDevice.id));

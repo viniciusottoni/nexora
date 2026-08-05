@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Diagnostics;
 using Nexora.Application.Abstractions.Behaviors;
 using Nexora.Application.Abstractions.Messaging;
@@ -78,7 +79,7 @@ public sealed class TableMapPerformanceIntegrationTests
 
             for (var i = 0; i < TableCount; i++)
             {
-                var table = DiningTable.Create(tenantId, storeId, area.Id, (i + 1).ToString(), $"qr-perf-{i}", sortOrder: (short)i);
+                var table = DiningTable.Create(tenantId, storeId, area.Id, (i + 1).ToString(CultureInfo.InvariantCulture), $"qr-perf-{i}", sortOrder: (short)i);
 
                 // Duas em cada três mesas ficam ocupadas, com pedido e item — o cenário mais caro
                 // de calcular (soma de itens + garçom + comparação de média), não o mais barato.

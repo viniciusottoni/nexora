@@ -71,6 +71,12 @@ export const errorCodeSchema = z.enum([
   'TENANT_NOT_FOUND',
   'SLUG_ALREADY_TAKEN',
   'OWNER_INVITE_INVALID_CREDENTIALS',
+
+  // Roteiro de implantação autoatendido (US-141) — ver Nexora.Shared.Errors.ApiErrorCodes.Onboarding.cs.
+  // [PENDÊNCIA] Ainda sem entrada em ResultExtensions.MapErrorCode no backend — ver relatório da
+  // tarefa que introduziu estes dois códigos.
+  'ONBOARDING_INCOMPLETE',
+  'ONBOARDING_STEP_NOT_FOUND',
 ]);
 
 export const problemDetailsSchema = z.object({

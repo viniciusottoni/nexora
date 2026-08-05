@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { VariantChannelPriceRow } from '@nexora/contracts';
 import { PriceTablePage } from './price-table-page.js';
@@ -77,14 +77,14 @@ describe('PriceTablePage', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Salvar preços' })).toBeDisabled();
+    expect(screen.getAllByRole('button', { name: 'Salvar preços' }).at(-1)).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText('Preço do canal Delivery'), {
+    fireEvent.change(screen.getAllByLabelText('Preço do canal Delivery').at(-1)!, {
       target: { value: '5500' },
     });
-    expect(screen.getByRole('button', { name: 'Salvar preços' })).toBeEnabled();
+    expect(screen.getAllByRole('button', { name: 'Salvar preços' }).at(-1)).toBeEnabled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar preços' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Salvar preços' }).at(-1)!);
 
     await waitFor(() =>
       expect(onSave).toHaveBeenCalledWith(variantId, {
@@ -112,12 +112,18 @@ describe('PriceTablePage', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('Preço do canal Balcão'), { target: { value: '5500' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar preços' }));
+    fireEvent.change(screen.getAllByLabelText('Preço do canal Balcão').at(-1)!, {
+      target: { value: '5500' },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Salvar preços' }).at(-1)!);
 
-    await waitFor(() => expect(screen.getByText('Nenhuma alteração pendente')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Salvar preços' })).toBeDisabled();
-    expect(screen.getAllByText('Próprio')).toHaveLength(3);
+    await waitFor(() =>
+      expect(screen.getAllByText('Nenhuma alteração pendente').at(-1)).toBeInTheDocument(),
+    );
+    expect(screen.getAllByRole('button', { name: 'Salvar preços' }).at(-1)).toBeDisabled();
+    const takeoutInput = screen.getAllByLabelText('Preço do canal Balcão').at(-1);
+    expect(takeoutInput).toBeTruthy();
+    expect(within(takeoutInput!.closest('tr')!).getByText('Próprio')).toBeInTheDocument();
   });
 
   it('pre-visualiza o reajuste em massa antes de confirmar', async () => {
@@ -142,14 +148,14 @@ describe('PriceTablePage', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('Percentual'), { target: { value: '8' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Pré-visualizar' }));
+    fireEvent.change(screen.getAllByLabelText('Percentual').at(-1)!, { target: { value: '8' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Pré-visualizar' }).at(-1)!);
 
     await waitFor(() => expect(onLoadSnapshot).toHaveBeenCalledWith('cat-1', 'Delivery'));
     expect(await screen.findByText('Pizza Mussarela — Pequena')).toBeInTheDocument();
     expect(screen.getByText('37,80')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar reajuste' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Confirmar reajuste' }).at(-1)!);
 
     await waitFor(() =>
       expect(onBulkAdjust).toHaveBeenCalledWith({

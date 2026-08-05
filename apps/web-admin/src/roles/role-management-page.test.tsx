@@ -74,7 +74,7 @@ describe('RoleManagementPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Novo papel' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Novo papel' }).at(-1)!);
     const dialog = screen.getByRole('dialog', { name: 'Criar papel' });
     fireEvent.change(within(dialog).getByLabelText('Nome do papel'), {
       target: { value: 'Recepcao' },
@@ -104,8 +104,12 @@ describe('RoleManagementPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByLabelText('Permitir Consultar'));
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar permissões' }));
+    const selectedRoleHeading = screen.getAllByRole('heading', { name: 'Atendente' }).at(-1)!;
+    const selectedRoleCard = selectedRoleHeading.closest('section');
+    expect(selectedRoleCard).not.toBeNull();
+
+    fireEvent.click(within(selectedRoleCard!).getByLabelText('Permitir Consultar'));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Salvar permissões' }).at(-1)!);
     await waitFor(() =>
       expect(onUpdate).toHaveBeenCalledWith(roles[0]?.id, {
         name: 'Atendente',
@@ -113,7 +117,10 @@ describe('RoleManagementPage', () => {
       }),
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Proprietário/ }));
-    expect(screen.getByLabelText('Permitir Acesso completo ao estabelecimento')).toBeDisabled();
+    fireEvent.click(screen.getAllByRole('button', { name: /Proprietário/ }).at(-1)!);
+    const ownerHeading = screen.getAllByRole('heading', { name: 'Proprietário' }).at(-1)!;
+    const ownerCard = ownerHeading.closest('section');
+    expect(ownerCard).not.toBeNull();
+    expect(within(ownerCard!).getByLabelText('Permitir Acesso completo ao estabelecimento')).toBeDisabled();
   });
 });

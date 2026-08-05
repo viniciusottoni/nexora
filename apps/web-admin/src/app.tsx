@@ -29,6 +29,7 @@ import type {
   ProductDto,
   RoleDto,
   StationDto,
+  SupportAccessSummary,
   TableDto,
 } from '@nexora/contracts';
 import { AlertRoutingApi } from './alerts/alert-routing-api.js';
@@ -43,6 +44,7 @@ import { BrandingContainer } from './branding/branding-container.js';
 import { UnavailableListPage } from './availability/unavailable-list-page.js';
 import { CatalogPage } from './catalog/catalog-page.js';
 import { CategoriesApi } from './catalog/categories-api.js';
+import { CatalogImportPage } from './catalog/catalog-import-page.js';
 import { PricesApi } from './catalog/prices-api.js';
 import { ProductsApi } from './catalog/products-api.js';
 import { VariantsApi } from './catalog/variants-api.js';
@@ -50,6 +52,8 @@ import { DeviceManagementPage } from './devices/device-management-page.js';
 import { DevicesApi, DevicesApiError } from './devices/devices-api.js';
 import { ModifierGroupManagementPage } from './modifiers/modifier-group-management-page.js';
 import { ModifierGroupsApi } from './modifiers/modifier-groups-api.js';
+import { OnboardingSetupPage } from './onboarding/onboarding-setup-page.js';
+import { OnboardingApi } from './onboarding/onboarding-api.js';
 import { PrepTimeApi } from './prep-time/prep-time-api.js';
 import { PrepTimeSection } from './prep-time/prep-time-section.js';
 import { PricingApi } from './pricing/pricing-api.js';
@@ -58,6 +62,8 @@ import { RoleManagementPage } from './roles/role-management-page.js';
 import { RolesApi } from './roles/roles-api.js';
 import { StationManagementPage } from './stations/station-management-page.js';
 import { StationsApi } from './stations/stations-api.js';
+import { SupportAccessHistoryPage } from './support-access/support-access-history-page.js';
+import { SupportAccessApiClient } from './support-access/support-access-api.js';
 import { TableManagementPage } from './tables/table-management-page.js';
 import { AreasApi, TablesApi } from './tables/tables-api.js';
 
@@ -87,6 +93,30 @@ const cloudAuditApi = new AuditApi(CLOUD_API_BASE_URL);
 const cloudThresholdsApi = new ThresholdsApi(CLOUD_API_BASE_URL);
 const cloudAlertRoutingApi = new AlertRoutingApi(CLOUD_API_BASE_URL);
 const cloudNotificationsApi = new NotificationsApi(CLOUD_API_BASE_URL);
+const cloudSupportAccessApi = new SupportAccessApiClient(CLOUD_API_BASE_URL);
+const cloudOnboardingApi = new OnboardingApi(CLOUD_API_BASE_URL);
+
+/**
+ * Lê `tid` (tenant id) do payload do access token já guardado pelo login (E-14/US-141
+ * "autoatendimento pelo cliente") — decodificação local, sem chamada de rede: o token é um JWT
+ * comum (header.payload.signature em base64url), e o painel do cliente precisa saber o PRÓPRIO
+ * tenant id para montar a URL de `GET /v1/platform/tenants/{id}/onboarding` (rota compartilhada
+ * com o painel da Replay, ver `OnboardingApi`). Retorna `undefined` se o token não existir/não
+ * tiver a claim — a seção de implantação trata esse caso mostrando um aviso, nunca quebrando a tela.
+ */
+function readOwnTenantIdFromSession(storage: Storage = localStorage): string | undefined {
+  const token = storage.getItem('food-operations.cloud.access');
+  const payload = token?.split('.')[1];
+  if (!payload) return undefined;
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const json = atob(normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '='));
+    const claims = JSON.parse(json) as { tid?: string };
+    return claims.tid;
+  } catch {
+    return undefined;
+  }
+}
 
 /** Dispara o download do PDF de QR Codes (US-020, cenário "Exportação para impressão"). */
 function downloadPdfBlob(blob: Blob, areaId?: string): void {
@@ -118,7 +148,8 @@ type BootResource =
   | 'categories'
   | 'products'
   | 'stations'
-  | 'modifierGroups';
+  | 'modifierGroups'
+  | 'supportAccessGrants';
 
 /** Em quais seções cada recurso aparece — determina onde seu erro de carregamento deve ser mostrado. */
 const RESOURCE_SECTIONS: Record<BootResource, readonly CloudAdminSection[]> = {
@@ -130,6 +161,7 @@ const RESOURCE_SECTIONS: Record<BootResource, readonly CloudAdminSection[]> = {
   products: ['catalog', 'prep-time', 'pricing'],
   stations: ['catalog', 'stations', 'prep-time'],
   modifierGroups: ['modifiers'],
+  supportAccessGrants: ['support-access'],
 };
 
 function CloudAdmin() {
@@ -144,7 +176,9 @@ function CloudAdmin() {
   const [products, setProducts] = useState<readonly ProductDto[]>([]);
   const [stations, setStations] = useState<readonly StationDto[]>([]);
   const [modifierGroups, setModifierGroups] = useState<readonly ModifierGroup[]>([]);
+  const [supportAccessGrants, setSupportAccessGrants] = useState<readonly SupportAccessSummary[]>([]);
   const [bootErrors, setBootErrors] = useState<Partial<Record<BootResource, string>>>({});
+  const ownTenantId = useMemo(() => readOwnTenantIdFromSession(), []);
 
   function setBootError(resource: BootResource, message: string) {
     setBootErrors((prev) => ({ ...prev, [resource]: message }));
@@ -229,6 +263,14 @@ function CloudAdmin() {
       .catch((reason: unknown) => {
         if (active) setBootError('modifierGroups', toMessage(reason));
       });
+    cloudSupportAccessApi
+      .history()
+      .then((result) => {
+        if (active) setSupportAccessGrants(result.data);
+      })
+      .catch((reason: unknown) => {
+        if (active) setBootError('supportAccessGrants', toMessage(reason));
+      });
     return () => {
       active = false;
     };
@@ -274,6 +316,11 @@ function CloudAdmin() {
   async function refreshModifierGroups() {
     setModifierGroups((await cloudModifierGroupsApi.list()).items);
     clearBootError('modifierGroups');
+  }
+
+  async function refreshSupportAccessGrants() {
+    setSupportAccessGrants((await cloudSupportAccessApi.history()).data);
+    clearBootError('supportAccessGrants');
   }
 
   if (!authenticated)
@@ -570,6 +617,25 @@ function CloudAdmin() {
             {section === 'alert-routing' ? (
               <AlertRoutingPage roles={roles} alertRoutingApi={cloudAlertRoutingApi} />
             ) : null}
+            {section === 'catalog-import' ? <CatalogImportPage /> : null}
+            {section === 'onboarding' ? (
+              ownTenantId ? (
+                <OnboardingSetupPage tenantId={ownTenantId} api={cloudOnboardingApi} />
+              ) : (
+                <AlertBanner tone="warning" title="Sessão sem identificação de estabelecimento">
+                  Não foi possível identificar o estabelecimento da sua sessão. Faça login novamente.
+                </AlertBanner>
+              )
+            ) : null}
+            {section === 'support-access' ? (
+              <SupportAccessHistoryPage
+                grants={supportAccessGrants}
+                onRevoke={async (id) => {
+                  await cloudSupportAccessApi.revoke(id);
+                  await refreshSupportAccessGrants();
+                }}
+              />
+            ) : null}
             <CreatedByFooter />
           </div>
         </div>
@@ -755,7 +821,10 @@ export type CloudAdminSection =
   | 'pricing'
   | 'audit'
   | 'alert-thresholds'
-  | 'alert-routing';
+  | 'alert-routing'
+  | 'catalog-import'
+  | 'onboarding'
+  | 'support-access';
 
 /* Agrupado por assunto \u2014 a navega\u00e7\u00e3o de dez itens corridos n\u00e3o dizia o que era opera\u00e7\u00e3o da
    loja, o que era card\u00e1pio e o que era cozinha (SideNav aceita `group` para isso). */
@@ -767,6 +836,7 @@ const ADMIN_NAV_ITEMS: readonly SideNavItem[] = [
   { id: 'branding', label: 'Identidade visual', icon: 'palette' },
   { group: 'Card\u00e1pio' },
   { id: 'catalog', label: 'Card\u00e1pio', icon: 'restaurant_menu' },
+  { id: 'catalog-import', label: 'Importar planilha', icon: 'upload_file' },
   { id: 'modifiers', label: 'Grupos de modificadores', icon: 'tune' },
   { id: 'pricing', label: 'Pre\u00e7os', icon: 'sell' },
   { id: 'availability', label: 'Indispon\u00edveis', icon: 'block' },
@@ -776,6 +846,9 @@ const ADMIN_NAV_ITEMS: readonly SideNavItem[] = [
   { group: 'Alertas' },
   { id: 'alert-thresholds', label: 'Limiares de alerta', icon: 'rule' },
   { id: 'alert-routing', label: 'Direcionamento de alertas', icon: 'alt_route' },
+  { group: 'Implanta\u00e7\u00e3o e suporte' },
+  { id: 'onboarding', label: 'Configura\u00e7\u00e3o inicial', icon: 'rocket_launch' },
+  { id: 'support-access', label: 'Acessos de suporte', icon: 'verified_user' },
   { group: 'Auditoria' },
   { id: 'audit', label: 'Trilha de auditoria', icon: 'fact_check' },
 ];

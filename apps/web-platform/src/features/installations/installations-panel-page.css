@@ -1,0 +1,89 @@
+/* US-140 — painel de instalações com saúde. Casca/página vêm de console.css (@nexora/ui);
+   aqui só o que é específico desta tela: badge de deriva de versão, grade do health check e
+   listas de log/incidente do modal de diagnóstico. */
+
+.installations-version {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.installations-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+.installations-detail__heading {
+  margin: 0 0 var(--sp-3);
+  font: var(--type-h3);
+  color: var(--text-primary);
+}
+
+.installations-healthcheck {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--sp-4);
+  margin: 0 0 var(--sp-6);
+}
+.installations-healthcheck dt {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.installations-healthcheck dd {
+  margin: var(--sp-1) 0 0;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.installations-log-list,
+.installations-incident-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.installations-log-list li {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: 13px;
+}
+.installations-log-list li[data-level='ERROR'] {
+  border-left: var(--border-2) solid var(--nx-danger-500);
+}
+.installations-log-list li[data-level='WARN'] {
+  border-left: var(--border-2) solid var(--nx-warning-500);
+}
+.installations-log-list__time {
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.installations-incident-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+.installations-incident-list__cause {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-primary);
+}
+.installations-incident-list__meta {
+  color: var(--text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}

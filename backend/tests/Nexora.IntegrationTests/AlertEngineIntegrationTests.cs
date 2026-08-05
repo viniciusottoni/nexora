@@ -1,8 +1,11 @@
+using Nexora.Application.Alerts.Commands.UpdateAlertRouting;
 using Nexora.Application.Alerts.Commands.EscalatePendingAlerts;
 using Nexora.Application.Alerts.Commands.EvaluateEdgeAlertConditions;
 using Nexora.Application.Alerts.Queries.GetAlerts;
+using Nexora.Application.Alerts.Support;
 using Nexora.Application.Catalog.Availability.Commands.MarkProductAvailable;
 using Nexora.Application.Catalog.Availability.Commands.MarkProductUnavailable;
+using Nexora.Contracts.Alerts;
 using Nexora.Domain.Catalog;
 using Nexora.Domain.Metrics;
 using Nexora.Domain.Operation;
@@ -126,6 +129,25 @@ public sealed class AlertEngineIntegrationTests
     public async Task Alerta_Sem_Reconhecimento_Escala_Para_O_Gestor_Apos_O_Prazo()
     {
         var tenant = await SeedTenantAsync(orderCriticalMinutes: 5);
+        var tenantContext = new StaticTenantContext(tenant.TenantId, tenant.StoreId);
+
+        await using (var routingDb = _fixture.CreateAppDbContext(tenantContext))
+        await using (var routingProvider = MediatRTestContainerFactory.Build(routingDb, tenantContext))
+        {
+            var routingSender = routingProvider.GetRequiredService<ISender>();
+            var routingPatch = new Dictionary<string, AlertRoutingRulePatch>
+            {
+                [AlertTypes.OrderLate] = new(
+                    Roles: new[] { "WAITER", "KITCHEN" },
+                    Scope: AlertRoutingScopes.Responsible,
+                    EscalateAfterSeconds: 120,
+                    GroupWindowSeconds: 60),
+            };
+
+            var routingResult = await routingSender.Send(new UpdateAlertRoutingCommand(routingPatch));
+            routingResult.IsSuccess.Should().BeTrue();
+        }
+
         await SeedLateOrderAsync(tenant, minutesAgo: 20);
         await RunEvaluationAsync(tenant);
 
@@ -138,7 +160,6 @@ public sealed class AlertEngineIntegrationTests
                 $"UPDATE alert SET raised_at = {DateTimeOffset.UtcNow.AddMinutes(-10)} WHERE type = {AlertTypes.OrderLate}");
         }
 
-        var tenantContext = new StaticTenantContext(tenant.TenantId, tenant.StoreId);
         await using var escalationDb = _fixture.CreateAppDbContext(tenantContext);
         await using var provider = MediatRTestContainerFactory.Build(escalationDb, tenantContext);
         var sender = provider.GetRequiredService<ISender>();

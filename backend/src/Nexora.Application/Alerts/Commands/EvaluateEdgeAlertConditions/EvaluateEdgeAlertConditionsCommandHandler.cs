@@ -11,9 +11,6 @@ namespace Nexora.Application.Alerts.Commands.EvaluateEdgeAlertConditions;
 
 internal sealed class EvaluateEdgeAlertConditionsCommandHandler : IRequestHandler<EvaluateEdgeAlertConditionsCommand, Result<int>>
 {
-    private static readonly OrderStatus[] OpenOrderStatuses =
-        { OrderStatus.Placed, OrderStatus.InProduction, OrderStatus.Ready, OrderStatus.Dispatched };
-
     /// <summary>Janela de cálculo do tempo médio (US-080, "AVG_TIME_ABOVE_TARGET") — não configurável, ao contrário dos limiares em si (nenhuma US pede isso).</summary>
     private static readonly TimeSpan AvgWindow = TimeSpan.FromMinutes(60);
 
@@ -62,7 +59,12 @@ internal sealed class EvaluateEdgeAlertConditionsCommandHandler : IRequestHandle
     private async Task<int> EvaluateOrderLateAsync(Guid tenantId, DateTimeOffset now, AlertThresholds thresholds, CancellationToken cancellationToken)
     {
         var openOrders = await _db.Orders.AsNoTracking()
-            .Where(o => o.TenantId == tenantId && OpenOrderStatuses.Contains(o.Status) && o.PlacedAt != null)
+            .Where(o => o.TenantId == tenantId
+                && (o.Status == OrderStatus.Placed
+                    || o.Status == OrderStatus.InProduction
+                    || o.Status == OrderStatus.Ready
+                    || o.Status == OrderStatus.Dispatched)
+                && o.PlacedAt != null)
             .ToListAsync(cancellationToken);
 
         var raisedCount = 0;

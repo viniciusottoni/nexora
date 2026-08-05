@@ -133,41 +133,42 @@ function renderPage(overrides: Partial<React.ComponentProps<typeof ProductManage
 
 describe('ProductManagementPage', () => {
   it('lista os produtos com categoria, praça e situação', () => {
-    renderPage();
+    const page = within(renderPage().container);
 
-    expect(screen.getAllByText('Pizza Mussarela').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText('Pizza Calabresa')).toBeInTheDocument();
-    expect(screen.getAllByText('Forno').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Ativo')).toBeInTheDocument();
-    expect(screen.getByText('Inativo')).toBeInTheDocument();
+    expect(page.getAllByText('Pizza Mussarela').length).toBeGreaterThanOrEqual(2);
+    expect(page.getByText('Pizza Calabresa')).toBeInTheDocument();
+    expect(page.getAllByText('Forno').length).toBeGreaterThanOrEqual(1);
+    expect(page.getByText('Ativo')).toBeInTheDocument();
+    expect(page.getByText('Inativo')).toBeInTheDocument();
   });
 
   it('cria um produto com todos os dados do cadastro', async () => {
     const onCreate = vi.fn(noOpCreate);
-    renderPage({ onCreate });
+    const page = within(renderPage({ onCreate }).container);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Novo produto' }));
-    const dialog = screen.getByRole('dialog', { name: 'Criar produto' });
-    fireEvent.change(within(dialog).getByLabelText('Nome'), {
+    fireEvent.click(page.getAllByRole('button', { name: 'Novo produto' }).at(-1)!);
+    const dialog = await screen.findByRole('dialog', { name: 'Criar produto' });
+    const modal = within(dialog);
+    fireEvent.change(modal.getByLabelText('Nome'), {
       target: { value: 'Pizza Portuguesa' },
     });
-    fireEvent.change(within(dialog).getByLabelText('Praça de produção'), {
+    fireEvent.change(modal.getByLabelText('Praça de produção'), {
       target: { value: stations[0]!.id },
     });
-    fireEvent.change(within(dialog).getByLabelText('Descrição'), {
+    fireEvent.change(modal.getByLabelText('Descrição'), {
       target: { value: 'Pizza clássica' },
     });
-    fireEvent.change(within(dialog).getByLabelText('Ingredientes'), {
+    fireEvent.change(modal.getByLabelText('Ingredientes'), {
       target: { value: 'presunto, ovos' },
     });
-    fireEvent.change(within(dialog).getByLabelText('Alérgenos'), {
+    fireEvent.change(modal.getByLabelText('Alérgenos'), {
       target: { value: 'glúten, lactose' },
     });
-    fireEvent.click(within(dialog).getByLabelText('Permite frações'));
-    fireEvent.change(within(dialog).getByLabelText('Máximo de frações'), {
+    fireEvent.click(modal.getByLabelText('Permite frações'));
+    fireEvent.change(modal.getByLabelText('Máximo de frações'), {
       target: { value: '4' },
     });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Criar produto' }));
+    fireEvent.click(modal.getByRole('button', { name: 'Criar produto' }));
 
     await waitFor(() =>
       expect(onCreate).toHaveBeenCalledWith(
@@ -188,9 +189,9 @@ describe('ProductManagementPage', () => {
 
   it('duplica o produto selecionado com um clique', async () => {
     const onCreate = vi.fn(noOpCreate);
-    renderPage({ onCreate });
+    const page = within(renderPage({ onCreate }).container);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Duplicar produto' }));
+    fireEvent.click(page.getAllByRole('button', { name: 'Duplicar produto' }).at(-1)!);
 
     await waitFor(() =>
       expect(onCreate).toHaveBeenCalledWith(
@@ -208,18 +209,19 @@ describe('ProductManagementPage', () => {
   it('envia a foto recortada depois de criar o produto', async () => {
     const onCreate = vi.fn(noOpCreate);
     const onUploadImage = vi.fn(noOpUpload);
-    renderPage({ onCreate, onUploadImage });
+    const page = within(renderPage({ onCreate, onUploadImage }).container);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Novo produto' }));
-    const dialog = screen.getByRole('dialog', { name: 'Criar produto' });
-    fireEvent.change(within(dialog).getByLabelText('Nome'), {
+    fireEvent.click(page.getAllByRole('button', { name: 'Novo produto' }).at(-1)!);
+    const dialog = await screen.findByRole('dialog', { name: 'Criar produto' });
+    const modal = within(dialog);
+    fireEvent.change(modal.getByLabelText('Nome'), {
       target: { value: 'Pizza com foto' },
     });
-    fireEvent.change(within(dialog).getByLabelText('Foto do produto'), {
+    fireEvent.change(modal.getByLabelText('Foto do produto'), {
       target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar recorte de teste' }));
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Criar produto' }));
+    fireEvent.click(modal.getByRole('button', { name: 'Criar produto' }));
 
     await waitFor(() =>
       expect(onUploadImage).toHaveBeenCalledWith(products[0]!.id, expect.any(Blob), 'image/jpeg', {
@@ -247,13 +249,15 @@ describe('ProductManagementPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Novo produto' }));
-    const dialog = screen.getByRole('dialog', { name: 'Criar produto' });
-    expect(within(dialog).getByLabelText('Categoria')).toHaveValue(categories[0]!.id);
-    fireEvent.change(within(dialog).getByLabelText('Nome'), {
+    const page = within(view.container);
+    fireEvent.click(page.getAllByRole('button', { name: 'Novo produto' }).at(-1)!);
+    const dialog = await screen.findByRole('dialog', { name: 'Criar produto' });
+    const modal = within(dialog);
+    expect(modal.getByLabelText('Categoria')).toHaveValue(categories[0]!.id);
+    fireEvent.change(modal.getByLabelText('Nome'), {
       target: { value: 'Produto carregado' },
     });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Criar produto' }));
+    fireEvent.click(modal.getByRole('button', { name: 'Criar produto' }));
 
     await waitFor(() =>
       expect(onCreate).toHaveBeenCalledWith(
@@ -264,12 +268,12 @@ describe('ProductManagementPage', () => {
 
   it('salva alteracoes de cadastro do produto selecionado', async () => {
     const onUpdate = vi.fn(noOpUpdate);
-    renderPage({ onUpdate });
+    const page = within(renderPage({ onUpdate }).container);
 
-    fireEvent.change(screen.getByLabelText('Nome do produto'), {
+    fireEvent.change(page.getByLabelText('Nome do produto'), {
       target: { value: 'Pizza Mussarela Especial' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar produto' }));
+    fireEvent.click(page.getAllByRole('button', { name: 'Salvar produto' }).at(-1)!);
 
     await waitFor(() =>
       expect(onUpdate).toHaveBeenCalledWith(
@@ -281,10 +285,10 @@ describe('ProductManagementPage', () => {
 
   it('desvincula a praça enviando o sentinela reservado', async () => {
     const onUpdate = vi.fn(noOpUpdate);
-    renderPage({ onUpdate });
+    const page = within(renderPage({ onUpdate }).container);
 
-    fireEvent.change(screen.getByLabelText('Praça de produção'), { target: { value: '' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar produto' }));
+    fireEvent.change(page.getByLabelText('Praça de produção'), { target: { value: '' } });
+    fireEvent.click(page.getAllByRole('button', { name: 'Salvar produto' }).at(-1)!);
 
     await waitFor(() =>
       expect(onUpdate).toHaveBeenCalledWith(
@@ -297,27 +301,27 @@ describe('ProductManagementPage', () => {
   it('ativa e desativa o produto selecionado sem apaga-lo', async () => {
     const onDeactivate = vi.fn(noOpDeactivate);
     const onActivate = vi.fn(noOpActivate);
-    renderPage({ onDeactivate, onActivate });
+    const page = within(renderPage({ onDeactivate, onActivate }).container);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Desativar produto' }));
+    fireEvent.click(page.getAllByRole('button', { name: 'Desativar produto' }).at(-1)!);
     await waitFor(() => expect(onDeactivate).toHaveBeenCalledWith(products[0]!.id));
 
-    fireEvent.click(screen.getByText('Pizza Calabresa'));
-    fireEvent.click(screen.getByRole('button', { name: 'Reativar produto' }));
+    fireEvent.click(page.getByText('Pizza Calabresa'));
+    fireEvent.click(page.getAllByRole('button', { name: 'Reativar produto' }).at(-1)!);
     await waitFor(() => expect(onActivate).toHaveBeenCalledWith(products[1]!.id));
   });
 
   it('so mostra controles de reordenacao quando uma categoria especifica esta filtrada', async () => {
     const onReorder = vi.fn(noOpReorder);
-    renderPage({ onReorder });
+    const page = within(renderPage({ onReorder }).container);
 
-    expect(screen.queryByRole('button', { name: /Mover Pizza Mussarela/ })).not.toBeInTheDocument();
+    expect(page.queryByRole('button', { name: /Mover Pizza Mussarela/ })).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('Filtrar por categoria'), {
+    fireEvent.change(page.getByLabelText('Filtrar por categoria'), {
       target: { value: categories[0]!.id },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mover Pizza Mussarela para baixo' }));
+    fireEvent.click(page.getAllByRole('button', { name: 'Mover Pizza Mussarela para baixo' }).at(-1)!);
 
     await waitFor(() =>
       expect(onReorder).toHaveBeenCalledWith(categories[0]!.id, [products[1]!.id, products[0]!.id]),

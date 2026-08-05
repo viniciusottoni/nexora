@@ -115,7 +115,7 @@ test.describe('Provisionamento de estabelecimento (US-002)', () => {
     await expect(page.locator('.install-command')).toContainText('raw-install-token-de-uso-unico-1234567890');
 
     // Checklist dos 9 passos da Visão Geral §8.5 — 7 concluídos, 2 pendentes (edge/cardápio).
-    await expect(page.getByRole('heading', { name: 'Checklist de lançamento' })).toBeVisible();
+    await expect(page.getByText('Checklist de lançamento', { exact: true })).toBeVisible();
     await expect(page.getByText('7/9')).toBeVisible();
     await expect(page.getByText('Servidor local instalado')).toBeVisible();
 

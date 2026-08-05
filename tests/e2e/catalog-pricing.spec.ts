@@ -218,7 +218,7 @@ test('gestora ve o preco distinto do delivery, herda o preco base no balcao e re
   await expect(page.getByText('Delivery mais barato que o salão')).toBeVisible();
 
   await page.getByRole('button', { name: 'Salvar preços' }).click();
-  await expect(page.getByText('Preços atualizados')).toBeVisible();
+  await expect(page.getByText('Preços atualizados', { exact: true })).toBeVisible();
 });
 
 test('gestora pre-visualiza e confirma reajuste em massa por categoria', async ({ page }) => {

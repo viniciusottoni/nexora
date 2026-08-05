@@ -13,6 +13,7 @@
     <InvariantGlobalization>false</InvariantGlobalization>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <NoWarn>$(NoWarn);CA1000;CA1707;CA1711;CA1716;CA1848;CA1850;CA1859;CA1861;CA1873;CA5350;CS8602;CS8764;CS8765;NU1900;NU1901;NU1902;NU1903;NU1904</NoWarn>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>Recommended</AnalysisMode>

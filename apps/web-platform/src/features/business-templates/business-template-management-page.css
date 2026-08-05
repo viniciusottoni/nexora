@@ -1,0 +1,20 @@
+/* Manutenção do catálogo de modelos de negócio (US-142) — casca/página vêm de console.css; aqui só o que é desta tela. */
+
+.business-template-json-editor {
+  display: block;
+  width: 100%;
+  min-height: 14rem;
+  resize: vertical;
+  background: var(--surface-card);
+  border: var(--border-1) solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4) var(--sp-5);
+  font: var(--fw-medium) var(--fs-12) / var(--lh-snug) var(--font-mono);
+  color: var(--text-primary);
+  transition: var(--transition-control);
+}
+.business-template-json-editor:focus-visible {
+  outline: none;
+  border-color: var(--border-brand);
+  box-shadow: var(--focus-ring);
+}

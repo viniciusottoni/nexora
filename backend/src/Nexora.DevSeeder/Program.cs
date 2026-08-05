@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -289,7 +290,7 @@ internal static class Totp
                      ((hash[offset + 1] & 0xFF) << 16) |
                      ((hash[offset + 2] & 0xFF) << 8) |
                      (hash[offset + 3] & 0xFF);
-        return (binary % 1_000_000).ToString("D6");
+        return (binary % 1_000_000).ToString("D6", CultureInfo.InvariantCulture);
     }
 
     private static byte[] Base32Decode(string value)

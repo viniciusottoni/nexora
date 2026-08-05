@@ -59,7 +59,7 @@ describe('CategoryManagementPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Nova categoria' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Nova categoria' }).at(-1)!);
     const dialog = screen.getByRole('dialog', { name: 'Criar categoria' });
     fireEvent.change(within(dialog).getByLabelText('Nome'), { target: { value: 'Sobremesas' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Criar categoria' }));
@@ -83,7 +83,9 @@ describe('CategoryManagementPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mover Pizzas Salgadas para baixo' }));
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Mover Pizzas Salgadas para baixo' }).at(-1)!,
+    );
 
     await waitFor(() =>
       expect(onReorder).toHaveBeenCalledWith([categories[1]!.id, categories[0]!.id]),
@@ -102,10 +104,10 @@ describe('CategoryManagementPage', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('Nome da categoria'), {
+    fireEvent.change(screen.getAllByLabelText('Nome da categoria').at(-1)!, {
       target: { value: 'Pizzas Especiais' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar categoria' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Salvar categoria' }).at(-1)!);
 
     await waitFor(() =>
       expect(onUpdate).toHaveBeenCalledWith(
@@ -128,10 +130,10 @@ describe('CategoryManagementPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Desativar categoria' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Desativar categoria' }).at(-1)!);
     await waitFor(() => expect(onDeactivate).toHaveBeenCalledWith(categories[0]!.id));
 
-    fireEvent.click(screen.getByText('Bebidas'));
+    fireEvent.click(screen.getAllByText('Bebidas').at(-1)!);
     fireEvent.click(screen.getByRole('button', { name: 'Reativar categoria' }));
     await waitFor(() =>
       expect(onUpdate).toHaveBeenCalledWith(

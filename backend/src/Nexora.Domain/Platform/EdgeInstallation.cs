@@ -38,6 +38,16 @@ public sealed class EdgeInstallation
     public DateTimeOffset? TokenExpiresAt { get; private set; }
     public DateTimeOffset? TokenConsumedAt { get; private set; }
     public DateTimeOffset? InstalledAt { get; private set; }
+
+    /// <summary>Versão que a liberação gradual da release corrente atribuiu a esta instalação (US-146) — nulo quando já está em dia.</summary>
+    public string? TargetVersion { get; private set; }
+
+    /// <summary>Instante da última tentativa de atualização (sucesso, falha ou rollback) — US-146.</summary>
+    public DateTimeOffset? LastUpdateAt { get; private set; }
+
+    /// <summary>Resultado da última tentativa de atualização (<see cref="EdgeUpdateStatus"/> serializado) — US-146.</summary>
+    public string? LastUpdateStatus { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
@@ -214,4 +224,45 @@ public sealed class EdgeInstallation
         UpdatedAt = now;
         return transition;
     }
+
+    /// <summary>Atribui uma versão-alvo à instalação (US-146, avaliação de elegibilidade de rollout de <c>Release</c>).</summary>
+    public void ScheduleUpdate(string targetVersion)
+    {
+        if (string.IsNullOrWhiteSpace(targetVersion))
+            throw new DomainException("A versão-alvo da atualização é obrigatória.");
+
+        TargetVersion = targetVersion;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// Registra o resultado do ciclo de atualização (download → migration → health check → ativa
+    /// ou reverte, US-146 §7). Em <see cref="EdgeUpdateStatus.Succeeded"/>, <see cref="Version"/>
+    /// passa a refletir a versão instalada e <see cref="TargetVersion"/> é limpo (já em dia).
+    /// </summary>
+    public void RecordUpdateResult(EdgeUpdateStatus status, DateTimeOffset at, string? installedVersion = null)
+    {
+        LastUpdateStatus = status.ToString();
+        LastUpdateAt = at;
+
+        if (status == EdgeUpdateStatus.Succeeded)
+        {
+            if (!string.IsNullOrWhiteSpace(installedVersion))
+                Version = installedVersion;
+
+            TargetVersion = null;
+        }
+
+        UpdatedAt = at;
+    }
+}
+
+/// <summary>Resultado de um ciclo de atualização controlada do parque (US-146).</summary>
+public enum EdgeUpdateStatus
+{
+    Deferred = 0,
+    InProgress = 1,
+    Succeeded = 2,
+    Failed = 3,
+    RolledBack = 4
 }

@@ -35,7 +35,7 @@ public static class PermissionCatalog
         "audit:*", "audit:read"
     };
 
-    private static readonly IReadOnlyDictionary<string, string> ResourceNames = new Dictionary<string, string>
+    private static readonly Dictionary<string, string> ResourceNames = new Dictionary<string, string>
     {
         ["table"] = "Mesas",
         ["order"] = "Pedidos",
@@ -56,7 +56,7 @@ public static class PermissionCatalog
         ["audit"] = "Auditoria"
     };
 
-    private static readonly IReadOnlyDictionary<string, string> ActionDescriptions = new Dictionary<string, string>
+    private static readonly Dictionary<string, string> ActionDescriptions = new Dictionary<string, string>
     {
         ["*"] = "Acesso completo",
         ["open"] = "Abrir",
@@ -88,7 +88,7 @@ public static class PermissionCatalog
         ["manage"] = "Gerenciar"
     };
 
-    private static readonly IReadOnlySet<string> Sensitive = new HashSet<string>
+    private static readonly HashSet<string> Sensitive = new HashSet<string>
     {
         "order:cancel_started",
         "cash:discount_any",

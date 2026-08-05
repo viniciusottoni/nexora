@@ -19,18 +19,21 @@ $connCloud = 'Host=localhost;Port=5432;Database=donabetinha_cloud_dev;Username=d
 Write-Host "==> Subindo Postgres e Redis (Docker)..." -ForegroundColor Cyan
 docker compose -f infra/dev/docker-compose.yml up -d --wait
 
+Write-Host "==> Build seguro do backend (.NET)..." -ForegroundColor Cyan
+dotnet build backend/Nexora.slnx -m:1 -p:BuildInParallel=false -p:UseSharedCompilation=false
+
 Write-Host "==> Aplicando migrations EF Core (Nexora.Api.Edge)..." -ForegroundColor Cyan
 $env:NEXORA_MIGRATIONS_CONNECTION = $connEdge
-dotnet ef database update --project backend/src/Nexora.Infrastructure
+dotnet ef database update --no-build --project backend/src/Nexora.Infrastructure
 
 Write-Host "==> Aplicando migrations EF Core (Nexora.Api.Cloud)..." -ForegroundColor Cyan
 $env:NEXORA_MIGRATIONS_CONNECTION = $connCloud
-dotnet ef database update --project backend/src/Nexora.Infrastructure
+dotnet ef database update --no-build --project backend/src/Nexora.Infrastructure
 Remove-Item Env:\NEXORA_MIGRATIONS_CONNECTION
 
 Write-Host "==> Criando massa de usuários de teste (Cloud + Edge)..." -ForegroundColor Cyan
-dotnet run --project backend/src/Nexora.DevSeeder -- --connection $connCloud --mode cloud
-dotnet run --project backend/src/Nexora.DevSeeder -- --connection $connEdge --mode edge
+dotnet run --no-build --project backend/src/Nexora.DevSeeder -- --connection $connCloud --mode cloud
+dotnet run --no-build --project backend/src/Nexora.DevSeeder -- --connection $connEdge --mode edge
 
 if (Test-PortListening -Port 5000) {
   Write-Host "==> Nexora.Api.Edge já está rodando em http://localhost:5000, pulando." -ForegroundColor Yellow
@@ -38,7 +41,7 @@ if (Test-PortListening -Port 5000) {
   Write-Host "==> Subindo Nexora.Api.Edge em http://localhost:5000 ..." -ForegroundColor Cyan
   Start-Process powershell -ArgumentList @(
     '-NoExit', '-Command',
-    "Set-Location '$repoRoot'; `$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS='http://localhost:5000'; dotnet run --project backend/src/Nexora.Api.Edge"
+    "Set-Location '$repoRoot'; `$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS='http://localhost:5000'; dotnet run --no-build --project backend/src/Nexora.Api.Edge"
   )
 }
 
@@ -48,7 +51,7 @@ if (Test-PortListening -Port 5100) {
   Write-Host "==> Subindo Nexora.Api.Cloud em http://localhost:5100 ..." -ForegroundColor Cyan
   Start-Process powershell -ArgumentList @(
     '-NoExit', '-Command',
-    "Set-Location '$repoRoot'; `$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS='http://localhost:5100'; dotnet run --project backend/src/Nexora.Api.Cloud"
+    "Set-Location '$repoRoot'; `$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS='http://localhost:5100'; dotnet run --no-build --project backend/src/Nexora.Api.Cloud"
   )
 }
 

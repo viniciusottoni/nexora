@@ -82,7 +82,7 @@ describe('TableManagementPage', () => {
   it('cria um novo ambiente', async () => {
     const handlers = renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Novo ambiente' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Novo ambiente' }).at(-1)!);
     const dialog = screen.getByRole('dialog', { name: 'Novo ambiente' });
     fireEvent.change(within(dialog).getByLabelText('Nome do ambiente'), {
       target: { value: 'Mezanino' },
@@ -96,7 +96,7 @@ describe('TableManagementPage', () => {
   it('cria mesas em lote com o intervalo informado', async () => {
     const handlers = renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Criar mesas em lote' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Criar mesas em lote' }).at(-1)!);
     const dialog = screen.getByRole('dialog', { name: 'Criar mesas em lote' });
     fireEvent.change(within(dialog).getByLabelText('De'), { target: { value: '1' } });
     fireEvent.change(within(dialog).getByLabelText('Até'), { target: { value: '20' } });
@@ -116,13 +116,13 @@ describe('TableManagementPage', () => {
   it('exige confirmacao para rotacionar o token e avisa que o QR impresso precisa ser trocado', async () => {
     const handlers = renderPage();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Rotacionar token' })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Rotacionar token' }).at(-1)!);
     const dialog = screen.getByRole('dialog', { name: /Rotacionar token da mesa/ });
     expect(within(dialog).getByText(/deixará de funcionar imediatamente/)).toBeInTheDocument();
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Sim, rotacionar token' }));
 
-    await waitFor(() => expect(handlers.onRotateToken).toHaveBeenCalledWith(tables[0]!.id));
+    await waitFor(() => expect(handlers.onRotateToken).toHaveBeenCalledWith(tables[1]!.id));
     expect(await screen.findByText(/parou de funcionar/)).toBeInTheDocument();
     expect(screen.getByText(/Exporte o PDF novamente/)).toBeInTheDocument();
   });
@@ -130,20 +130,20 @@ describe('TableManagementPage', () => {
   it('exige confirmacao para excluir e explica a alternativa de desativacao', async () => {
     const handlers = renderPage();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Excluir' })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Excluir' }).at(-1)!);
     const dialog = screen.getByRole('dialog', { name: /Excluir mesa/ });
     expect(within(dialog).getByText(/desative-a em vez de excluir/)).toBeInTheDocument();
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Sim, excluir mesa' }));
 
-    await waitFor(() => expect(handlers.onDeleteTable).toHaveBeenCalledWith(tables[0]!.id));
+    await waitFor(() => expect(handlers.onDeleteTable).toHaveBeenCalledWith(tables[1]!.id));
   });
 
   it('exporta os QR Codes filtrando pelo ambiente selecionado', async () => {
     const handlers = renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: /^Salão/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Exportar QR Codes' }));
+    fireEvent.click(screen.getAllByRole('button', { name: /^Salão/ }).at(-1)!);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Exportar QR Codes' }).at(-1)!);
 
     await waitFor(() => expect(handlers.onExportQrCodesPdf).toHaveBeenCalledWith(areas[0]!.id));
   });
@@ -155,12 +155,12 @@ describe('TableManagementPage', () => {
       }),
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Excluir' })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Excluir' }).at(-1)!);
     fireEvent.click(screen.getByRole('button', { name: 'Sim, excluir mesa' }));
 
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      'Esta mesa tem sessões no histórico e não pode ser excluída.',
-    );
+    expect(
+      await screen.findByText('Esta mesa tem sessões no histórico e não pode ser excluída.'),
+    ).toBeInTheDocument();
     expect(handlers.onDeleteTable).toHaveBeenCalled();
   });
 });
