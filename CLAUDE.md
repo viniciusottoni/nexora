@@ -128,6 +128,7 @@ A solution existe em `Git/backend/Nexora.slnx` (SDK .NET 10, `global.json` pino 
 | Comando (a partir de `Git/`) | O que faz |
 |---|---|
 | `dotnet build backend/Nexora.slnx` | Build de toda a solution — deve dar 0 erros |
+| `pnpm build:backend` | Build .NET mais resistente a lock/SourceLink no Windows (`-m:1`, sem build paralelo nem shared compilation) |
 | `dotnet test backend/Nexora.slnx` | 4 projetos de teste (`Nexora.UnitTests`, `Nexora.ApiTests`, `Nexora.ArchitectureTests`, `Nexora.IntegrationTests`) — os de integração exigem Docker (Testcontainers.PostgreSql) |
 | `dotnet ef migrations add <Nome> --project backend/src/Nexora.Infrastructure --startup-project backend/src/Nexora.Infrastructure` | Nova migration (há um `DesignTimeDbContextFactory`, não precisa de projeto Api como startup) |
 | `pnpm install`, `pnpm typecheck`, `pnpm vitest run` (ou `pnpm test`) | Frontend — 7 packages/apps via turbo |

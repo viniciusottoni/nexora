@@ -166,6 +166,7 @@ builder.Services.AddSingleton<IBootstrapAuthorizationImporter, NullBootstrapAuth
 builder.Services.Configure<RedisHealthCheckOptions>(builder.Configuration.GetSection(RedisHealthCheckOptions.SectionName));
 builder.Services.AddSingleton<IRedisHealthChecker, RedisHealthChecker>();
 builder.Services.AddSingleton<ISyncHealthPoller, NullSyncHealthPoller>();
+builder.Services.AddScoped<IEdgeUpdateExecutor, SimulatedEdgeUpdateExecutor>();
 
 // Mídia de produto (US-0xx) — upload de imagem do cardápio, autoridade da nuvem (CLAUDE.md,
 // "cardápio é editado na nuvem"). Único registro desta lista que é implementação real invocada de

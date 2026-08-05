@@ -188,7 +188,7 @@ builder.Services.AddHostedService<SyncOutboxWorker>();
 // janela de manutenção do tenant (ADR-019: o edge decide, a nuvem nunca empurra).
 // ---------------------------------------------------------------------------
 builder.Services.AddSingleton<IBackupStorage, FileSystemBackupStorage>();
-builder.Services.AddSingleton<IEdgeUpdateExecutor, SimulatedEdgeUpdateExecutor>();
+builder.Services.AddScoped<IEdgeUpdateExecutor, SimulatedEdgeUpdateExecutor>();
 // IPlatformAlertNotifier (US-140) não era registrado aqui antes desta história — nenhum handler
 // despachado pelo Api.Edge precisava dele até RunEdgeUpdateCycleCommandHandler (rollback/adiamento
 // alertam a plataforma). Mesma implementação de fallback (log estruturado) do Api.Cloud.
