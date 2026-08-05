@@ -48,6 +48,12 @@ internal sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderIte
         builder.Property(i => i.TotalPrice).HasColumnName("total_price").HasColumnType("money_amount");
         builder.Property(i => i.UnitCost).HasColumnName("unit_cost").HasColumnType("money_amount");
 
+        // US-054 (Desconto com autorização) — desconto por item (escopo ITEM, RN-011).
+        builder.Property(i => i.Discount).HasColumnName("discount").HasColumnType("money_amount").HasDefaultValue(0m);
+        builder.Property(i => i.DiscountReason).HasColumnName("discount_reason");
+        builder.Property(i => i.DiscountAppliedBy).HasColumnName("discount_applied_by");
+        builder.Property(i => i.DiscountAuthorizedBy).HasColumnName("discount_authorized_by");
+
         builder.Property(i => i.Status).HasColumnName("status").HasDefaultValue(OrderItemStatus.Queued);
         builder.Property(i => i.Notes).HasColumnName("notes");
 

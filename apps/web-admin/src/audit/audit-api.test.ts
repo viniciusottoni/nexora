@@ -23,6 +23,12 @@ function json(value: unknown, status = 200): Response {
   });
 }
 
+function requestUrl(input: RequestInfo | URL) {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
+}
+
 describe('AuditApi', () => {
   it('monta a querystring só com os filtros informados e valida a resposta pelo schema', async () => {
     const fetcher = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
@@ -41,7 +47,7 @@ describe('AuditApi', () => {
 
     expect(fetcher).toHaveBeenCalledTimes(1);
     const [url, init] = fetcher.mock.calls[0]!;
-    expect(String(url)).toBe(
+    expect(requestUrl(url)).toBe(
       '/api/v1/audit?from=2026-08-01T00%3A00%3A00Z&to=2026-08-08T00%3A00%3A00Z&actorId=0198aabb-1111-7000-8000-000000000002&action=DISCOUNT_APPLIED&minAmount=50.00&limit=50',
     );
     expect(init).toMatchObject({ credentials: 'include' });

@@ -184,6 +184,49 @@ public static class ResultExtensions
             (meta ??= new Dictionary<string, object>())["itemStatus"] = itemStatusValues[0];
         }
 
+        // US-054 §7: 403 AUTHORIZATION_REQUIRED { meta: { action, limitPercent, requestedPercent } }
+        // — desconto acima do limite sem token válido.
+        if (fieldErrors.TryGetValue("limitPercent", out var limitPercentValues) && limitPercentValues.Length > 0 &&
+            decimal.TryParse(limitPercentValues[0], NumberStyles.Number, CultureInfo.InvariantCulture, out var limitPercent))
+        {
+            (meta ??= new Dictionary<string, object>())["limitPercent"] = limitPercent;
+        }
+
+        if (fieldErrors.TryGetValue("requestedPercent", out var requestedPercentValues) && requestedPercentValues.Length > 0 &&
+            decimal.TryParse(requestedPercentValues[0], NumberStyles.Number, CultureInfo.InvariantCulture, out var requestedPercent))
+        {
+            (meta ??= new Dictionary<string, object>())["requestedPercent"] = requestedPercent;
+        }
+
+        // US-052 §7: 422 PAYMENT_SUM_MISMATCH { meta: { total, provided, difference } } — valores
+        // monetários (decimal), mesma convenção de chave reservada acima.
+        if (fieldErrors.TryGetValue("total", out var totalValues) && totalValues.Length > 0 &&
+            decimal.TryParse(totalValues[0], NumberStyles.Number, CultureInfo.InvariantCulture, out var total))
+        {
+            (meta ??= new Dictionary<string, object>())["total"] = total;
+        }
+
+        if (fieldErrors.TryGetValue("provided", out var providedValues) && providedValues.Length > 0 &&
+            decimal.TryParse(providedValues[0], NumberStyles.Number, CultureInfo.InvariantCulture, out var provided))
+        {
+            (meta ??= new Dictionary<string, object>())["provided"] = provided;
+        }
+
+        if (fieldErrors.TryGetValue("difference", out var differenceValues) && differenceValues.Length > 0 &&
+            decimal.TryParse(differenceValues[0], NumberStyles.Number, CultureInfo.InvariantCulture, out var difference))
+        {
+            (meta ??= new Dictionary<string, object>())["difference"] = difference;
+        }
+
+        // US-055 §7: 422 OPEN_TABLES { meta: { openSessions: [{ table, total }] } } — mesma convenção
+        // de PendingItems acima: valor é o JSON já serializado da lista inteira.
+        if (fieldErrors.TryGetValue(Nexora.Application.Cashier.Support.CashCloseGuard.MetaErrorsKey, out var openTablesValues) &&
+            openTablesValues.Length > 0)
+        {
+            (meta ??= new Dictionary<string, object>())["openSessions"] =
+                System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(openTablesValues[0]);
+        }
+
         if (meta is null)
         {
             return null;
@@ -192,7 +235,9 @@ public static class ResultExtensions
         var reservedKeys = new HashSet<string>(StringComparer.Ordinal)
         {
             "retryAfterSeconds", "sessionId", "itemIndex", "groupId", "groupName", "variantId", "action", "itemStatus",
+            "total", "provided", "difference", "limitPercent", "requestedPercent",
             Nexora.Application.Tables.Support.PendingItemsClosePolicy.MetaErrorsKey,
+            Nexora.Application.Cashier.Support.CashCloseGuard.MetaErrorsKey,
         };
         var remaining = fieldErrors.Where(kv => !reservedKeys.Contains(kv.Key))
             .ToDictionary(kv => kv.Key, kv => kv.Value);
@@ -347,6 +392,34 @@ public static class ResultExtensions
         // Bloquear fechamento com item pendente (US-035) — mesma semântica de
         // AuthorizationRequired (requiresAuthorization=true): o caixa pode reenviar autorizado.
         ApiErrorCodes.PendingItems => (StatusCodes.Status422UnprocessableEntity, true, true),
+
+        // Múltiplas formas de pagamento (US-052) e pagamento de maquininha externa (US-058).
+        ApiErrorCodes.PaymentSumMismatch => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.PaymentMethodInvalid => (StatusCodes.Status422UnprocessableEntity, true, false),
+        // Aviso, não bloqueio (US-058 §4: "o registro deve exigir confirmação explícita") — o
+        // caixa reenvia a MESMA chamada com confirmDuplicate=true, por isso recoverable=true.
+        ApiErrorCodes.PaymentDuplicateReference => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.PaymentSessionNotPayable => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.PaymentListEmpty => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Desconto com autorização (US-054) e taxa de serviço com retirada registrada (US-053).
+        ApiErrorCodes.DiscountInvalidAmount => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.DiscountItemNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ServiceFeePartialRequiresSplitPeople => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Caixa (US-055/US-056) — abertura/fechamento de sessão de caixa e sangria/suprimento.
+        ApiErrorCodes.CashSessionNotFound => (StatusCodes.Status404NotFound, false, false),
+        // US-055 §4, cenário "Um caixa por operador e turno" — mesma família de TableAlreadyOpen
+        // (409 recuperável, meta.sessionId aponta a sessão existente).
+        ApiErrorCodes.CashSessionAlreadyOpen => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.CashSessionAlreadyClosed => (StatusCodes.Status409Conflict, true, false),
+        // US-056 §4, cenário "Movimento sem caixa aberto" — pede 409 explicitamente.
+        ApiErrorCodes.NoOpenCashSession => (StatusCodes.Status409Conflict, true, false),
+        // US-055 §7, cenário "Mesa aberta no fechamento" (RN-018) — mesma semântica de PendingItems
+        // (422 recuperável, requiresAuthorization=true: reenviar com X-Authorization-Token).
+        ApiErrorCodes.OpenTables => (StatusCodes.Status422UnprocessableEntity, true, true),
+        ApiErrorCodes.CashJustificationRequired => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.CashMovementTypeInvalid => (StatusCodes.Status422UnprocessableEntity, true, false),
 
         // Consumo da mesa em tempo real (US-024) e repetição de item (US-028) — gap de US-030,
         // ver docstring de AddOrderItemCommandHandler.

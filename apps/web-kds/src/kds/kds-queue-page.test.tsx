@@ -43,6 +43,12 @@ vi.mock('../notifications/alert-sound.js', () => ({
   previewAlertTone: vi.fn(),
 }));
 
+function requestUrl(input: RequestInfo | URL) {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
+}
+
 // stn=0198aabb-1111-7000-8000-000000000050 (payload de um dispositivo pareado à praça "forno").
 const STATION_ID = '0198aabb-1111-7000-8000-000000000050';
 function tokenWithStation(stationId: string | null): string {
@@ -211,7 +217,7 @@ describe('KdsQueuePage (US-040/US-041)', () => {
   it('refaz a consulta quando o cliente realtime recebe um kdsEvent', async () => {
     let queueCallCount = 0;
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
-      const url = String(input);
+      const url = requestUrl(input);
       if (url.includes('/v1/catalog/stations')) return jsonOk({ items: [] });
       queueCallCount += 1;
       if (queueCallCount === 1) return jsonOk({ items: [ticketFixture()], lastEventId: '2026-08-03T12:00:00.000Z' });
@@ -306,9 +312,9 @@ describe('KdsQueuePage — teclado numérico (US-041)', () => {
   function stubAdvanceFlow(options: {
     readonly advanceResponse?: { ok: boolean; status?: number; body: unknown };
     readonly undoResponse?: { ok: boolean; status?: number; body: unknown };
-  } = {}) {
+    } = {}) {
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
+      const url = requestUrl(input);
       const method = init?.method ?? 'GET';
 
       if (url.includes('/v1/kds/queue')) {

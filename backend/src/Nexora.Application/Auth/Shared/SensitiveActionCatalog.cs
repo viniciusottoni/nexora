@@ -15,5 +15,8 @@ internal static class SensitiveActionCatalog
             ["ADJUST_STOCK"] = "stock:adjust",
             ["REFUND_PAYMENT"] = "payment:refund",
             ["CLOSE_WITH_PENDING"] = "order:close_with_pending",
+            // US-056 §5 (RN-011): sangria acima de operation.maxWithdrawalWithoutAuth exige
+            // autorização de perfil superior — ver CashPolicy/RegisterCashMovementCommandHandler.
+            ["WITHDRAWAL_ABOVE_LIMIT"] = "cash:withdraw_any",
         };
 }

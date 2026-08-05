@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { KdsDeviceSoundPreferences } from '@nexora/contracts';
-import type { KdsQueueItem, KdsThresholdState } from '@nexora/contracts';
+import type { KdsQueueItem } from '@nexora/contracts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../notifications/alert-sound.js', () => ({
@@ -30,7 +30,7 @@ function makeItem(overrides: Partial<KdsQueueItem> & { orderItemId: string }): K
     status: 'QUEUED',
     placedAt: new Date().toISOString(),
     elapsedSeconds: 0,
-    thresholdState: 'NORMAL' as KdsThresholdState,
+    thresholdState: 'NORMAL',
     warnSeconds: 300,
     criticalSeconds: 600,
     table: null,

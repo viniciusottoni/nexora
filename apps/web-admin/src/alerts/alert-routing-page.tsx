@@ -120,7 +120,6 @@ export function AlertRoutingPage({
     setEdited(toEditable(baselineRule));
     // Reage à troca de tipo selecionado ou a uma configuração recém-carregada/salva — `baselineRule`
     // é derivado desses dois, incluí-lo também na dependência re-executaria o efeito a cada render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedType, config]);
 
   function toggleRole(code: string) {

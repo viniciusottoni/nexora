@@ -9,6 +9,21 @@ function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
+function requestUrl(input: RequestInfo | URL) {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
+}
+
+async function captureError(action: () => Promise<unknown>) {
+  try {
+    await action();
+    return undefined;
+  } catch (cause: unknown) {
+    return cause;
+  }
+}
+
 describe('ConsumptionApi', () => {
   it('busca o consumo atual anexando o Bearer do sessionToken', async () => {
     const fetcher = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
@@ -38,7 +53,7 @@ describe('ConsumptionApi', () => {
         minutesOpen: 12,
       });
     });
-    const api = new ConsumptionApi('token-de-sessao', '', fetcher as unknown as typeof fetch);
+    const api = new ConsumptionApi('token-de-sessao', '', fetcher);
 
     const result = await api.getCurrentConsumption();
 
@@ -49,9 +64,9 @@ describe('ConsumptionApi', () => {
 
   it('propaga o codigo de erro sem vazar detalhe (ex.: sessao nao encontrada, 404 nunca 403)', async () => {
     const fetcher = vi.fn(async () => jsonResponse({ detail: 'Sessão não encontrada.', code: 'TABLE_SESSION_NOT_FOUND' }, 404));
-    const api = new ConsumptionApi('token-de-outra-mesa', '', fetcher as unknown as typeof fetch);
+    const api = new ConsumptionApi('token-de-outra-mesa', '', fetcher);
 
-    const error = await api.getCurrentConsumption().catch((cause) => cause);
+    const error = await captureError(() => api.getCurrentConsumption());
 
     expect(error).toBeInstanceOf(ConsumptionApiError);
     expect((error as ConsumptionApiError).code).toBe('TABLE_SESSION_NOT_FOUND');
@@ -60,13 +75,13 @@ describe('ConsumptionApi', () => {
   it('repete um item enviando Idempotency-Key e devolve o preco vigente', async () => {
     const seenKeys = new Set<string>();
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(input.toString()).toContain(`/v1/orders/${orderId}/items/${itemId}/repeat`);
+      expect(requestUrl(input)).toContain(`/v1/orders/${orderId}/items/${itemId}/repeat`);
       const key = (init?.headers as Record<string, string>)['Idempotency-Key'];
       expect(key).toBeTruthy();
       if (key) seenKeys.add(key);
       return jsonResponse({ item: { id: 'novo-item', unitPrice: '55.00', repeatedFromItemId: itemId } }, 201);
     });
-    const api = new ConsumptionApi('token-de-sessao', '', fetcher as unknown as typeof fetch);
+    const api = new ConsumptionApi('token-de-sessao', '', fetcher);
 
     const result = await api.repeatItem(orderId, itemId);
 
@@ -77,9 +92,9 @@ describe('ConsumptionApi', () => {
 
   it('bloqueio de produto indisponivel propaga PRODUCT_UNAVAILABLE', async () => {
     const fetcher = vi.fn(async () => jsonResponse({ detail: 'Produto indisponível.', code: 'PRODUCT_UNAVAILABLE' }, 422));
-    const api = new ConsumptionApi('token-de-sessao', '', fetcher as unknown as typeof fetch);
+    const api = new ConsumptionApi('token-de-sessao', '', fetcher);
 
-    const error = await api.repeatItem(orderId, itemId).catch((cause) => cause);
+    const error = await captureError(() => api.repeatItem(orderId, itemId));
 
     expect(error).toBeInstanceOf(ConsumptionApiError);
     expect((error as ConsumptionApiError).code).toBe('PRODUCT_UNAVAILABLE');
@@ -87,7 +102,7 @@ describe('ConsumptionApi', () => {
 
   it('busca a prévia da divisão da conta (US-027 §10) com split/people na query', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL) => {
-      const url = input.toString();
+      const url = requestUrl(input);
       expect(url).toContain('/v1/public/sessions/current/bill?');
       expect(url).toContain('split=BY_PERSON');
       expect(url).toContain('people=4');
@@ -110,7 +125,7 @@ describe('ConsumptionApi', () => {
         unassignedItemIds: [],
       });
     });
-    const api = new ConsumptionApi('token-de-sessao', '', fetcher as unknown as typeof fetch);
+    const api = new ConsumptionApi('token-de-sessao', '', fetcher);
 
     const bill = await api.getBillPreview('BY_PERSON', 4);
 

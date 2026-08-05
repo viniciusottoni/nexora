@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { SessionConsumptionItemDto, SessionConsumptionResponse, TableConsumptionEvent } from '@nexora/contracts';
+import type { SessionConsumptionItemDto, SessionConsumptionResponse } from '@nexora/contracts';
 import { EmptyState, Icon, OrderLine, StatusPill, SyncStatus, type StatusPillStatus, type SyncStatusState } from '@nexora/ui';
 import { ConsumptionApi, ConsumptionApiError, ConsumptionRealtimeConnection, type ConsumptionMode } from './consumption-api.js';
 import './consumption-view.css';
@@ -59,7 +59,7 @@ export function ConsumptionView({
     let active = true;
     void reload();
 
-    function handleEvent(_event: TableConsumptionEvent) {
+    function handleEvent() {
       // Qualquer evento de consumo (item lançado, status mudou) — recarrega a lista inteira.
       // Simplicidade deliberada: a lista raramente passa de poucos itens por mesa, e isso evita
       // reimplementar reconciliação incremental por item nesta wave.

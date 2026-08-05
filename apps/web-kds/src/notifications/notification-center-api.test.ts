@@ -11,6 +11,12 @@ function jsonResponse(body: unknown, ok = true, status = 200): Response {
   } as unknown as Response;
 }
 
+function requestUrl(input: RequestInfo | URL) {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
+}
+
 function alertFixture(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     id: '0198aabb-1111-7000-8000-000000000001',
@@ -56,7 +62,7 @@ describe('NotificationCenterApi (US-081/US-083)', () => {
   it('reconhece um alerta com Idempotency-Key e devolve o alerta atualizado', async () => {
     const acknowledged = alertFixture({ acknowledgedAt: '2026-08-04T12:05:00.000Z', acknowledgedBy: 'user-1' });
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(input.toString()).toBe('/v1/alerts/0198aabb-1111-7000-8000-000000000001/acknowledge');
+      expect(requestUrl(input)).toBe('/v1/alerts/0198aabb-1111-7000-8000-000000000001/acknowledge');
       expect(init?.method).toBe('POST');
       expect(new Headers(init?.headers).get('Idempotency-Key')).toBeTruthy();
       return jsonResponse(acknowledged);

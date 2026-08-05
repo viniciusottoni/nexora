@@ -12,6 +12,12 @@ function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
+function requestUrl(input: RequestInfo | URL) {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
+}
+
 function createMemoryStorage(): Storage {
   const map = new Map<string, string>();
   return {
@@ -60,7 +66,7 @@ describe('TableAccessPage', () => {
     );
     const storage = createMemoryStorage();
     const fetcher = vi.fn(async (input: RequestInfo | URL) => {
-      const url = input.toString();
+      const url = requestUrl(input);
       if (url.includes('/public/table/')) {
         return jsonResponse({
           table: { id: tableId, label: '12', areaName: 'Salão' },

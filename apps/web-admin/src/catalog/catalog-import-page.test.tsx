@@ -16,8 +16,14 @@ function makeFile(): File {
 }
 
 function selectFile(): void {
-  const input = screen.getByLabelText('Selecionar arquivo .xlsx', { exact: false }) as HTMLInputElement;
+  const input = screen.getByLabelText('Selecionar arquivo .xlsx', { exact: false });
   fireEvent.change(input, { target: { files: [makeFile()] } });
+}
+
+function requestUrl(input: RequestInfo | URL) {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
 }
 
 afterEach(() => {
@@ -59,7 +65,7 @@ describe('CatalogImportPage', () => {
 
   it('mostra a pré-visualização e confirma a importação com sucesso', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
+      const url = requestUrl(input);
       if (url.endsWith('/v1/catalog/import/validate')) {
         return new Response(
           JSON.stringify({

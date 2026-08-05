@@ -8,6 +8,12 @@ function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
+function requestUrl(input: RequestInfo | URL) {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
+}
+
 function buildConsumption(subtotal = '80.00') {
   return {
     items: [],
@@ -45,7 +51,7 @@ function buildBillPreview(people: number, subtotal = '80.00') {
 describe('WaiterCallPanel (US-025/US-026)', () => {
   it('chama o garcom e mostra confirmacao visual imediata', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL) => {
-      expect(input.toString()).toContain('/call-waiter');
+      expect(requestUrl(input)).toContain('/call-waiter');
       return jsonResponse({ acknowledged: true, alreadyPending: false });
     });
 
@@ -68,7 +74,7 @@ describe('WaiterCallPanel (US-025/US-026)', () => {
 
   it('abre a tela de pedir a conta e mostra o valor por pessoa calculado pelo backend (US-027 §10)', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL) => {
-      const url = input.toString();
+      const url = requestUrl(input);
       if (url.includes('/sessions/current/bill')) {
         expect(url).toContain('split=BY_PERSON');
         expect(url).toContain('people=4');
@@ -93,7 +99,7 @@ describe('WaiterCallPanel (US-025/US-026)', () => {
 
   it('mostra o valor da 1ª pessoa separado quando o resíduo de arredondamento (ADR-017) gera um valor diferente', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL) => {
-      const url = input.toString();
+      const url = requestUrl(input);
       if (url.includes('/sessions/current/bill')) {
         return jsonResponse({
           ...buildBillPreview(3, '100.00'),
@@ -123,10 +129,11 @@ describe('WaiterCallPanel (US-025/US-026)', () => {
 
   it('confirma a solicitacao de conta enviando o modo escolhido', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (input.toString().includes('/sessions/current')) {
+      const url = requestUrl(input);
+      if (url.includes('/sessions/current')) {
         return jsonResponse(buildConsumption());
       }
-      expect(input.toString()).toContain('/request-bill');
+      expect(url).toContain('/request-bill');
       const body = JSON.parse(init?.body as string) as Record<string, unknown>;
       expect(body.splitMode).toBe('SINGLE');
       return jsonResponse({

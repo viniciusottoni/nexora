@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BillingPage } from './billing-page.js';
 
 const identity = {
@@ -12,6 +12,12 @@ const identity = {
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+}
+
+function requestUrl(input: RequestInfo | URL): string {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
 }
 
 const byPersonBill = {
@@ -32,11 +38,13 @@ const byPersonBill = {
   unassignedItemIds: [],
 };
 
+afterEach(() => cleanup());
+
 describe('BillingPage', () => {
   it('carrega a divisão por pessoa (padrão) com resíduo de arredondamento (US-027 §4)', async () => {
     const fetcher = vi.fn(async () => jsonResponse(byPersonBill));
 
-    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher as unknown as typeof fetch} />);
+    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher} />);
 
     expect(await screen.findByText('R$ 33,34')).toBeInTheDocument();
     expect(screen.getAllByText(/R\$ 33,33/)).toHaveLength(2);
@@ -45,14 +53,14 @@ describe('BillingPage', () => {
   it('avisa quando há item ainda em produção (RN-017)', async () => {
     const fetcher = vi.fn(async () => jsonResponse({ ...byPersonBill, hasPendingItems: true }));
 
-    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher as unknown as typeof fetch} />);
+    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher} />);
 
     expect(await screen.findByRole('alert')).toHaveTextContent('ainda em produção');
   });
 
   it('troca para o modo por valor e registra um pagamento parcial (US-027 §4, cenário "Divisão por valor")', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = input.toString();
+      const url = requestUrl(input);
       if (init?.method === 'POST' && url.includes('/partial-payment')) {
         return jsonResponse({
           paymentId: '0198aabb-4444-7000-8000-000000000001',
@@ -76,7 +84,7 @@ describe('BillingPage', () => {
       return jsonResponse(byPersonBill);
     });
 
-    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher as unknown as typeof fetch} />);
+    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher} />);
 
     await screen.findByText('R$ 33,34');
     fireEvent.click(screen.getByRole('button', { name: 'Por valor' }));
@@ -95,7 +103,7 @@ describe('BillingPage', () => {
 
   it('modo BLOCK desabilita o botão de pagamento e lista os itens pendentes (cenário "Fechamento bloqueado")', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL) => {
-      const url = input.toString();
+      const url = requestUrl(input);
       if (url.includes('split=BY_AMOUNT')) {
         return jsonResponse({
           ...byPersonBill,
@@ -109,7 +117,7 @@ describe('BillingPage', () => {
       return jsonResponse({ ...byPersonBill, pendingItems: [pendingItem], hasPendingItems: true, pendingItemsMode: 'BLOCK' });
     });
 
-    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher as unknown as typeof fetch} />);
+    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher} />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Por valor' }));
 
@@ -121,7 +129,7 @@ describe('BillingPage', () => {
 
   it('modo BLOCK reabilita o pagamento depois de autorizar com PIN e motivo (cenário "Fechamento autorizado mesmo com pendência")', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = input.toString();
+      const url = requestUrl(input);
       if (url.includes('/v1/auth/authorize')) {
         return jsonResponse({
           authorizationToken: 'token-autorizacao',
@@ -152,7 +160,7 @@ describe('BillingPage', () => {
       return jsonResponse({ ...byPersonBill, pendingItems: [pendingItem], hasPendingItems: true, pendingItemsMode: 'BLOCK' });
     });
 
-    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher as unknown as typeof fetch} />);
+    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher} />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Por valor' }));
     await screen.findByText(/Fechamento bloqueado/);
@@ -175,7 +183,7 @@ describe('BillingPage', () => {
       jsonResponse({ ...byPersonBill, pendingItems: [pendingItem], hasPendingItems: true, pendingItemsMode: 'IGNORE' }),
     );
 
-    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher as unknown as typeof fetch} />);
+    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher} />);
 
     await screen.findByText('R$ 33,34');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -185,7 +193,7 @@ describe('BillingPage', () => {
   it('modo por item recusa calcular com item órfão e mostra a mensagem estável', async () => {
     const itemId = '0198aabb-5555-7000-8000-000000000001';
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = input.toString();
+      const url = requestUrl(input);
       if (init?.method === 'POST' && url.includes('/assign-items')) {
         return jsonResponse({ detail: 'Item não atribuído.', code: 'BILL_ITEM_NOT_ASSIGNED' }, 422);
       }
@@ -200,7 +208,7 @@ describe('BillingPage', () => {
       return jsonResponse(byPersonBill);
     });
 
-    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher as unknown as typeof fetch} />);
+    render(<BillingPage identity={identity} sessionId="session-1" fetcher={fetcher} />);
 
     await screen.findByText('R$ 33,34');
     fireEvent.click(screen.getByRole('button', { name: 'Por item' }));

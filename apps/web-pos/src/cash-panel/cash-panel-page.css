@@ -1,0 +1,107 @@
+/* Painel do caixa (US-050) — mesma paleta/tokens de table-map-page.css (garçom) e billing.css
+   (fechamento), para a leitura de cor ficar idêntica nas três telas do fluxo de mesa. */
+.cash-panel {
+  min-height: 100vh;
+  padding: 1rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  background: var(--brand-surface, var(--color-surface));
+  color: var(--color-text);
+}
+
+.cash-panel__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0 1.25rem;
+  position: sticky;
+  top: 0;
+  background: inherit;
+  z-index: 5;
+}
+
+.cash-panel__eyebrow {
+  margin: 0 0 0.15rem;
+  font: 700 0.7rem/1 var(--brand-font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.cash-panel__header h1 {
+  margin: 0 0 0.35rem;
+  font: 700 clamp(1.4rem, 3vw, 1.9rem)/1.1 var(--brand-font-display);
+}
+
+.cash-panel__summary {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cash-panel__controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.cash-panel__controls .db-input {
+  min-width: 18rem;
+  flex: 1 1 18rem;
+}
+
+.cash-panel__error {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.cash-panel__loading {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) backwards;
+}
+
+/* Densidade alta (US-050 §10): a tabela usa db-table--compact (32px de linha) — 30 mesas cabem
+   sem rolagem em monitor de 1080p (US-050 §12, "Desempenho"). */
+.cash-panel__table {
+  width: 100%;
+}
+
+.cash-panel__row {
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+
+/* Conta solicitada em destaque (US-050 §10) — mesma cor de fundo de StatusPill BILL_REQUESTED
+   (--surface-brand-subtle), para a leitura de "isto precisa de ação" ficar idêntica ao badge. */
+.cash-panel__row--attention td {
+  background: var(--surface-brand-subtle, var(--nx-blue-100));
+}
+
+.cash-panel__order-code {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 0.3rem;
+  font: 600 0.7rem/1.4 var(--font-mono, monospace);
+  color: var(--color-text-muted);
+  background: var(--color-surface-sunken, rgba(0, 0, 0, 0.05));
+}
+
+.cash-panel__waiting {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--nx-navy-700, var(--color-text-muted));
+}
+
+.cash-panel__no-pending {
+  color: var(--color-text-muted);
+}

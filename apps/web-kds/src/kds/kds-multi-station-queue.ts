@@ -91,7 +91,6 @@ export function useMultiStationKdsQueue(
       // US-031 §9 (comportamento offline) — mantém a última fila conhecida em vez de limpar a tela.
       setError('Sem conexão com o servidor local — mostrando a última fila conhecida.');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- stationIds vem via stationIdsRef (ver acima)
   }, [api, identity]);
 
   useEffect(() => {
@@ -99,7 +98,6 @@ export function useMultiStationKdsQueue(
     if (pollMs <= 0) return;
     const interval = setInterval(() => void refresh(), pollMs);
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- stationIdsKey representa stationIds de forma estável
   }, [refresh, stationIdsKey, pollMs]);
 
   const result = useMemo(() => ({ items, error, refresh }), [items, error, refresh]);

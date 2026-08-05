@@ -111,13 +111,28 @@ body {
   margin: 0.65rem 1rem 0 0;
   /* Não tem animação própria — entra deslizando ao autenticar, mesma assinatura de entrada do
      resto do app (nunca duração/easing "solto"). */
-  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) backwards;
 }
 .pos-authenticated > .pos-top-row > .db-operator-bar {
   flex: 1 1 auto;
   width: auto;
   margin: 0;
   animation: none;
+}
+
+.pos-view-nav {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem 0;
+}
+
+.pos-view-nav .db-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 /* US-034 §10 — indicador discreto e permanente da fila local de pedidos (queda de LAN), visível
@@ -151,7 +166,7 @@ body {
   text-align: center;
   background: var(--surface-page);
   color: var(--color-text);
-  animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) backwards;
 }
 .pos-device-missing h1 {
   font: 700 2.5rem/1 var(--font-display);

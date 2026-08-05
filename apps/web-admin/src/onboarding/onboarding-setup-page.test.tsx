@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
+import { render, waitFor, fireEvent, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { OnboardingStatusResponse } from '@nexora/contracts';
 import type { OnboardingApi } from './onboarding-api.js';
