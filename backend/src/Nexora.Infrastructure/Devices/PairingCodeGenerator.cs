@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using Nexora.Application.Devices.Abstractions;
 
@@ -10,5 +11,5 @@ namespace Nexora.Infrastructure.Devices;
 /// </summary>
 public sealed class PairingCodeGenerator : IPairingCodeGenerator
 {
-    public string Generate() => RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+    public string Generate() => RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6", CultureInfo.InvariantCulture);
 }

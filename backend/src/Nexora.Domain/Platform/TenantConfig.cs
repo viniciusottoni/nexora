@@ -37,6 +37,13 @@ public sealed class TenantConfig
     public int CatalogVersion { get; private set; } = 1;
     public int ConfigVersion { get; private set; } = 1;
     public int BrandingVersion { get; private set; } = 1;
+
+    /// <summary>Código do modelo de negócio aplicado na criação (US-142) — nulo para tenants provisionados antes desta história.</summary>
+    public string? TemplateCode { get; private set; }
+
+    /// <summary>Versão do <c>business_template</c> aplicada — tenants existentes não acompanham atualizações posteriores do modelo (US-142 §4).</summary>
+    public int? TemplateVersion { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
@@ -68,7 +75,9 @@ public sealed class TenantConfig
         string fiscalJson,
         string printersJson,
         string paymentsJson,
-        string maintenanceJson)
+        string maintenanceJson,
+        string? templateCode = null,
+        int? templateVersion = null)
     {
         var now = DateTimeOffset.UtcNow;
 
@@ -86,6 +95,8 @@ public sealed class TenantConfig
             CatalogVersion = 1,
             ConfigVersion = 1,
             BrandingVersion = 1,
+            TemplateCode = templateCode,
+            TemplateVersion = templateVersion,
             CreatedAt = now,
             UpdatedAt = now
         };

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Nexora.Application.Abstractions.Storage;
@@ -53,7 +54,7 @@ public sealed class S3ProductMediaStorage : IProductMediaStorage
 
     private string PresignedPutUrl(string key, DateTimeOffset now)
     {
-        var dateTime = now.UtcDateTime.ToString("yyyyMMddTHHmmssZ");
+        var dateTime = now.UtcDateTime.ToString("yyyyMMddTHHmmssZ", CultureInfo.InvariantCulture);
         var date = dateTime[..8];
         var scope = $"{date}/{_options.Region}/s3/aws4_request";
         var path = $"/{EncodePath(_options.Bucket)}/{EncodePath(key)}";
@@ -64,7 +65,7 @@ public sealed class S3ProductMediaStorage : IProductMediaStorage
             ["X-Amz-Algorithm"] = "AWS4-HMAC-SHA256",
             ["X-Amz-Credential"] = $"{_options.AccessKeyId}/{scope}",
             ["X-Amz-Date"] = dateTime,
-            ["X-Amz-Expires"] = ExpiresSeconds.ToString(),
+            ["X-Amz-Expires"] = ExpiresSeconds.ToString(CultureInfo.InvariantCulture),
             ["X-Amz-SignedHeaders"] = "host"
         };
         var query = string.Join('&', parameters.Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}"));

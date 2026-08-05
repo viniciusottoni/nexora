@@ -16,7 +16,15 @@ export const createTenantRequestSchema = z.object({
     .min(1)
     .max(32)
     .regex(/^[A-Z][A-Z0-9_]*$/),
-  template: z.literal('PIZZERIA'),
+  // US-142: modelo deixou de ser um literal fixo — agora é o `code` de um `business_template`
+  // ativo (pizzaria/hamburgueria/restaurante/lanchonete/...), buscado em
+  // `GET /v1/platform/templates` e validado no servidor (não aqui: a lista de códigos válidos
+  // muda sem deploy do front, ver ADR-013/ADR-032).
+  template: z
+    .string()
+    .trim()
+    .min(1, 'Informe o modelo de negócio.')
+    .regex(/^[A-Z][A-Z0-9_]*$/, 'Código de modelo inválido.'),
   owner: z.object({
     name: z.string().trim().min(2).max(160),
     email: z.string().trim().email().max(254),

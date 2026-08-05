@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Buffers.Binary;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -56,7 +57,7 @@ public sealed class WebPushSender : IPushNotificationSender
             };
             request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
             request.Content.Headers.ContentEncoding.Add("aes128gcm");
-            request.Headers.TryAddWithoutValidation("TTL", _options.TtlSeconds.ToString());
+            request.Headers.TryAddWithoutValidation("TTL", _options.TtlSeconds.ToString(CultureInfo.InvariantCulture));
             request.Headers.TryAddWithoutValidation(
                 "Authorization",
                 $"vapid t={vapidJwt}, k={_options.PublicKeyBase64Url}");

@@ -1,0 +1,9 @@
+/* Histórico de acesso de suporte — casca/cabeçalho/cartão vêm de `console.css` (@nexora/ui). */
+
+.support-access-reason {
+  display: block;
+  max-width: 28rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -404,6 +404,31 @@ public static class ResultExtensions
         ApiErrorCodes.AlertAlreadyResolved => (StatusCodes.Status409Conflict, true, false),
         ApiErrorCodes.PushSubscriptionInvalid => (StatusCodes.Status400BadRequest, true, false),
 
+        // E-14 · Plataforma em Escala — painel de instalações (US-140) reusa InstallationNotFound,
+        // já mapeado acima. Os demais módulos abaixo entram nesta tarefa de integração final —
+        // mantido idêntico ao gêmeo de Nexora.Api.Cloud (só os dois códigos legados do cloud não
+        // se repetem aqui).
+        ApiErrorCodes.SupportAccessNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.SupportAccessTokenNotFound => (StatusCodes.Status401Unauthorized, false, false),
+        ApiErrorCodes.SupportAccessTokenExpired => (StatusCodes.Status401Unauthorized, false, false),
+        ApiErrorCodes.SupportAccessTokenRevoked => (StatusCodes.Status401Unauthorized, false, false),
+
+        ApiErrorCodes.OnboardingIncomplete => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OnboardingStepNotFound => (StatusCodes.Status404NotFound, false, false),
+
+        ApiErrorCodes.CatalogImportInvalidFile => (StatusCodes.Status400BadRequest, true, false),
+        ApiErrorCodes.CatalogImportValidationFailed => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        ApiErrorCodes.TenantDomainAlreadyRegistered => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.TenantDomainVerificationFailed => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.TenantDomainNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.TenantDomainCertificateIssuanceFailed => (StatusCodes.Status503ServiceUnavailable, true, false),
+
+        ApiErrorCodes.BusinessTemplateNotFound => (StatusCodes.Status404NotFound, false, false),
+
+        ApiErrorCodes.ReleaseNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.ReleaseRolloutCannotDecrease => (StatusCodes.Status422UnprocessableEntity, true, false),
+
         // Catch-all: código não catalogado -> 500, tratado como bug de mapeamento (não vaza
         // stack trace nem mensagem interna — ADR-021).
         _ => (StatusCodes.Status500InternalServerError, false, false),

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { act, render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { act, render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type {
   AvailabilityApi,
@@ -28,11 +28,12 @@ describe('UnavailableListPage', () => {
     }));
     const api = { listUnavailable } as unknown as AvailabilityApi;
 
-    render(<UnavailableListPage api={api} subscribeFn={noopSubscribe} />);
+    const { container } = render(<UnavailableListPage api={api} subscribeFn={noopSubscribe} />);
+    const page = within(container);
 
-    expect(await screen.findByText('Pizza Calabresa')).toBeInTheDocument();
-    expect(screen.getByText('Acabou o insumo')).toBeInTheDocument();
-    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(await page.findByText('Pizza Calabresa')).toBeInTheDocument();
+    expect(page.getByText('Acabou o insumo')).toBeInTheDocument();
+    expect(page.getByText('1')).toBeInTheDocument();
   });
 
   it('lista vazia mostra estado neutro, nunca uma tabela vazia sem contexto', async () => {
@@ -40,9 +41,10 @@ describe('UnavailableListPage', () => {
       listUnavailable: vi.fn(async () => ({ items: [] })),
     } as unknown as AvailabilityApi;
 
-    render(<UnavailableListPage api={api} subscribeFn={noopSubscribe} />);
+    const { container } = render(<UnavailableListPage api={api} subscribeFn={noopSubscribe} />);
+    const page = within(container);
 
-    expect(await screen.findByText('Nenhum item indisponível')).toBeInTheDocument();
+    expect(await page.findByText('Nenhum item indisponível')).toBeInTheDocument();
   });
 
   it('marcar disponível remove o item da lista', async () => {
@@ -68,14 +70,15 @@ describe('UnavailableListPage', () => {
       markAvailable,
     } as unknown as AvailabilityApi;
 
-    render(<UnavailableListPage api={api} subscribeFn={noopSubscribe} />);
+    const { container } = render(<UnavailableListPage api={api} subscribeFn={noopSubscribe} />);
+    const page = within(container);
 
-    await screen.findByText('Pizza Calabresa');
-    fireEvent.click(screen.getByRole('button', { name: 'Marcar disponível' }));
+    await page.findByText('Pizza Calabresa');
+    fireEvent.click(page.getByRole('button', { name: 'Marcar disponível' }));
 
     await waitFor(() => expect(markAvailable).toHaveBeenCalledWith('p1'));
-    await waitFor(() => expect(screen.queryByText('Pizza Calabresa')).not.toBeInTheDocument());
-    expect(await screen.findByText('Nenhum item indisponível')).toBeInTheDocument();
+    await waitFor(() => expect(page.queryByText('Pizza Calabresa')).not.toBeInTheDocument());
+    expect(await page.findByText('Nenhum item indisponível')).toBeInTheDocument();
   });
 
   it('reflete em tempo real uma marcação feita a partir do KDS', async () => {
@@ -88,9 +91,10 @@ describe('UnavailableListPage', () => {
       listUnavailable: vi.fn(async () => ({ items: [] })),
     } as unknown as AvailabilityApi;
 
-    render(<UnavailableListPage api={api} subscribeFn={subscribeFn} />);
+    const { container } = render(<UnavailableListPage api={api} subscribeFn={subscribeFn} />);
+    const page = within(container);
 
-    await screen.findByText('Nenhum item indisponível');
+    await page.findAllByText('Nenhum item indisponível');
     expect(capturedOnChange).toBeDefined();
 
     act(() => {
@@ -100,7 +104,7 @@ describe('UnavailableListPage', () => {
       });
     });
 
-    expect(await screen.findByText('Marcado pela cozinha')).toBeInTheDocument();
+    expect(await page.findByText('Marcado pela cozinha')).toBeInTheDocument();
   });
 
   it('exibe erro quando o carregamento falha', async () => {
@@ -110,10 +114,11 @@ describe('UnavailableListPage', () => {
       }),
     } as unknown as AvailabilityApi;
 
-    render(<UnavailableListPage api={api} subscribeFn={noopSubscribe} />);
+    const { container } = render(<UnavailableListPage api={api} subscribeFn={noopSubscribe} />);
+    const page = within(container);
 
     expect(
-      await screen.findByText('Não foi possível carregar os itens indisponíveis.'),
+      await page.findByText('Não foi possível carregar os itens indisponíveis.'),
     ).toBeInTheDocument();
   });
 });

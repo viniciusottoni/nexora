@@ -4075,6 +4075,15 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasDefaultValue(0L)
                         .HasColumnName("last_synced_seq");
 
+                    b.Property<DateTimeOffset?>("LastUpdateAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_update_at");
+
+                    b.Property<string>("LastUpdateStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("last_update_status");
+
                     b.Property<DateTimeOffset?>("OfflineSince")
                         .HasColumnType("timestamptz")
                         .HasColumnName("offline_since");
@@ -4086,6 +4095,11 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid")
                         .HasColumnName("store_id");
+
+                    b.Property<string>("TargetVersion")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("target_version");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
@@ -4241,6 +4255,59 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.ToTable("idempotency_key", (string)null);
                 });
 
+            modelBuilder.Entity("Nexora.Domain.Platform.InstallationIncident", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Cause")
+                        .HasColumnType("text")
+                        .HasColumnName("cause");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("InstallationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("installation_id");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("resolved_at");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("started_at");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_installation_incident");
+
+                    b.HasIndex("InstallationId", "ResolvedAt")
+                        .HasDatabaseName("idx_installation_incident_open")
+                        .HasFilter("resolved_at IS NULL");
+
+                    b.HasIndex("TenantId", "InstallationId")
+                        .HasDatabaseName("idx_installation_incident_installation");
+
+                    b.ToTable("installation_incident", (string)null);
+                });
+
             modelBuilder.Entity("Nexora.Domain.Platform.InstallationNonce", b =>
                 {
                     b.Property<Guid>("InstallationId")
@@ -4346,6 +4413,54 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("uq_media_asset");
 
                     b.ToTable("media_asset", (string)null);
+                });
+
+            modelBuilder.Entity("Nexora.Domain.Platform.OnboardingStep", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("completed_at");
+
+                    b.Property<Guid?>("CompletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("completed_by");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("key");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_onboarding_step");
+
+                    b.HasIndex("TenantId", "Key")
+                        .IsUnique()
+                        .HasDatabaseName("uq_onboarding_step_tenant_key");
+
+                    b.ToTable("onboarding_step", (string)null);
                 });
 
             modelBuilder.Entity("Nexora.Domain.Platform.OwnerInvite", b =>
@@ -4498,6 +4613,54 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_push_subscription_tenant_id_user_id");
 
                     b.ToTable("push_subscription", (string)null);
+                });
+
+            modelBuilder.Entity("Nexora.Domain.Platform.Release", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTimeOffset>("PublishedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("published_at");
+
+                    b.Property<Guid?>("PublishedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_by");
+
+                    b.Property<int>("RolloutPercent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("rollout_percent");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_release");
+
+                    b.HasIndex("Version")
+                        .IsUnique()
+                        .HasDatabaseName("uq_release_version");
+
+                    b.ToTable("release", (string)null);
                 });
 
             modelBuilder.Entity("Nexora.Domain.Platform.Role", b =>
@@ -4717,11 +4880,88 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.ToTable("store", (string)null);
                 });
 
+            modelBuilder.Entity("Nexora.Domain.Platform.SupportAccess", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_minutes");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTimeOffset>("GrantedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("granted_at");
+
+                    b.Property<Guid?>("GrantedTo")
+                        .HasColumnType("uuid")
+                        .HasColumnName("granted_to");
+
+                    b.Property<DateTimeOffset?>("LastUsedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_used_at");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<Guid?>("RevokedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("revoked_by");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_support_access");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("idx_support_access_tenant");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("uq_support_access_token_hash");
+
+                    b.HasIndex("TenantId", "ExpiresAt")
+                        .HasDatabaseName("idx_support_access_active")
+                        .HasFilter("revoked_at IS NULL");
+
+                    b.ToTable("support_access", (string)null);
+                });
+
             modelBuilder.Entity("Nexora.Domain.Platform.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("activated_at");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamptz")
@@ -4762,6 +5002,10 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("name");
+
+                    b.Property<DateTimeOffset?>("OnboardingStartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("onboarding_started_at");
 
                     b.Property<string>("Plan")
                         .IsRequired()
@@ -4885,6 +5129,15 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasDefaultValue("[]")
                         .HasColumnName("printers");
 
+                    b.Property<string>("TemplateCode")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("template_code");
+
+                    b.Property<int?>("TemplateVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("template_version");
+
                     b.Property<string>("Thresholds")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -4900,6 +5153,86 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasName("pk_tenant_config");
 
                     b.ToTable("tenant_config", (string)null);
+                });
+
+            modelBuilder.Entity("Nexora.Domain.Platform.TenantDomain", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("CertExpiresAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cert_expires_at");
+
+                    b.Property<DateTimeOffset?>("CertIssuedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cert_issued_at");
+
+                    b.Property<string>("CertStatus")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("cert_status");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("Domain")
+                        .IsRequired()
+                        .HasMaxLength(253)
+                        .HasColumnType("character varying(253)")
+                        .HasColumnName("domain");
+
+                    b.Property<bool>("IsPrimary")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_primary");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("VerificationToken")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("verification_token");
+
+                    b.Property<DateTimeOffset?>("VerifiedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("verified_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_tenant_domain");
+
+                    b.HasIndex("CertExpiresAt")
+                        .HasDatabaseName("idx_tenant_domain_cert_expires")
+                        .HasFilter("cert_expires_at IS NOT NULL");
+
+                    b.HasIndex("Domain")
+                        .IsUnique()
+                        .HasDatabaseName("uq_tenant_domain_domain");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("idx_tenant_domain_tenant");
+
+                    b.ToTable("tenant_domain", (string)null);
                 });
 
             modelBuilder.Entity("Nexora.Domain.Platform.TenantSecret", b =>
@@ -4971,6 +5304,67 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("uq_user_role");
 
                     b.ToTable("user_role", (string)null);
+                });
+
+            modelBuilder.Entity("Nexora.Domain.Provisioning.BusinessTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("code");
+
+                    b.Property<string>("ConfigJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValue("{}")
+                        .HasColumnName("config");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("SeedsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValue("{}")
+                        .HasColumnName("seeds");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int>("Version")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_business_template");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("uq_business_template_code");
+
+                    b.ToTable("business_template", (string)null);
                 });
 
             modelBuilder.Entity("Nexora.Domain.Sync.Outbox", b =>
@@ -5458,6 +5852,26 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("Nexora.Domain.Platform.InstallationIncident", b =>
+                {
+                    b.HasOne("Nexora.Domain.Platform.EdgeInstallation", null)
+                        .WithMany()
+                        .HasForeignKey("InstallationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_installation_incident_edge_installation_installation_id");
+                });
+
+            modelBuilder.Entity("Nexora.Domain.Platform.OnboardingStep", b =>
+                {
+                    b.HasOne("Nexora.Domain.Platform.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_onboarding_step_tenants_tenant_id");
+                });
+
             modelBuilder.Entity("Nexora.Domain.Platform.OwnerInvite", b =>
                 {
                     b.HasOne("Nexora.Domain.Platform.AppUser", "User")
@@ -5504,6 +5918,16 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_store_tenants_tenant_id");
                 });
 
+            modelBuilder.Entity("Nexora.Domain.Platform.SupportAccess", b =>
+                {
+                    b.HasOne("Nexora.Domain.Platform.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_support_access_tenants_tenant_id");
+                });
+
             modelBuilder.Entity("Nexora.Domain.Platform.TenantConfig", b =>
                 {
                     b.HasOne("Nexora.Domain.Platform.Tenant", "Tenant")
@@ -5514,6 +5938,16 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_tenant_config_tenants_tenant_id");
 
                     b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Nexora.Domain.Platform.TenantDomain", b =>
+                {
+                    b.HasOne("Nexora.Domain.Platform.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_tenant_domain_tenant_tenant_id");
                 });
 
             modelBuilder.Entity("Nexora.Domain.Platform.UserRole", b =>

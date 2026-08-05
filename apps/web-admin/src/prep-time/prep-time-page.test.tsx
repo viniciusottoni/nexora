@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PrepTimePage, type PrepTimeVariantRow } from './prep-time-page.js';
 import type { PrepTimeAnalysisResponse, StationDto } from '@nexora/contracts';
@@ -62,8 +62,8 @@ describe('PrepTimePage', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('Preparo (min)'), { target: { value: '14' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar tempo de preparo' }));
+    fireEvent.change(screen.getAllByLabelText('Preparo (min)').at(-1)!, { target: { value: '14' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Salvar tempo de preparo' }).at(-1)!);
 
     await waitFor(() =>
       expect(onUpdatePrepTime).toHaveBeenCalledWith(variant.variantId, {
@@ -86,15 +86,19 @@ describe('PrepTimePage', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('Praça de produção'), {
+    const selectedCardTitle = screen.getAllByText('Pizza Mussarela', { selector: '.db-card__title' }).at(-1)!;
+    const selectedCard = selectedCardTitle.closest('section');
+    expect(selectedCard).not.toBeNull();
+
+    fireEvent.change(within(selectedCard!).getByLabelText('Praça de produção'), {
       target: { value: stations[0]!.id },
     });
 
     await waitFor(() =>
       expect(onReassignStation).toHaveBeenCalledWith(variant.productId, stations[0]!.id),
     );
-    expect(screen.getByText('Forno', { selector: '.prep-time-station-tag' })).toBeInTheDocument();
-    expect(screen.queryByText('Sem praça', { selector: '.db-badge' })).not.toBeInTheDocument();
+    expect(within(selectedCard!).getByText('Forno', { selector: '.prep-time-station-tag' })).toBeInTheDocument();
+    expect(within(selectedCard!).queryByText('Sem praça', { selector: '.db-badge' })).not.toBeInTheDocument();
   });
 
   it('carrega e alterna o painel de comparativo estimado versus real', async () => {
@@ -122,12 +126,12 @@ describe('PrepTimePage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ver comparativo estimado x real' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Ver comparativo estimado x real' }).at(-1)!);
 
     expect(await screen.findByText(/considere ajustar para 16 min/i)).toBeInTheDocument();
     expect(screen.getByText('340 pedido(s)')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ocultar comparativo' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Ocultar comparativo' }).at(-1)!);
     expect(screen.queryByText(/considere ajustar/i)).not.toBeInTheDocument();
   });
 
@@ -145,9 +149,9 @@ describe('PrepTimePage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar tempo de preparo' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Salvar tempo de preparo' }).at(-1)!);
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Falha simulada de rede.');
+    expect(await screen.findByText('Falha simulada de rede.')).toBeInTheDocument();
   });
 
   it('bloqueia limiares inválidos antes de chamar a API', async () => {
@@ -162,10 +166,10 @@ describe('PrepTimePage', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('Atenção (min)'), { target: { value: '8' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar tempo de preparo' }));
+    fireEvent.change(screen.getAllByLabelText('Atenção (min)').at(-1)!, { target: { value: '8' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Salvar tempo de preparo' }).at(-1)!);
 
     expect(onUpdatePrepTime).not.toHaveBeenCalled();
-    expect(screen.getByRole('status')).toHaveTextContent('atenção não pode ser menor');
+    expect(screen.getAllByRole('status').at(-1)).toHaveTextContent('atenção não pode ser menor');
   });
 });

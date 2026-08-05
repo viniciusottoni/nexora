@@ -28,6 +28,12 @@ public sealed class Tenant
     public string Locale { get; private set; } = "pt-BR";
     public string Currency { get; private set; } = "BRL";
     public string? Domain { get; private set; }
+
+    /// <summary>Início do roteiro de implantação (US-141) — marcado na criação do tenant, base da métrica de tempo de implantação.</summary>
+    public DateTimeOffset? OnboardingStartedAt { get; private set; }
+
+    /// <summary>Instante de ativação (US-141) — fim da medição "da criação do tenant à ativação".</summary>
+    public DateTimeOffset? ActivatedAt { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
     public DateTimeOffset? DeletedAt { get; private set; }
@@ -68,6 +74,7 @@ public sealed class Tenant
             Timezone = timezone,
             Locale = locale,
             Currency = currency,
+            OnboardingStartedAt = now,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -91,6 +98,40 @@ public sealed class Tenant
     public void Activate()
     {
         Status = TenantStatus.Active;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// Ativação ao final do roteiro de implantação (US-141) — distinta de <see cref="Activate"/>
+    /// (que só muda o status): aqui também se fecha a medição de tempo de implantação
+    /// (<see cref="OnboardingStartedAt"/> → <see cref="ActivatedAt"/>, meta ≤ 5 dias úteis).
+    /// </summary>
+    public void CompleteOnboarding(DateTimeOffset at)
+    {
+        Status = TenantStatus.Active;
+        ActivatedAt = at;
+        UpdatedAt = at;
+    }
+
+    /// <summary>
+    /// Espelha o domínio próprio primário e ativo do tenant (US-143) — mantém
+    /// <see cref="Domain"/> como o único valor consultado pela resolução de tenant por host em
+    /// tempo de requisição (<c>GetPublicBrandingQueryHandler</c> e afins, mecanismo herdado da
+    /// US-003), mesmo depois de <c>tenant_domain</c> (US-143) existir. Decisão de projeto: não foi
+    /// possível consultar <c>tenant_domain</c> diretamente nesses handlers públicos/anônimos porque
+    /// a tabela tem RLS (ADR-004, "falha fechada" — sem <c>app.tenant_id</c> no contexto, RETORNA
+    /// ZERO linhas, mesmo para leitura), e esses handlers rodam exatamente ANTES de qualquer tenant
+    /// ser conhecido. Espelhar o domínio verificado aqui, na tabela <c>tenant</c> (a única sem RLS,
+    /// "raiz global"), preserva o caminho de leitura rápido e sem varredura — chamado por
+    /// <c>VerifyTenantDomainCommandHandler</c> só quando o domínio verificado é o primeiro/primário
+    /// do tenant (<c>TenantDomain.IsPrimary</c>).
+    /// </summary>
+    public void SetCustomDomain(string domain)
+    {
+        if (string.IsNullOrWhiteSpace(domain))
+            throw new DomainException("O domínio é obrigatório.");
+
+        Domain = domain.Trim().ToLowerInvariant();
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 

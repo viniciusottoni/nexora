@@ -1,5 +1,5 @@
 import { AlertBanner, Button, Card, Field, Icon, Input, Select } from '@nexora/ui';
-import type { CreateTenantRequest, CreateTenantResponse } from '@nexora/contracts';
+import type { BusinessTemplateSummary, CreateTenantRequest, CreateTenantResponse } from '@nexora/contracts';
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import { createTenantsApi, type ApiProblem, type TenantsApi } from './tenants-api.js';
@@ -42,6 +42,28 @@ export function ProvisionTenantPage({ api: providedApi }: ProvisionTenantPagePro
   const timezoneFieldId = useId();
   const api = useMemo(() => providedApi ?? createTenantsApi(), [providedApi]);
   const [form, setForm] = useState(INITIAL_FORM);
+  // US-142: modelos deixaram de ser um seletor travado em "Pizzaria" — vêm do catálogo mantido
+  // pela Replay (GET /v1/platform/templates). Enquanto carrega/se falhar, a pizzaria continua
+  // disponível como opção (era o único valor possível antes desta história).
+  const [templates, setTemplates] = useState<readonly BusinessTemplateSummary[]>([
+    { code: 'PIZZERIA', name: 'Pizzaria', version: 1 },
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void api
+      .listTemplates()
+      .then((list) => {
+        if (!cancelled && list.length > 0) setTemplates(list);
+      })
+      .catch(() => {
+        // Mantém o fallback (pizzaria) — o formulário continua utilizável mesmo se o catálogo
+        // de modelos estiver indisponível.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api]);
   const [slugWasEdited, setSlugWasEdited] = useState(false);
   const [slugStatus, setSlugStatus] = useState<'IDLE' | 'CHECKING' | 'AVAILABLE' | 'TAKEN'>('IDLE');
   const [busy, setBusy] = useState(false);
@@ -271,13 +293,15 @@ export function ProvisionTenantPage({ api: providedApi }: ProvisionTenantPagePro
               <Field
                 label="Modelo de negócio"
                 htmlFor={templateFieldId}
-                hint="Novos modelos entram como configuração do produto."
+                hint="Praças, categorias e limiares padrão vêm do modelo escolhido."
               >
                 <Select
                   id={templateFieldId}
                   value={form.template}
-                  disabled
-                  options={[{ value: 'PIZZERIA', label: 'Pizzaria' }]}
+                  options={templates.map((template) => ({ value: template.code, label: template.name }))}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, template: event.target.value }))
+                  }
                 />
               </Field>
             </div>

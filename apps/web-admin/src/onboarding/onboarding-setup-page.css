@@ -1,0 +1,50 @@
+/* Assistente de configuração inicial (US-141) — casca/página vêm de console.css. */
+
+.onboarding-setup-progress {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+.onboarding-setup-progress strong {
+  font: var(--fw-bold) var(--fs-24) / 1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+.onboarding-setup-progress span {
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+
+.onboarding-setup-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.onboarding-setup-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--sp-5);
+  align-items: center;
+  min-height: var(--density-desk-row);
+  padding: var(--sp-4) var(--sp-2);
+  border-bottom: var(--border-1) solid var(--border-subtle);
+}
+.onboarding-setup-list li:last-child {
+  border-bottom: 0;
+}
+.onboarding-setup-list strong {
+  display: block;
+  font: var(--type-label);
+  color: var(--text-primary);
+}
+.onboarding-setup-list small {
+  display: block;
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+.onboarding-setup-list li[data-status='PENDING'] strong {
+  color: var(--text-secondary);
+}

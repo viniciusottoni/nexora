@@ -27,6 +27,9 @@ internal sealed class TenantConfigConfiguration : IEntityTypeConfiguration<Tenan
         builder.Property(c => c.ConfigVersion).HasColumnName("config_version").HasDefaultValue(1);
         builder.Property(c => c.BrandingVersion).HasColumnName("branding_version").HasDefaultValue(1);
 
+        builder.Property(c => c.TemplateCode).HasColumnName("template_code").HasMaxLength(32); // US-142
+        builder.Property(c => c.TemplateVersion).HasColumnName("template_version");
+
         builder.Property(c => c.CreatedAt).HasColumnName("created_at").HasColumnType("timestamptz");
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamptz");
 

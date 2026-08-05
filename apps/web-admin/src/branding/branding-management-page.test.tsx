@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Branding, UpdateBrandingRequest } from '@nexora/contracts';
 import { BrandingManagementPage } from './branding-management-page.js';
@@ -16,7 +16,7 @@ const branding: Branding = {
 
 describe('BrandingManagementPage', () => {
   it('pré-visualiza a marca atual e desabilita salvar sem alteração', () => {
-    render(
+    const { container } = render(
       <BrandingManagementPage
         tenantName="Casa do Bairro"
         branding={branding}
@@ -24,16 +24,17 @@ describe('BrandingManagementPage', () => {
         onUploadLogo={async () => ({ assetId: 'a', publicUrl: 'https://cdn.example/logo.svg' })}
       />,
     );
+    const page = within(container);
 
-    expect(screen.getByText('Contraste WCAG AA atendido.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Salvar identidade visual' })).toBeDisabled();
+    expect(page.getByText('Contraste WCAG AA atendido.')).toBeInTheDocument();
+    expect(page.getByRole('button', { name: 'Salvar identidade visual' })).toBeDisabled();
     expect(
-      screen.getByRole('region', { name: 'Pré-visualização da identidade visual' }),
+      page.getByRole('region', { name: 'Pré-visualização da identidade visual' }),
     ).toHaveTextContent('Casa do Bairro');
   });
 
   it('avisa sobre contraste insuficiente ao escolher uma cor primária de baixo contraste', () => {
-    render(
+    const { container } = render(
       <BrandingManagementPage
         tenantName="Casa do Bairro"
         branding={branding}
@@ -41,10 +42,13 @@ describe('BrandingManagementPage', () => {
         onUploadLogo={async () => ({ assetId: 'a', publicUrl: 'https://cdn.example/logo.svg' })}
       />,
     );
+    const page = within(container);
 
-    fireEvent.change(screen.getByLabelText('Primária'), { target: { value: '#F8F4EC' } });
+    fireEvent.change(page.getByLabelText('Primária (seletor de cor)'), {
+      target: { value: '#F8F4EC' },
+    });
 
-    expect(screen.getByText('Cor com contraste WCAG AA insuficiente.')).toBeInTheDocument();
+    expect(page.getByText('Cor com contraste WCAG AA insuficiente.')).toBeInTheDocument();
   });
 
   it('salva as alterações e mostra aviso de propagação sem novo build', async () => {
@@ -53,7 +57,7 @@ describe('BrandingManagementPage', () => {
         ({ ...branding, ...patch }) as Branding,
     );
 
-    render(
+    const { container } = render(
       <BrandingManagementPage
         tenantName="Casa do Bairro"
         branding={branding}
@@ -61,12 +65,13 @@ describe('BrandingManagementPage', () => {
         onUploadLogo={async () => ({ assetId: 'a', publicUrl: 'https://cdn.example/logo.svg' })}
       />,
     );
+    const page = within(container);
 
-    fireEvent.change(screen.getByLabelText('Boas-vindas'), { target: { value: 'Bem-vindo(a)!' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar identidade visual' }));
+    fireEvent.change(page.getByLabelText('Boas-vindas'), { target: { value: 'Bem-vindo(a)!' } });
+    fireEvent.click(page.getByRole('button', { name: 'Salvar identidade visual' }));
 
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-    expect(await screen.findByRole('status')).toHaveTextContent(/até 60 segundos, sem novo build/);
+    expect(await page.findByRole('status')).toHaveTextContent(/até 60 segundos, sem novo build/);
   });
 
   it('envia a logo escolhida e a inclui no próximo salvamento', async () => {
@@ -79,7 +84,7 @@ describe('BrandingManagementPage', () => {
         ({ ...branding, ...patch }) as Branding,
     );
 
-    render(
+    const { container } = render(
       <BrandingManagementPage
         tenantName="Casa do Bairro"
         branding={branding}
@@ -87,14 +92,15 @@ describe('BrandingManagementPage', () => {
         onUploadLogo={onUploadLogo}
       />,
     );
+    const page = within(container);
 
     const file = new File(['logo'], 'logo.svg', { type: 'image/svg+xml' });
-    fireEvent.change(screen.getByLabelText('Logo escura'), { target: { files: [file] } });
+    fireEvent.change(page.getByLabelText('Logo escura'), { target: { files: [file] } });
 
     await waitFor(() => expect(onUploadLogo).toHaveBeenCalledWith('LOGO_DARK', file));
-    expect(await screen.findByRole('status')).toHaveTextContent(/Salve para publicar/);
+    expect(await page.findByRole('status')).toHaveTextContent(/Salve para publicar/);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar identidade visual' }));
+    fireEvent.click(page.getByRole('button', { name: 'Salvar identidade visual' }));
     await waitFor(() =>
       expect(onSave).toHaveBeenCalledWith(
         expect.objectContaining({

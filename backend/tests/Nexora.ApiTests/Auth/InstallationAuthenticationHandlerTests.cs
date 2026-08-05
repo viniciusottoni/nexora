@@ -1,4 +1,5 @@
 extern alias ApiCloud;
+using System.Globalization;
 using System.Text.Encodings.Web;
 using ApiCloud::Nexora.Api.Cloud.Infrastructure.Auth;
 using Nexora.Application.Abstractions.Messaging;
@@ -83,7 +84,7 @@ public sealed class InstallationAuthenticationHandlerTests
     private static Dictionary<string, string> ValidHeaders(Guid installationId) => new()
     {
         ["X-Installation-Id"] = installationId.ToString(),
-        ["X-Installation-Timestamp"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+        ["X-Installation-Timestamp"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture),
         ["X-Installation-Nonce"] = Guid.NewGuid().ToString("N"),
         ["X-Installation-Signature"] = "dGVzdC1zaWduYXR1cmU=",
     };

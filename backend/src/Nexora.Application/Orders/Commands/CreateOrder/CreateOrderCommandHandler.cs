@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Nexora.Application.Abstractions.Events;
 using Nexora.Application.Abstractions.Messaging;
@@ -312,7 +313,7 @@ internal sealed class CreateOrderCommandHandler : IRequestHandler<CreateOrderCom
             if (variant is null)
             {
                 return Fail("Variante não encontrada.", ApiErrorCodes.VariantNotFound,
-                    new Dictionary<string, string[]> { ["itemIndex"] = new[] { index.ToString() } });
+                    new Dictionary<string, string[]> { ["itemIndex"] = new[] { index.ToString(CultureInfo.InvariantCulture) } });
             }
 
             var product = variant.Product;
@@ -325,7 +326,7 @@ internal sealed class CreateOrderCommandHandler : IRequestHandler<CreateOrderCom
                     ApiErrorCodes.ProductUnavailable,
                     new Dictionary<string, string[]>
                     {
-                        ["itemIndex"] = new[] { index.ToString() },
+                        ["itemIndex"] = new[] { index.ToString(CultureInfo.InvariantCulture) },
                         ["variantId"] = new[] { variant.Id.ToString() },
                     });
             }
@@ -352,7 +353,7 @@ internal sealed class CreateOrderCommandHandler : IRequestHandler<CreateOrderCom
                     violation.Code,
                     new Dictionary<string, string[]>
                     {
-                        ["itemIndex"] = new[] { index.ToString() },
+                        ["itemIndex"] = new[] { index.ToString(CultureInfo.InvariantCulture) },
                         ["groupId"] = new[] { violation.GroupId.ToString() },
                         ["groupName"] = new[] { violation.GroupName },
                     });
@@ -366,7 +367,7 @@ internal sealed class CreateOrderCommandHandler : IRequestHandler<CreateOrderCom
                 _db, tenantId, channel, variant.Id, input.Fractions, tenantOperationJson, cancellationToken);
             if (pricing.IsFailure)
             {
-                var meta = new Dictionary<string, string[]> { ["itemIndex"] = new[] { index.ToString() } };
+                var meta = new Dictionary<string, string[]> { ["itemIndex"] = new[] { index.ToString(CultureInfo.InvariantCulture) } };
                 if (pricing.Errors is { Count: > 0 })
                 {
                     foreach (var (key, value) in pricing.Errors)
@@ -386,7 +387,7 @@ internal sealed class CreateOrderCommandHandler : IRequestHandler<CreateOrderCom
                 if (modifier is null)
                 {
                     return Fail("Modificador não encontrado.", ApiErrorCodes.ModifierNotFound,
-                        new Dictionary<string, string[]> { ["itemIndex"] = new[] { index.ToString() } });
+                        new Dictionary<string, string[]> { ["itemIndex"] = new[] { index.ToString(CultureInfo.InvariantCulture) } });
                 }
 
                 resolvedModifiers.Add((modifier, modifierInput.Quantity < 1 ? (short)1 : modifierInput.Quantity));

@@ -188,7 +188,7 @@ public sealed class ProvisionTenantIntegrationTests
 
     private static string UniqueSlug() => $"tenant-{Guid.NewGuid():N}";
 
-    private ServiceProvider BuildContainerWithThrowingSecretDigester(Nexora.Application.Abstractions.Persistence.IApplicationDbContext db)
+    private static ServiceProvider BuildContainerWithThrowingSecretDigester(Nexora.Application.Abstractions.Persistence.IApplicationDbContext db)
     {
         var services = new ServiceCollection();
         services.AddLogging();

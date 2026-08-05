@@ -1,4 +1,3 @@
-using Nexora.Domain.Provisioning;
 using FluentValidation;
 
 namespace Nexora.Application.Tenants.Commands.ProvisionTenant;
@@ -19,9 +18,12 @@ public sealed class ProvisionTenantCommandValidator : AbstractValidator<Provisio
         RuleFor(x => x.Plan)
             .NotEmpty().WithMessage("Informe o plano contratado.");
 
+        // US-142: a existência/ativação do modelo agora é uma consulta ao banco
+        // (business_template) — validador síncrono não é o lugar (async validator não é padrão
+        // estabelecido neste código-base); a checagem mora no handler, ver
+        // ProvisionTenantCommandHandler.Handle.
         RuleFor(x => x.Template)
-            .NotEmpty().WithMessage("Informe o modelo de negócio.")
-            .Must(ProvisioningTemplates.IsKnown).WithMessage("Modelo de negócio desconhecido.");
+            .NotEmpty().WithMessage("Informe o modelo de negócio.");
 
         RuleFor(x => x.OwnerName)
             .NotEmpty().WithMessage("Informe o nome do proprietário.");

@@ -9,6 +9,6 @@ namespace Nexora.IntegrationTests.Fixtures;
 /// container entre classes é seguro.
 /// </summary>
 [CollectionDefinition("Postgres")]
-public sealed class PostgresCollection : ICollectionFixture<PostgresFixture>
+public sealed class PostgresFixtures : ICollectionFixture<PostgresFixture>
 {
 }

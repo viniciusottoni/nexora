@@ -44,6 +44,14 @@ public interface IApplicationDbContext
     DbSet<Domain.Platform.TenantSecret> TenantSecrets { get; }
     DbSet<Domain.Platform.PushSubscription> PushSubscriptions { get; }
 
+    // Plataforma em escala — E-14
+    DbSet<Domain.Platform.InstallationIncident> InstallationIncidents { get; }
+    DbSet<Domain.Platform.TenantDomain> TenantDomains { get; }
+    DbSet<Domain.Platform.SupportAccess> SupportAccesses { get; }
+    DbSet<Domain.Platform.Release> Releases { get; }
+    DbSet<Domain.Platform.OnboardingStep> OnboardingSteps { get; }
+    DbSet<Domain.Provisioning.BusinessTemplate> BusinessTemplates { get; }
+
     // Catalog
     DbSet<Domain.Catalog.Category> Categories { get; }
     DbSet<Domain.Catalog.Product> Products { get; }

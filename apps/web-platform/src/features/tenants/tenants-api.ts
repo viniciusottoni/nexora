@@ -1,6 +1,8 @@
 import {
+  businessTemplateListResponseSchema,
   createTenantResponseSchema,
   slugAvailabilityResponseSchema,
+  type BusinessTemplateSummary,
   type CreateTenantRequest,
   type CreateTenantResponse,
 } from '@nexora/contracts';
@@ -9,6 +11,8 @@ import { authenticatedFetch } from '@nexora/ui';
 export interface TenantsApi {
   checkSlug(slug: string): Promise<boolean>;
   provision(input: CreateTenantRequest): Promise<CreateTenantResponse>;
+  /** US-142: modelos ativos para o seletor da tela de provisionamento (`GET /v1/platform/templates`). */
+  listTemplates(): Promise<BusinessTemplateSummary[]>;
 }
 
 export function createTenantsApi(baseUrl = ''): TenantsApi {
@@ -22,6 +26,14 @@ export function createTenantsApi(baseUrl = ''): TenantsApi {
       );
       if (!response.ok) throw await toApiError(response);
       return slugAvailabilityResponseSchema.parse(await response.json()).available;
+    },
+
+    async listTemplates() {
+      const response = await authenticatedFetch(`${baseUrl}/v1/platform/templates`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw await toApiError(response);
+      return businessTemplateListResponseSchema.parse(await response.json()).data;
     },
 
     async provision(input) {

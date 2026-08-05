@@ -4,6 +4,7 @@ using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Realtime;
 using Nexora.Application.Abstractions.Security;
+using Nexora.Application.Alerts.Support;
 using Nexora.Application.Catalog.Availability.Commands.MarkProductAvailable;
 using Nexora.Application.Catalog.Availability.Commands.MarkProductUnavailable;
 using Nexora.Application.Catalog.Availability.Commands.RestoreProductsPastBusinessDay;
@@ -268,6 +269,8 @@ public sealed class AvailabilityIntegrationTests
         services.AddSingleton(tenantContext);
         services.AddSingleton<IEventOriginProvider, EdgeEventOriginProvider>();
         services.AddSingleton(broadcaster);
+        services.AddSingleton<Nexora.Application.Abstractions.Realtime.IAlertsBroadcaster, RecordingAlertsBroadcaster>();
+        services.AddScoped<IAlertRaiser, AlertRaiser>();
 
         services.AddMediatR(cfg =>
         {

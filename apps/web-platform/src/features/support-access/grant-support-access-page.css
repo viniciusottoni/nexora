@@ -1,0 +1,57 @@
+/* Conceder acesso de suporte — casca/cabeçalho/cartão vêm de `console.css` (@nexora/ui). Aqui só
+   o que é desta tela: o token revelado (mesmo padrão visual de provision-tenant-page.css, mas
+   feature própria — cada tela mantém seu CSS, ADR-013 não se aplica a duplicação de layout). */
+
+.support-access-token {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: var(--sp-6);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font: var(--fw-medium) var(--fs-13) / var(--lh-relaxed) var(--font-mono);
+}
+
+.support-access-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+}
+
+.support-access-copy-status {
+  min-height: var(--sp-7);
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-success);
+}
+.support-access-copy-status:not(:empty) {
+  animation: nx-slide-in var(--dur-fast) var(--ease-out) backwards;
+}
+
+.support-access-meta {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-6);
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+
+.support-access-form-body {
+  display: grid;
+  gap: var(--sp-6);
+  padding: var(--sp-8);
+}
+
+.support-access-footer {
+  display: grid;
+  gap: var(--sp-5);
+  padding: var(--sp-6) var(--sp-8) var(--sp-8);
+  background: var(--surface-sunken);
+}
+.support-access-footer .db-editor__footer {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}

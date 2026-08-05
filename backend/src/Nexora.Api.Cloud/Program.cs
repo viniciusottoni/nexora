@@ -7,6 +7,7 @@ using Nexora.Api.Cloud.Infrastructure.Observability;
 using Nexora.Api.Cloud.Realtime;
 using Nexora.Api.Cloud.Workers;
 using Nexora.Application.Abstractions.Behaviors;
+using Nexora.Application.Abstractions.Catalog;
 using Nexora.Application.Abstractions.Events;
 using Nexora.Application.Abstractions.Idempotency;
 using Nexora.Application.Abstractions.Messaging;
@@ -24,6 +25,7 @@ using Nexora.Application.Installations.Abstractions;
 using Nexora.Application.Operation.Abstractions;
 using Nexora.Contracts.Http;
 using Nexora.Infrastructure.Auth;
+using Nexora.Infrastructure.Catalog;
 using Nexora.Infrastructure.Devices;
 using Nexora.Infrastructure.Idempotency;
 using Nexora.Infrastructure.Installation;
@@ -171,6 +173,10 @@ builder.Services.AddSingleton<ISyncHealthPoller, NullSyncHealthPoller>();
 builder.Services.Configure<S3ProductMediaStorageOptions>(builder.Configuration.GetSection(S3ProductMediaStorageOptions.SectionName));
 builder.Services.AddSingleton<IProductMediaStorage, S3ProductMediaStorage>();
 
+// US-144 (Importação de cardápio por planilha) — leitura/geração de .xlsx via ClosedXML. Stateless,
+// então AddSingleton (mesmo idioma de IProductMediaStorage acima).
+builder.Services.AddSingleton<ISpreadsheetParser, ClosedXmlSpreadsheetParser>();
+
 // IAuthorizationTokenValidator (US-004, gap "autorização pontual é só emitida, nunca validada") —
 // valida o header X-Authorization-Token contra o que AuthorizeSensitiveActionCommandHandler emitiu;
 // nenhum endpoint de negócio consome isto ainda (ver RequiresAuthorizationTokenAttribute), mas o
@@ -188,6 +194,14 @@ builder.Services.AddScoped<IAuthSessionActivityGuard, AuthSessionActivityGuard>(
 // HmacSecretDigester (não DeviceSecretDigester, que é exclusiva do Api.Edge)
 // é a única implementação registrada aqui.
 builder.Services.AddSingleton<ISecretDigester, HmacSecretDigester>();
+
+// US-145 (Acesso de suporte auditado) — ISupportAccessTokenValidator resolve/valida o token
+// bruto de support_access (hash + IsActive) e registra o uso; nenhum controller desta tarefa
+// consome um token bruto de suporte via header (grant/revoke/history/relatório autenticam via JWT
+// PlatformAdmin/tenant, não via este token — ver relatório da tarefa), mas o serviço precisa estar
+// pronto no DI para a próxima US que efetivamente ler dado de tenant "como suporte".
+builder.Services.AddScoped<Nexora.Application.Platform.SupportAccessTokens.ISupportAccessTokenValidator,
+    Nexora.Application.Platform.SupportAccessTokens.SupportAccessTokenValidator>();
 
 builder.Services.AddSingleton<IEventOriginProvider, CloudEventOriginProvider>();
 builder.Services.AddSingleton<IAppVersionProvider, AppVersionProvider>();
@@ -249,6 +263,26 @@ else
 
 builder.Services.AddHostedService<AlertEvaluationWorker>();
 builder.Services.AddHostedService<PushDeliveryWorker>();
+
+// US-140 — painel de instalações com saúde: classificação OK/DEGRADED/DOWN é sempre da nuvem (§9),
+// nunca dos eventos que o próprio edge emite sobre si mesmo. IPlatformAlertNotifier hoje só loga
+// (mesmo idioma condicional de IEmailDispatcher acima); sem canal real configurado ainda, não há
+// "if" a fazer aqui — só o registro do default de log.
+builder.Services.AddSingleton<Nexora.Application.Abstractions.Notifications.IPlatformAlertNotifier, Nexora.Infrastructure.Notifications.LoggingPlatformAlertNotifier>();
+builder.Services.AddHostedService<InstallationHealthEvaluationWorker>();
+
+// ---------------------------------------------------------------------------
+// US-143 — domínio próprio por cliente: verificação de posse por DNS TXT (real, DnsClient.NET —
+// leitura pública sem efeito colateral, seguro rodar de verdade em qualquer ambiente), emissão de
+// certificado TLS (ManualCertificateIssuer — dev-safe default; o cliente ACME/DNS-01 real é um
+// próximo passo de infraestrutura, ver docstring da classe) e o redirecionamento do domínio padrão
+// para o próprio (inerte sem "Platform:DefaultDomainSuffix" configurado).
+// ---------------------------------------------------------------------------
+builder.Services.AddSingleton<IDomainVerificationService, DnsClientDomainVerificationService>();
+builder.Services.AddSingleton<ICertificateIssuer, ManualCertificateIssuer>();
+builder.Services.Configure<PlatformDomainOptions>(builder.Configuration.GetSection(PlatformDomainOptions.SectionName));
+builder.Services.AddScoped<ITenantDomainRedirectResolver, TenantDomainRedirectResolver>();
+builder.Services.AddHostedService<TenantDomainCertificateRenewalWorker>();
 
 // ---------------------------------------------------------------------------
 // Installations (cloud, plural) — registro/consumo de token de instalação,
@@ -520,6 +554,11 @@ if (app.Environment.IsDevelopment())
     .AllowAnonymous()
     .ExcludeFromDescription();
 }
+
+// US-143 §3.1 "Redirecionamento do domínio padrão para o próprio" — antes de UseRouting() de
+// propósito: não depende de endpoint resolvido nem de autenticação, só do Host da requisição
+// (GET). Inerte (nunca redireciona) sem "Platform:DefaultDomainSuffix" configurado.
+app.UseMiddleware<Nexora.Api.Cloud.Infrastructure.Platform.TenantDomainRedirectMiddleware>();
 
 // UseRouting() explícito (em vez de confiar na inserção implícita do WebApplication) para que a
 // ordem abaixo seja inequívoca: autenticação/autorização e os middlewares seguintes precisam do

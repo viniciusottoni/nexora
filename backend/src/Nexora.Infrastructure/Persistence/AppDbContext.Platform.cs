@@ -38,4 +38,12 @@ public partial class AppDbContext
     public DbSet<Domain.Platform.MediaAsset> MediaAssets => Set<Domain.Platform.MediaAsset>();
     public DbSet<Domain.Platform.TenantSecret> TenantSecrets => Set<Domain.Platform.TenantSecret>();
     public DbSet<Domain.Platform.PushSubscription> PushSubscriptions => Set<Domain.Platform.PushSubscription>();
+
+    // Plataforma em escala — E-14
+    public DbSet<Domain.Platform.InstallationIncident> InstallationIncidents => Set<Domain.Platform.InstallationIncident>();
+    public DbSet<Domain.Platform.TenantDomain> TenantDomains => Set<Domain.Platform.TenantDomain>();
+    public DbSet<Domain.Platform.SupportAccess> SupportAccesses => Set<Domain.Platform.SupportAccess>();
+    public DbSet<Domain.Platform.Release> Releases => Set<Domain.Platform.Release>();
+    public DbSet<Domain.Platform.OnboardingStep> OnboardingSteps => Set<Domain.Platform.OnboardingStep>();
+    public DbSet<Domain.Provisioning.BusinessTemplate> BusinessTemplates => Set<Domain.Provisioning.BusinessTemplate>();
 }

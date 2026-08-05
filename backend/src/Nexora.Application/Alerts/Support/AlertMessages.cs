@@ -5,7 +5,7 @@ namespace Nexora.Application.Alerts.Support;
 /// <summary>Rótulos em pt-BR do catálogo de alertas do motor (US-080 §2) — usados na mensagem consolidada de grupo (US-083 §4: "5 pedidos atrasados").</summary>
 public static class AlertMessages
 {
-    private static readonly IReadOnlyDictionary<string, string> PluralLabels = new Dictionary<string, string>
+    private static readonly Dictionary<string, string> PluralLabels = new Dictionary<string, string>
     {
         [AlertTypes.OrderLate] = "pedidos atrasados",
         [AlertTypes.AvgTimeAboveTarget] = "alertas de tempo médio acima da meta",

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using Nexora.Application.Abstractions.Security;
 
@@ -59,7 +60,7 @@ public sealed class TotpOtpVerifier : IOtpVerifier
             (hash[offset + 3] & 0xFF);
 
         var code = binary % (int)Math.Pow(10, DigitCount);
-        return code.ToString(new string('0', DigitCount));
+        return code.ToString(new string('0', DigitCount), CultureInfo.InvariantCulture);
     }
 
     private static byte[] Base32Decode(string base32)

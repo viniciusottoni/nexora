@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 afterEach(() => {
@@ -54,6 +54,8 @@ describe('AlertRoutingPage', () => {
 
     render(<AlertRoutingPage roles={roles} alertRoutingApi={alertRoutingApi} />);
 
+    const alertNav = await screen.findByRole('navigation', { name: 'Tipos de alerta' });
+    fireEvent.click(within(alertNav).getByRole('button', { name: /Pedido atrasado/ }));
     expect(await screen.findByLabelText('Garçom')).toBeChecked();
     expect(screen.getAllByText('Pedido atrasado').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByLabelText('Gestor')).not.toBeChecked();
@@ -80,6 +82,8 @@ describe('AlertRoutingPage', () => {
     const alertRoutingApi = { get, update } as unknown as AlertRoutingApi;
 
     render(<AlertRoutingPage roles={roles} alertRoutingApi={alertRoutingApi} />);
+    const alertNav = await screen.findByRole('navigation', { name: 'Tipos de alerta' });
+    fireEvent.click(within(alertNav).getByRole('button', { name: /Pedido atrasado/ }));
     await screen.findByLabelText('Garçom');
 
     fireEvent.click(screen.getByLabelText('Gestor'));

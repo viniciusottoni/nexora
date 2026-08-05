@@ -23,7 +23,7 @@ internal sealed class GetPublicBrandingQueryHandler : IRequestHandler<GetPublicB
 
         var record = await _db.Tenants
             .AsNoTracking()
-            .Where(t => t.DeletedAt == null && t.Domain != null && t.Domain.ToLower() == host)
+            .Where(t => t.DeletedAt == null && t.Domain == host)
             .Select(t => new
             {
                 t.Id,

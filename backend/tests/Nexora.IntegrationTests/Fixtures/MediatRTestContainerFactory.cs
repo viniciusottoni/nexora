@@ -1,18 +1,22 @@
 using Nexora.Application.Abstractions.Behaviors;
+using Nexora.Application.Abstractions.Catalog;
 using Nexora.Application.Abstractions.Events;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Notifications;
 using Nexora.Application.Abstractions.Persistence;
+using Nexora.Application.Abstractions.Platform;
 using Nexora.Application.Abstractions.Realtime;
 using Nexora.Application.Abstractions.Security;
 using Nexora.Application.Alerts.Support;
 using Nexora.Application.Auth.Shared;
 using Nexora.Application.Installations.Abstractions;
 using Nexora.Infrastructure.Auth;
+using Nexora.Infrastructure.Catalog;
 using Nexora.Infrastructure.Devices;
 using Nexora.Infrastructure.Installations;
 using Nexora.Infrastructure.Notifications;
 using Nexora.Infrastructure.Persistence;
+using Nexora.Infrastructure.Platform;
 using Nexora.IntegrationTests.Fakes;
 using FluentValidation;
 using MediatR;
@@ -40,8 +44,12 @@ internal static class MediatRTestContainerFactory
         IApplicationDbContext db,
         ICurrentTenantContext tenantContext,
         IAlertsBroadcaster? alertsBroadcaster = null,
+        IAvailabilityBroadcaster? availabilityBroadcaster = null,
         ITableMapBroadcaster? tableMapBroadcaster = null,
-        IStationBroadcaster? stationBroadcaster = null)
+        IStationBroadcaster? stationBroadcaster = null,
+        IDomainVerificationService? domainVerificationService = null,
+        ICertificateIssuer? certificateIssuer = null,
+        IPlatformAlertNotifier? platformAlertNotifier = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -53,6 +61,7 @@ internal static class MediatRTestContainerFactory
         // RequestBillByQrCommand dependem destes dois broadcasters — duplos de gravação por
         // padrão (o chamador passa a MESMA instância quando quiser inspecionar as chamadas).
         services.AddSingleton(alertsBroadcaster ?? new RecordingAlertsBroadcaster());
+        services.AddSingleton(availabilityBroadcaster ?? new RecordingAvailabilityBroadcaster());
         services.AddSingleton(tableMapBroadcaster ?? new RecordingTableMapBroadcaster());
         // AddOrderItemCommand (gap de US-030, reaproveitado pelo cenário "Novo pedido após
         // solicitar a conta" da US-026) também depende de IOrderConsumptionBroadcaster.
@@ -102,6 +111,27 @@ internal static class MediatRTestContainerFactory
         // evita I/O de rede real durante o teste (mesmo espírito de LoggingEmailDispatcher).
         services.AddSingleton<IAlertRaiser, AlertRaiser>();
         services.AddSingleton<IPushNotificationSender, Nexora.Infrastructure.Notifications.LoggingPushNotificationSender>();
+
+        // US-144 (Importação de cardápio por planilha): ValidateCatalogImportQueryHandler/
+        // ImportCatalogCommandHandler/GetCatalogImportTemplateQueryHandler dependem de
+        // ISpreadsheetParser — mesma implementação real de produção (ClosedXML), nenhum mock.
+        services.AddSingleton<ISpreadsheetParser, ClosedXmlSpreadsheetParser>();
+
+        // US-143 (Domínio próprio por cliente): registro real de ManualCertificateIssuer (dev-safe
+        // default, nunca fala com uma CA de verdade — ver docstring da classe); verificação DNS por
+        // padrão SEMPRE confirma (testes que precisam do cenário "Domínio não verificado" passam
+        // um FakeDomainVerificationService(result: false) explícito); IPlatformAlertNotifier
+        // reaproveita o mesmo LoggingPlatformAlertNotifier de produção (só log, nenhum I/O externo).
+        services.AddSingleton(domainVerificationService ?? new FakeDomainVerificationService(result: true));
+        services.AddSingleton<ICertificateIssuer>(certificateIssuer ?? new ManualCertificateIssuer());
+        if (platformAlertNotifier is not null)
+        {
+            services.AddSingleton(platformAlertNotifier);
+        }
+        else
+        {
+            services.AddSingleton<IPlatformAlertNotifier, Nexora.Infrastructure.Notifications.LoggingPlatformAlertNotifier>();
+        }
 
         services.AddMediatR(cfg =>
         {

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
@@ -22,7 +23,7 @@ public sealed class InstallationRequestSigner : IInstallationRequestSigner
     public async Task<IReadOnlyDictionary<string, string>> SignAsync(
         string method, Uri requestUri, CancellationToken cancellationToken)
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture);
         var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
         var requestPath = requestUri.PathAndQuery;
         var message = $"{method}\n{requestPath}\n{timestamp}\n{nonce}";

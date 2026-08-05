@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { validateModifierSelection, type ModifierGroup } from '@nexora/contracts';
 import {
@@ -96,7 +96,7 @@ const adicionaisGroup: ModifierGroup = {
 const noOpAsync = async () => undefined as never;
 
 function renderPage(groups: readonly ModifierGroup[] = [tamanhoGroup, adicionaisGroup]) {
-  return render(
+  const result = render(
     <ModifierGroupManagementPage
       groups={groups}
       onCreateGroup={noOpAsync}
@@ -109,6 +109,7 @@ function renderPage(groups: readonly ModifierGroup[] = [tamanhoGroup, adicionais
       onUnlinkFromProduct={noOpAsync}
     />,
   );
+  return within(result.container);
 }
 
 describe('validateModifierSelection (função pura, US-012 §10)', () => {
@@ -150,77 +151,77 @@ describe('ModifierGroupManagementPage', () => {
   });
 
   it('destaca grupo obrigatório pendente antes de o cliente tentar avançar (cenário Gherkin "Modificador obrigatório")', () => {
-    renderPage();
+    const page = renderPage();
 
-    expect(screen.getByText(/Escolha pendente: este grupo é obrigatório/)).toBeInTheDocument();
-    expect(screen.getByText(/Escolha até 1 · 0 selecionado/)).toBeInTheDocument();
+    expect(page.getByText(/Escolha pendente: este grupo é obrigatório/)).toBeInTheDocument();
+    expect(page.getByText(/Escolha até 1 · 0 selecionado/)).toBeInTheDocument();
   });
 
   it('some com o aviso obrigatório assim que a seleção mínima é atingida', () => {
-    renderPage();
+    const page = renderPage();
 
-    fireEvent.click(screen.getByRole('checkbox', { name: /^Grande/ }));
+    fireEvent.click(page.getByRole('checkbox', { name: /^Grande/ }));
 
-    expect(screen.queryByText(/Escolha pendente/)).not.toBeInTheDocument();
-    expect(screen.getByText(/1 selecionado/)).toBeInTheDocument();
+    expect(page.queryByText(/Escolha pendente/)).not.toBeInTheDocument();
+    expect(page.getByText(/1 selecionado/)).toBeInTheDocument();
   });
 
   it('troca diretamente a opção de seleção única sem exigir desmarcar a anterior', () => {
-    renderPage();
+    const page = renderPage();
 
-    fireEvent.click(screen.getByRole('checkbox', { name: /^Pequena/ }));
-    fireEvent.click(screen.getByRole('checkbox', { name: /^Grande/ }));
+    fireEvent.click(page.getByRole('checkbox', { name: /^Pequena/ }));
+    fireEvent.click(page.getByRole('checkbox', { name: /^Grande/ }));
 
-    expect(screen.getByRole('checkbox', { name: /^Pequena/ })).not.toBeChecked();
-    expect(screen.getByRole('checkbox', { name: /^Grande/ })).toBeChecked();
-    expect(screen.queryByText(/Limite de 1 opções atingido/)).not.toBeInTheDocument();
+    expect(page.getByRole('checkbox', { name: /^Pequena/ })).not.toBeChecked();
+    expect(page.getByRole('checkbox', { name: /^Grande/ })).toBeChecked();
+    expect(page.queryByText(/Limite de 1 opções atingido/)).not.toBeInTheDocument();
   });
 
   it('bloqueia a quarta seleção do grupo "Adicionais" (máximo 3) e mantém as três primeiras (cenário Gherkin "Limite máximo de seleção")', () => {
-    renderPage();
+    const page = renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: /Adicionais/ }));
+    fireEvent.click(page.getByRole('button', { name: /Adicionais/ }));
 
-    fireEvent.click(screen.getByRole('checkbox', { name: /^Bacon/ }));
-    fireEvent.click(screen.getByRole('checkbox', { name: /^Borda Catupiry/ }));
-    fireEvent.click(screen.getByRole('checkbox', { name: /^Cheddar/ }));
-    fireEvent.click(screen.getByRole('checkbox', { name: /^Sem cebola/ }));
+    fireEvent.click(page.getByRole('checkbox', { name: /^Bacon/ }));
+    fireEvent.click(page.getByRole('checkbox', { name: /^Borda Catupiry/ }));
+    fireEvent.click(page.getByRole('checkbox', { name: /^Cheddar/ }));
+    fireEvent.click(page.getByRole('checkbox', { name: /^Sem cebola/ }));
 
-    expect(screen.getByText(/Limite de 3 opções atingido/)).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /^Bacon/ })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: /^Borda Catupiry/ })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: /^Cheddar/ })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: /^Sem cebola/ })).not.toBeChecked();
+    expect(page.getByText(/Limite de 3 opções atingido/)).toBeInTheDocument();
+    expect(page.getByRole('checkbox', { name: /^Bacon/ })).toBeChecked();
+    expect(page.getByRole('checkbox', { name: /^Borda Catupiry/ })).toBeChecked();
+    expect(page.getByRole('checkbox', { name: /^Cheddar/ })).toBeChecked();
+    expect(page.getByRole('checkbox', { name: /^Sem cebola/ })).not.toBeChecked();
   });
 
   /** Cenário Gherkin "Preço do adicional somado": pizza de R$ 45,00 + Borda Catupiry de R$ 8,00 = R$ 53,00. */
   it('soma o adicional ao preço base do item', () => {
-    renderPage();
-    fireEvent.click(screen.getByRole('button', { name: /Adicionais/ }));
+    const page = renderPage();
+    fireEvent.click(page.getByRole('button', { name: /Adicionais/ }));
 
-    const baseInput = screen.getByLabelText('Preço base do item (R$)');
+    const baseInput = page.getByLabelText('Preço base do item (R$)');
     fireEvent.change(baseInput, { target: { value: '45.00' } });
-    fireEvent.click(screen.getByRole('checkbox', { name: /^Borda Catupiry/ }));
+    fireEvent.click(page.getByRole('checkbox', { name: /^Borda Catupiry/ }));
 
-    expect(screen.getByText(/Total do item: R\$\s?53,00/)).toBeInTheDocument();
+    expect(page.getByText(/Total do item: R\$\s?53,00/)).toBeInTheDocument();
   });
 
   /** Cenário Gherkin "Remoção sem custo": não muda o preço e aparece em destaque no cartão do KDS simulado. */
   it('remoção sem custo não altera o preço e aparece em destaque no cartão do KDS', () => {
-    renderPage();
-    fireEvent.click(screen.getByRole('button', { name: /Adicionais/ }));
+    const page = renderPage();
+    fireEvent.click(page.getByRole('button', { name: /Adicionais/ }));
 
-    const baseInput = screen.getByLabelText('Preço base do item (R$)');
+    const baseInput = page.getByLabelText('Preço base do item (R$)');
     fireEvent.change(baseInput, { target: { value: '45.00' } });
-    fireEvent.click(screen.getByRole('checkbox', { name: /^Sem cebola/ }));
+    fireEvent.click(page.getByRole('checkbox', { name: /^Sem cebola/ }));
 
-    expect(screen.getByText(/Total do item: R\$\s?45,00/)).toBeInTheDocument();
-    expect(screen.getByText('SEM CEBOLA')).toBeInTheDocument();
+    expect(page.getByText(/Total do item: R\$\s?45,00/)).toBeInTheDocument();
+    expect(page.getByText('SEM CEBOLA')).toBeInTheDocument();
   });
 
   it('permite atualizar o preço de modificador existente', async () => {
     const onUpdateModifierPrice = vi.fn(async () => adicionaisGroup.modifiers[1]!);
-    render(
+    const { container } = render(
       <ModifierGroupManagementPage
         groups={[adicionaisGroup]}
         onCreateGroup={noOpAsync}
@@ -233,11 +234,12 @@ describe('ModifierGroupManagementPage', () => {
         onUnlinkFromProduct={noOpAsync}
       />,
     );
+    const page = within(container);
 
-    fireEvent.change(screen.getByLabelText('Preço de Borda Catupiry'), {
+    fireEvent.change(page.getByLabelText('Preço de Borda Catupiry'), {
       target: { value: '9.50' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar preço de Borda Catupiry' }));
+    fireEvent.click(page.getByRole('button', { name: 'Salvar preço de Borda Catupiry' }));
 
     await waitFor(() =>
       expect(onUpdateModifierPrice).toHaveBeenCalledWith(
@@ -250,7 +252,7 @@ describe('ModifierGroupManagementPage', () => {
 
   it('ao marcar grupo como obrigatório ajusta mínimo para um antes de criar', async () => {
     const onCreateGroup = vi.fn(async () => tamanhoGroup);
-    render(
+    const { container } = render(
       <ModifierGroupManagementPage
         groups={[]}
         onCreateGroup={onCreateGroup}
@@ -263,11 +265,14 @@ describe('ModifierGroupManagementPage', () => {
         onUnlinkFromProduct={noOpAsync}
       />,
     );
+    const page = within(container);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Novo grupo' }));
-    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Tamanho' } });
-    fireEvent.click(screen.getByRole('switch', { name: /^Obrigatório/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Criar grupo' }));
+    fireEvent.click(page.getByRole('button', { name: 'Novo grupo' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Criar grupo de modificadores' });
+    const modal = within(dialog);
+    fireEvent.change(modal.getByLabelText('Nome'), { target: { value: 'Tamanho' } });
+    fireEvent.click(modal.getByRole('switch', { name: /^Obrigatório/ }));
+    fireEvent.click(modal.getByRole('button', { name: 'Criar grupo' }));
 
     await waitFor(() =>
       expect(onCreateGroup).toHaveBeenCalledWith(
@@ -278,7 +283,7 @@ describe('ModifierGroupManagementPage', () => {
 
   it('cria grupo pelo diálogo "Novo grupo"', async () => {
     const onCreateGroup = vi.fn(async () => tamanhoGroup);
-    render(
+    const { container } = render(
       <ModifierGroupManagementPage
         groups={[]}
         onCreateGroup={onCreateGroup}
@@ -291,11 +296,14 @@ describe('ModifierGroupManagementPage', () => {
         onUnlinkFromProduct={noOpAsync}
       />,
     );
+    const page = within(container);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Novo grupo' }));
-    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ponto da massa' } });
+    fireEvent.click(page.getByRole('button', { name: 'Novo grupo' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Criar grupo de modificadores' });
+    const modal = within(dialog);
+    fireEvent.change(modal.getByLabelText('Nome'), { target: { value: 'Ponto da massa' } });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Criar grupo' }));
+      fireEvent.click(modal.getByRole('button', { name: 'Criar grupo' }));
     });
 
     await waitFor(() =>
