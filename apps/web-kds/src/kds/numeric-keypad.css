@@ -1,0 +1,71 @@
+/* US-041 — teclado numérico do KDS: alvos grandes (Button size="touch", 64px), alto contraste,
+   legível a 1,5 m. Fixo no rodapé da tela para ficar sempre ao alcance da mão suja de farinha. */
+.kds-keypad {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.85rem clamp(0.75rem, 3vw, 1.5rem) 1.1rem;
+  margin-top: 1.5rem;
+  background: color-mix(in srgb, var(--brand-surface-dark, #14181f) 92%, black);
+  border-top: 1px solid color-mix(in srgb, white 12%, transparent);
+  border-radius: 0.9rem 0.9rem 0 0;
+  z-index: 10;
+}
+
+.kds-keypad__display {
+  width: 100%;
+  box-sizing: border-box;
+  font: 700 clamp(1.6rem, 5vw, 2.2rem)/1.2 var(--brand-font-display, inherit);
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--text-inverse, #fff);
+  background: color-mix(in srgb, white 8%, transparent);
+  border: 2px solid color-mix(in srgb, white 20%, transparent);
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  caret-color: var(--nx-brand-500, #6366f1);
+  transition: border-color var(--dur-fast, 120ms) var(--ease-standard);
+}
+.kds-keypad__display:focus {
+  outline: none;
+  border-color: var(--nx-brand-500, #6366f1);
+}
+.kds-keypad__display--error {
+  border-color: var(--nx-danger-500, #ef4444);
+}
+
+.kds-keypad__error {
+  margin: 0;
+  text-align: center;
+  color: var(--nx-danger-300, #fca5a5);
+  font-weight: 600;
+}
+
+.kds-keypad__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+.kds-keypad__grid .db-button {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.kds-keypad__actions {
+  display: grid;
+  grid-template-columns: minmax(6rem, 1fr) 2fr;
+  gap: 0.5rem;
+}
+
+@media (min-width: 48rem) {
+  .kds-keypad {
+    position: fixed;
+    right: clamp(1rem, 3vw, 2rem);
+    bottom: 1rem;
+    width: min(22rem, 90vw);
+    border-radius: 0.9rem;
+    box-shadow: 0 0.75rem 2rem color-mix(in srgb, black 45%, transparent);
+  }
+}

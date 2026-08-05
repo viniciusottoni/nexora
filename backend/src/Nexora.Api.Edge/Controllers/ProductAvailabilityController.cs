@@ -59,7 +59,8 @@ public sealed class ProductAvailabilityController : ControllerBase
     {
         Activity.Current?.SetTag("product.id", id);
         var result = await _sender.Send(
-            new MarkProductUnavailableCommand(id, request.Reason, request.AutoRestoreNextDay), cancellationToken);
+            new MarkProductUnavailableCommand(id, request.Reason, request.AutoRestoreNextDay, request.OrderItemId),
+            cancellationToken);
         return result.ToActionResult(HttpContext);
     }
 

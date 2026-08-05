@@ -1,0 +1,77 @@
+/* US-045 — painel de configuração de som (Modal de packages/ui) e botão de atalho no cabeçalho da
+   fila (mesmo padrão visual de `.kds-queue__fullscreen` em kds-queue-page.css: ícone translúcido
+   sobre o fundo escuro do KDS). */
+
+.kds-sound-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid color-mix(in srgb, white 20%, transparent);
+  background: color-mix(in srgb, white 8%, transparent);
+  color: var(--text-inverse, #fff);
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+.kds-sound-trigger:hover {
+  background: color-mix(in srgb, white 16%, transparent);
+}
+.kds-sound-trigger--muted {
+  border-color: color-mix(in srgb, var(--nx-danger-500, #e0393f) 60%, transparent);
+  color: var(--nx-danger-100, #fbe0e1);
+}
+
+.kds-sound-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.kds-sound-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.kds-sound-panel__row > span:first-child {
+  flex: 1 1 auto;
+}
+
+.kds-sound-panel__status {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.kds-sound-panel__error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-danger, #c42026);
+}
+
+/* US-045 §3.1 "Modo silencioso": reforço visual compensatório — pulso mais chamativo que o
+   `db-order-ticket--late` já usa, aplicado SÓ enquanto o som está mudo. É um pulso (repete um
+   número finito de vezes), nunca uma animação permanente — a mesma regra de "nunca contínuo" que
+   vale para o som em si (US-045 §10). */
+.kds-sound-alert-flash {
+  animation: kds-sound-alert-pulse var(--dur-slower) var(--ease-out) 3;
+}
+
+@keyframes kds-sound-alert-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--nx-danger-500, #e0393f) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 10px color-mix(in srgb, var(--nx-danger-500, #e0393f) 45%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kds-sound-alert-flash {
+    animation: none;
+    outline: 3px solid var(--nx-danger-500, #e0393f);
+    outline-offset: 2px;
+  }
+}

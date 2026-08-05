@@ -18,6 +18,16 @@ public sealed class Device
     public string? SecretHash { get; private set; }
     public Guid? StationId { get; private set; }
     public bool IsActive { get; private set; } = true;
+
+    /// <summary>
+    /// US-042/US-045/US-047 (filtro de praça, som e modo pico do KDS, todos "por dispositivo") —
+    /// JSONB livre, mesma convenção de <see cref="TenantConfig.Thresholds"/>: nenhum desses três
+    /// formatos tem hoje uma tela própria de configuração, então um esquema tipado seria
+    /// especulativo. Namespace por feature dentro do objeto (ex.: <c>{"kds":{"stationIds":[...],
+    /// "sound":{...},"peakMode":{...}}}</c>) evita colisão entre features que gravam preferências
+    /// do mesmo dispositivo em momentos diferentes.
+    /// </summary>
+    public string Preferences { get; private set; } = "{}";
     public DateTimeOffset? LastSeenAt { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
@@ -117,6 +127,21 @@ public sealed class Device
         // válido para essa instalação física deve reviver o mesmo registro, não ficar bloqueada
         // por ele estar soft-deleted.
         DeletedAt = null;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// Substitui o JSON de preferências por completo — a MESCLA de campos (ex.: atualizar só
+    /// <c>kds.sound</c> sem apagar <c>kds.stationIds</c> já gravado) é responsabilidade da
+    /// Application (<c>UpdateDevicePreferencesCommandHandler</c>), porque só ela sabe interpretar o
+    /// formato; o Domain só garante que o valor gravado é sempre um JSON válido não vazio.
+    /// </summary>
+    public void UpdatePreferences(string preferencesJson)
+    {
+        if (string.IsNullOrWhiteSpace(preferencesJson))
+            throw new DomainException("Preferências do dispositivo não podem ser vazias.");
+
+        Preferences = preferencesJson;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 

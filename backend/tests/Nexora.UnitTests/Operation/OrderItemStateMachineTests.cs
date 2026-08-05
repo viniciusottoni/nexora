@@ -103,4 +103,68 @@ public sealed class OrderItemStateMachineTests
 
         item.Status.Should().Be(OrderItemStatus.Served);
     }
+
+    /// <summary>US-041 §3/§4 — desfazer reverte um passo e limpa o carimbo/autor/dispositivo correspondente.</summary>
+    [Fact]
+    public void UndoLastTransition_De_Fired_Volta_A_Queued_E_Limpa_O_Carimbo()
+    {
+        var item = NewItem();
+        item.Fire(Guid.NewGuid(), deviceId: Guid.NewGuid());
+
+        item.UndoLastTransition();
+
+        item.Status.Should().Be(OrderItemStatus.Queued);
+        item.FiredAt.Should().BeNull();
+        item.FiredBy.Should().BeNull();
+        item.FiredDeviceId.Should().BeNull();
+    }
+
+    [Fact]
+    public void UndoLastTransition_Percorre_Os_Mesmos_Passos_Em_Ordem_Inversa()
+    {
+        var item = NewItem();
+        item.Fire(Guid.NewGuid());
+        item.SendToOven(ovenSlot: 3);
+        item.TakeOutOfOven();
+        item.MarkReady(Guid.NewGuid());
+        item.MarkServed(Guid.NewGuid());
+
+        item.UndoLastTransition();
+        item.Status.Should().Be(OrderItemStatus.Ready);
+
+        item.UndoLastTransition();
+        item.Status.Should().Be(OrderItemStatus.OutOfOven);
+
+        item.UndoLastTransition();
+        item.Status.Should().Be(OrderItemStatus.InOven);
+
+        item.UndoLastTransition();
+        item.Status.Should().Be(OrderItemStatus.Fired);
+
+        item.UndoLastTransition();
+        item.Status.Should().Be(OrderItemStatus.Queued);
+    }
+
+    [Fact]
+    public void UndoLastTransition_Sobre_Item_Ainda_Na_Fila_E_Proibido()
+    {
+        var item = NewItem();
+
+        var act = () => item.UndoLastTransition();
+
+        act.Should().Throw<DomainException>();
+    }
+
+    [Fact]
+    public void LastTransitionAt_Reflete_O_Carimbo_Do_Estado_Atual()
+    {
+        var item = NewItem();
+        var firedAt = new DateTimeOffset(2026, 8, 4, 12, 0, 0, TimeSpan.Zero);
+
+        item.LastTransitionAt.Should().BeNull();
+
+        item.Fire(Guid.NewGuid(), occurredAt: firedAt);
+
+        item.LastTransitionAt.Should().Be(firedAt);
+    }
 }

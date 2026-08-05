@@ -7,6 +7,24 @@ import { z } from 'zod';
  * ProductAvailabilityResponse.cs).
  */
 
+/**
+ * US-044 §10 — "motivo escolhido por número (1 acabou, 2 equipamento, 3 qualidade), não por
+ * texto": porta de `Nexora.Contracts.Catalog.ProductUnavailableReasons`. Os dois processos que
+ * gravam `MarkProductUnavailableCommand.Reason` (KDS via edge e painel via nuvem) validam contra a
+ * MESMA lista no backend — texto livre (aceito pela US-015 original) não passa mais.
+ */
+export const PRODUCT_UNAVAILABLE_REASONS = ['OUT_OF_STOCK', 'EQUIPMENT', 'QUALITY'] as const;
+
+export const productUnavailableReasonSchema = z.enum(PRODUCT_UNAVAILABLE_REASONS);
+
+/** Rótulo em PT-BR + tecla numérica de cada motivo — mesma ordem de `ProductUnavailableReasons.All` (índice 0 = tecla "1"). */
+export const PRODUCT_UNAVAILABLE_REASON_LABELS: Record<(typeof PRODUCT_UNAVAILABLE_REASONS)[number], string> = {
+  OUT_OF_STOCK: 'Acabou',
+  EQUIPMENT: 'Equipamento',
+  QUALITY: 'Qualidade',
+};
+
+/** Mantido para os poucos consumidores que ainda leem `unavailableReason` como texto livre já persistido (ex. histórico). */
 export const productAvailabilityReasonSchema = z
   .string()
   .trim()
@@ -17,18 +35,20 @@ export const productAvailabilityReasonSchema = z
 export const setProductAvailabilityRequestSchema = z
   .object({
     isAvailable: z.boolean(),
-    reason: productAvailabilityReasonSchema.optional(),
+    reason: productUnavailableReasonSchema.optional(),
     autoRestoreNextDay: z.boolean().default(true),
   })
-  .refine((value) => value.isAvailable || (value.reason?.length ?? 0) > 0, {
+  .refine((value) => value.isAvailable || value.reason !== undefined, {
     message: 'Informe o motivo da indisponibilidade',
     path: ['reason'],
   });
 
-/** Corpo de `POST /v1/kds/products/:id/unavailable` (edge/KDS) — "cabe em um toque" (US-015 §10). */
+/** Corpo de `POST /v1/kds/products/:id/unavailable` (edge/KDS) — "cabe em um toque" (US-015 §10), motivo por número (US-044 §10). */
 export const markProductUnavailableRequestSchema = z.object({
-  reason: productAvailabilityReasonSchema,
+  reason: productUnavailableReasonSchema,
   autoRestoreNextDay: z.boolean().default(true),
+  /** US-044 §6 — preenchido só quando a marcação parte de um item específico já na fila do KDS. */
+  orderItemId: z.string().uuid().optional(),
 });
 
 export const productAvailabilitySchema = z.object({
@@ -56,6 +76,7 @@ export const productAvailabilityChangedEventSchema = z.object({
   }),
 });
 
+export type ProductUnavailableReason = z.infer<typeof productUnavailableReasonSchema>;
 export type SetProductAvailabilityRequest = z.infer<typeof setProductAvailabilityRequestSchema>;
 export type MarkProductUnavailableRequest = z.infer<typeof markProductUnavailableRequestSchema>;
 export type ProductAvailabilityDto = z.infer<typeof productAvailabilitySchema>;

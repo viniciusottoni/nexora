@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AvailabilityApi, type AvailabilitySubscription } from './availability-api.js';
 import { UnavailableToggle } from './unavailable-toggle.js';
 
@@ -11,12 +11,16 @@ function noopSubscribe(): AvailabilitySubscription {
 }
 
 describe('UnavailableToggle', () => {
-  it('produto disponível abre dialog do design system e marca indisponível com o motivo', async () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('produto disponível abre dialog do design system e marca indisponível com o motivo escolhido por número (US-044 §10)', async () => {
     const markUnavailable = vi.fn(async () => ({
       productId: 'p1',
       productName: 'Pizza Calabresa',
       isAvailable: false,
-      unavailableReason: 'Acabou a calabresa',
+      unavailableReason: 'Acabou',
       unavailableSince: '2026-08-02T20:00:00.000Z',
     }));
     const api = { markUnavailable } as unknown as AvailabilityApi;
@@ -33,12 +37,39 @@ describe('UnavailableToggle', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Marcar indisponível' }));
     expect(screen.getByRole('dialog', { name: 'Marcar produto indisponível' })).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'Acabou a calabresa' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar indisponibilidade' }));
+    // Zero digitação livre: não há campo de texto, só três motivos fixos numerados.
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '1 Acabou' }));
 
-    await waitFor(() => expect(markUnavailable).toHaveBeenCalledWith('p1', 'Acabou a calabresa'));
-    expect(await screen.findByText('Em falta — Acabou a calabresa')).toBeInTheDocument();
+    await waitFor(() => expect(markUnavailable).toHaveBeenCalledWith('p1', 'OUT_OF_STOCK'));
+    expect(await screen.findByText('Em falta — Acabou')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Marcar disponível' })).toBeInTheDocument();
+  });
+
+  it('aceita a tecla física do motivo (1/2/3), sem exigir toque', async () => {
+    const markUnavailable = vi.fn(async () => ({
+      productId: 'p1',
+      productName: 'Pizza Calabresa',
+      isAvailable: false,
+      unavailableReason: 'Equipamento',
+      unavailableSince: '2026-08-02T20:00:00.000Z',
+    }));
+    const api = { markUnavailable } as unknown as AvailabilityApi;
+
+    render(
+      <UnavailableToggle
+        productId="p1"
+        productName="Pizza Calabresa"
+        isAvailable
+        api={api}
+        subscribeFn={noopSubscribe}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar indisponível' }));
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: '2' });
+
+    await waitFor(() => expect(markUnavailable).toHaveBeenCalledWith('p1', 'EQUIPMENT'));
   });
 
   it('cancelar o dialog nao marca indisponivel', async () => {

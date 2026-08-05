@@ -399,6 +399,11 @@ public static class ResultExtensions
         ApiErrorCodes.StationHasLinkedProducts => (StatusCodes.Status422UnprocessableEntity, true, false),
         ApiErrorCodes.StationStoreContextMissing => (StatusCodes.Status403Forbidden, false, false),
 
+        // KDS Cozinha (E-04) — avanço por teclado numérico e desfazer (US-041).
+        ApiErrorCodes.KdsShortCodeNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.KdsNoEligibleItem => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.KdsUndoWindowExpired => (StatusCodes.Status409Conflict, false, false),
+
         // Motor de alertas e notificações (E-08).
         ApiErrorCodes.AlertNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.AlertAlreadyResolved => (StatusCodes.Status409Conflict, true, false),

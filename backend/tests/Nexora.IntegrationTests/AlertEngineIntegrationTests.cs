@@ -113,10 +113,13 @@ public sealed class AlertEngineIntegrationTests
         await using var provider = MediatRTestContainerFactory.Build(db, tenantContext);
         var sender = provider.GetRequiredService<ISender>();
 
-        var unavailable = await sender.Send(new MarkProductUnavailableCommand(productId, "Acabou o insumo", AutoRestoreNextDay: false));
+        var unavailable = await sender.Send(new MarkProductUnavailableCommand(productId, "OUT_OF_STOCK", AutoRestoreNextDay: false));
         unavailable.IsSuccess.Should().BeTrue();
 
-        (await OpenAlertsAsync(tenant, AlertTypes.ProductUnavailable)).Should().ContainSingle(a => a.EntityId == productId);
+        // US-044 §5/§4 (cenário "Alerta dirigido"): garçom, caixa e gestor — matriz padrão de
+        // AlertRoutingConfig.Defaults[ProductUnavailable] (US-082 §7), sem personalização de tenant.
+        var alert = (await OpenAlertsAsync(tenant, AlertTypes.ProductUnavailable)).Should().ContainSingle(a => a.EntityId == productId).Subject;
+        alert.TargetRoles.Should().BeEquivalentTo(new[] { "WAITER", "CASHIER", "MANAGER" });
 
         var available = await sender.Send(new MarkProductAvailableCommand(productId));
         available.IsSuccess.Should().BeTrue();
@@ -255,7 +258,7 @@ public sealed class AlertEngineIntegrationTests
         await using var db = _fixture.CreateAppDbContext(new StaticTenantContext(tenant.TenantId, tenant.StoreId));
 
         var order = Order.Create(
-            tenant.TenantId, tenant.StoreId, Channel.DineIn, $"A{Random.Shared.Next(10, 99)}",
+            tenant.TenantId, tenant.StoreId, Channel.DineIn, ShortCode(),
             DateOnly.FromDateTime(DateTime.UtcNow));
         order.Place(DateTimeOffset.UtcNow.AddMinutes(-minutesAgo));
         db.Orders.Add(order);
@@ -299,4 +302,6 @@ public sealed class AlertEngineIntegrationTests
         await using var db = _fixture.CreateAppDbContext(new StaticTenantContext(tenant.TenantId, tenant.StoreId));
         return await db.Alerts.Where(a => a.Type == type && a.ResolvedAt == null).ToListAsync();
     }
+
+    private static string ShortCode() => Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
 }

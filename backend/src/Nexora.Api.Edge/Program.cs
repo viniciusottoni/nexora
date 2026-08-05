@@ -381,6 +381,14 @@ builder.Services.AddAuthorization(options =>
             context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
             "catalog:write")));
 
+    // Leitura de praças no edge (US-042, achado durante a EPIC-E-04: o KDS roda no edge e precisa
+    // listar praças offline para o filtro por praça — CRUD continua exclusivo da nuvem). Mesmo
+    // recurso "catalog:read" de ProductRead acima; nome igual ao gêmeo em Nexora.Api.Cloud/Program.cs.
+    options.AddPolicy("StationRead", policy => policy.RequireAssertion(context =>
+        PermissionAuthorization.HasPermission(
+            context.User.FindAll(PermissionAuthorization.PermissionClaimType).Select(c => c.Value),
+            "catalog:read")));
+
     options.AddPolicy("ProductAvailability", policy => policy.RequireAssertion(context =>
     {
         var permissions = context.User

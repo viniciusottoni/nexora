@@ -90,25 +90,9 @@ internal sealed class AdvanceOrderItemStatusCommandHandler : IRequestHandler<Adv
                 clockResolution.Deviation?.TotalSeconds);
         }
 
-        switch (item.Status)
+        if (!OrderItemStatusMachine.TryAdvanceOneStep(item, actorId, occurredAt, deviceId))
         {
-            case OrderItemStatus.Queued:
-                item.Fire(actorId, occurredAt, deviceId);
-                break;
-            case OrderItemStatus.Fired:
-                item.SendToOven(ovenSlot: null, ovenInBy: actorId, occurredAt: occurredAt, deviceId: deviceId);
-                break;
-            case OrderItemStatus.InOven:
-                item.TakeOutOfOven(ovenOutBy: actorId, occurredAt: occurredAt, deviceId: deviceId);
-                break;
-            case OrderItemStatus.OutOfOven:
-                item.MarkReady(actorId, occurredAt, deviceId);
-                break;
-            case OrderItemStatus.Ready:
-                item.MarkServed(actorId, occurredAt, deviceId);
-                break;
-            default:
-                return Result<OrderItemResponse>.Failure("Este item já está em um estado final.", ApiErrorCodes.ValidationError);
+            return Result<OrderItemResponse>.Failure("Este item já está em um estado final.", ApiErrorCodes.ValidationError);
         }
 
         _db.DomainEvents.Add(DomainEvent.Create(
