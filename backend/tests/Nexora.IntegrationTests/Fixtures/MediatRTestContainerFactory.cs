@@ -88,6 +88,16 @@ internal static class MediatRTestContainerFactory
         });
         services.AddSingleton<ISecretDigester>(new HmacSecretDigester(authSecrets));
         services.AddSingleton<IInstallationTokenDigester, InstallationTokenDigester>();
+        services.AddSingleton(Options.Create(new CloudPublicUrlSettings
+        {
+            PublicUrl = "https://cloud.integration.test",
+        }));
+        services.AddSingleton<ICloudEndpointOptions, CloudEndpointOptions>();
+        services.AddSingleton(Options.Create(new PinLookupMasterKeyOptions
+        {
+            Value = TestSecretPepper,
+        }));
+        services.AddSingleton<IPinLookupPepperProvider, PinLookupPepperProvider>();
         services.AddSingleton(Options.Create(new EmailOutboxOptions { EncryptionKey = TestEmailEncryptionKey }));
         services.AddSingleton<IEmailSender, EmailOutboxSender>();
 

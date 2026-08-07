@@ -395,6 +395,26 @@ POST /v1/platform/tenants/{id}/support-access   { "reason": "...", "durationMinu
 
 POST /v1/platform/tenants/{id}/import/menu      (multipart: planilha)
 
+GET  /v1/platform/plans                         # E-15/US-154 — catálogo comercial canônico
+GET  /v1/platform/tenants/{id}/plan             # plano atual, capacidades efetivas e agendamento
+PUT  /v1/platform/tenants/{id}/plan             # exige Idempotency-Key, If-Match, vigência e motivo
+POST /v1/platform/tenants/{id}/plan/reconciliations   # corrige divergência confirmada de configuração
+
+GET    /v1/platform/tenants/{id}/ownership      # E-15/US-155 — proprietário e convites
+POST   /v1/platform/tenants/{id}/owner-invites
+DELETE /v1/platform/tenants/{id}/owner-invites/{inviteId}
+POST   /v1/platform/tenants/{id}/ownership-transfers
+POST   /v1/platform/tenants/{id}/ownership/unlock
+
+GET    /v1/platform/tenants/{id}/deployment     # E-15/US-156 — progresso e instalação alvo
+POST   /v1/platform/installations/{installationId}/tokens   # segredo exibido uma única vez
+DELETE /v1/platform/installations/{installationId}/tokens/{credentialId}
+
+GET  /v1/platform/attention                     # E-15/US-157 — fila operacional paginada
+POST /v1/platform/attention/{itemId}/acknowledgements
+GET  /v1/platform/attention/export
+GET  /v1/platform/tenants/{id}/administrative-timeline
+
 POST /v1/platform/tenants/{id}/status-transitions   # E-15/US-153 — ciclo de vida do estabelecimento
 Idempotency-Key: <uuid>
 If-Match: "<statusVersion>"

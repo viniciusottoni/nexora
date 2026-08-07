@@ -81,13 +81,16 @@ function buildApi(overrides: Partial<TenantOwnershipApi> = {}): TenantOwnershipA
       previousKeptAsAdmin: false,
       transferredAt: '2026-08-07T10:00:00Z',
     } satisfies TransferTenantOwnershipResult),
-    unlock: vi.fn().mockResolvedValue({ userId: '0198aabb-0002-7000-8000-000000000030', status: 'ACTIVE' } satisfies UnlockOwnerAccessResult),
+    unlock: vi.fn().mockResolvedValue({
+      userId: '0198aabb-0002-7000-8000-000000000030',
+      status: 'ACTIVE',
+    } satisfies UnlockOwnerAccessResult),
     ...overrides,
   };
 }
 
 function genericError(): ApiProblem {
-  return new Error('Falha de rede') as ApiProblem;
+  return new Error('Falha de rede');
 }
 
 describe('TenantOwnershipSection', () => {
@@ -103,7 +106,9 @@ describe('TenantOwnershipSection', () => {
   });
 
   it('nunca exibe token bruto ou hash em lugar nenhum da tela', async () => {
-    const api = buildApi({ get: vi.fn().mockResolvedValue(buildView({ invites: [pendingInvite, revokedInvite] })) });
+    const api = buildApi({
+      get: vi.fn().mockResolvedValue(buildView({ invites: [pendingInvite, revokedInvite] })),
+    });
     render(<TenantOwnershipSection tenantId={TENANT_ID} api={api} />);
 
     await screen.findByText('Dona Betinha');
@@ -115,16 +120,24 @@ describe('TenantOwnershipSection', () => {
 
   it('sem proprietário mostra badge "Sem proprietário" e nenhum botão de transferência', async () => {
     const api = buildApi({
-      get: vi.fn().mockResolvedValue(buildView({ owner: { id: null, name: null, email: null, status: 'NONE' }, invites: [] })),
+      get: vi
+        .fn()
+        .mockResolvedValue(
+          buildView({ owner: { id: null, name: null, email: null, status: 'NONE' }, invites: [] }),
+        ),
     });
     render(<TenantOwnershipSection tenantId={TENANT_ID} api={api} />);
 
     expect(await screen.findByText('Sem proprietário')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Transferir titularidade/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Transferir titularidade/ }),
+    ).not.toBeInTheDocument();
   });
 
   it('histórico de convites mostra status, entrega e motivo de revogação', async () => {
-    const api = buildApi({ get: vi.fn().mockResolvedValue(buildView({ invites: [pendingInvite, revokedInvite] })) });
+    const api = buildApi({
+      get: vi.fn().mockResolvedValue(buildView({ invites: [pendingInvite, revokedInvite] })),
+    });
     render(<TenantOwnershipSection tenantId={TENANT_ID} api={api} />);
 
     expect(await screen.findByText('Pendente')).toBeInTheDocument();
@@ -134,7 +147,9 @@ describe('TenantOwnershipSection', () => {
   });
 
   it('histórico de transferências aparece quando existente', async () => {
-    const api = buildApi({ get: vi.fn().mockResolvedValue(buildView({ transfers: [transferHistory] })) });
+    const api = buildApi({
+      get: vi.fn().mockResolvedValue(buildView({ transfers: [transferHistory] })),
+    });
     render(<TenantOwnershipSection tenantId={TENANT_ID} api={api} />);
 
     expect(await screen.findByText('Alteração societária')).toBeInTheDocument();
@@ -149,11 +164,19 @@ describe('TenantOwnershipSection', () => {
 
   describe('Reenviar/corrigir convite', () => {
     it('só aparece quando o proprietário está CONVIDADO', async () => {
-      const api = buildApi({ get: vi.fn().mockResolvedValue(buildView({ owner: { id: '1', name: 'X', email: 'x@example.com', status: 'ACTIVE' } })) });
+      const api = buildApi({
+        get: vi
+          .fn()
+          .mockResolvedValue(
+            buildView({ owner: { id: '1', name: 'X', email: 'x@example.com', status: 'ACTIVE' } }),
+          ),
+      });
       render(<TenantOwnershipSection tenantId={TENANT_ID} api={api} />);
 
       await screen.findByText('Ativo');
-      expect(screen.queryByRole('button', { name: /Reenviar\/corrigir convite/ })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /Reenviar\/corrigir convite/ }),
+      ).not.toBeInTheDocument();
     });
 
     it('avisa que o link anterior deixa de funcionar antes de confirmar', async () => {
@@ -179,24 +202,45 @@ describe('TenantOwnershipSection', () => {
       fireEvent.click(await screen.findByRole('button', { name: /Reenviar\/corrigir convite/ }));
       const dialog = await screen.findByRole('dialog', { name: 'Reenviar ou corrigir convite' });
 
-      fireEvent.change(within(dialog).getByLabelText(/^E-mail/), { target: { value: 'correto@example.com' } });
-      fireEvent.change(within(dialog).getByLabelText(/^Motivo/), { target: { value: 'Correção solicitada no chamado #91' } });
+      fireEvent.change(within(dialog).getByLabelText(/^E-mail/), {
+        target: { value: 'correto@example.com' },
+      });
+      fireEvent.change(within(dialog).getByLabelText(/^Motivo/), {
+        target: { value: 'Correção solicitada no chamado #91' },
+      });
       fireEvent.click(within(dialog).getByRole('button', { name: 'Confirmar envio' }));
 
       await waitFor(() =>
         expect(createInvite).toHaveBeenCalledWith(
           TENANT_ID,
-          expect.objectContaining({ email: 'correto@example.com', reason: 'Correção solicitada no chamado #91' }),
+          expect.objectContaining({
+            email: 'correto@example.com',
+            reason: 'Correção solicitada no chamado #91',
+          }),
         ),
       );
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
       expect(get).toHaveBeenCalledTimes(2);
     });
+
+    it('identifica nomes e autocomplete adequados nos campos do convite', async () => {
+      render(<TenantOwnershipSection tenantId={TENANT_ID} api={buildApi()} />);
+
+      fireEvent.click(await screen.findByRole('button', { name: /Reenviar\/corrigir convite/ }));
+      const dialog = await screen.findByRole('dialog', { name: 'Reenviar ou corrigir convite' });
+
+      expect(within(dialog).getByLabelText(/^Nome/)).toHaveAttribute('name', 'owner-invite-name');
+      expect(within(dialog).getByLabelText(/^E-mail/)).toHaveAttribute('autocomplete', 'email');
+      expect(within(dialog).getByLabelText(/^E-mail/)).toHaveAttribute('spellcheck', 'false');
+      expect(within(dialog).getByLabelText(/^Motivo/)).toHaveAttribute('autocomplete', 'off');
+    });
   });
 
   describe('Revogar convite', () => {
     it('botão "Revogar" só aparece para convite pendente', async () => {
-      const api = buildApi({ get: vi.fn().mockResolvedValue(buildView({ invites: [pendingInvite, revokedInvite] })) });
+      const api = buildApi({
+        get: vi.fn().mockResolvedValue(buildView({ invites: [pendingInvite, revokedInvite] })),
+      });
       render(<TenantOwnershipSection tenantId={TENANT_ID} api={api} />);
 
       await screen.findByText('Pendente');
@@ -204,7 +248,10 @@ describe('TenantOwnershipSection', () => {
     });
 
     it('confirma revogação com motivo e recarrega a lista', async () => {
-      const get = vi.fn().mockResolvedValueOnce(buildView()).mockResolvedValueOnce(buildView({ invites: [revokedInvite] }));
+      const get = vi
+        .fn()
+        .mockResolvedValueOnce(buildView())
+        .mockResolvedValueOnce(buildView({ invites: [revokedInvite] }));
       const revokeInvite = vi.fn().mockResolvedValue(undefined);
       const api = buildApi({ get, revokeInvite });
       render(<TenantOwnershipSection tenantId={TENANT_ID} api={api} />);
@@ -212,27 +259,49 @@ describe('TenantOwnershipSection', () => {
       fireEvent.click(await screen.findByRole('button', { name: 'Revogar' }));
       const dialog = await screen.findByRole('dialog', { name: 'Revogar convite pendente?' });
 
-      fireEvent.change(within(dialog).getByLabelText(/^Motivo/), { target: { value: 'Convite não é mais necessário' } });
+      fireEvent.change(within(dialog).getByLabelText(/^Motivo/), {
+        target: { value: 'Convite não é mais necessário' },
+      });
       fireEvent.click(within(dialog).getByRole('button', { name: 'Sim, revogar convite' }));
 
-      await waitFor(() => expect(revokeInvite).toHaveBeenCalledWith(TENANT_ID, pendingInvite.id, 'Convite não é mais necessário'));
+      await waitFor(() =>
+        expect(revokeInvite).toHaveBeenCalledWith(
+          TENANT_ID,
+          pendingInvite.id,
+          'Convite não é mais necessário',
+        ),
+      );
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     });
   });
 
   describe('Transferir titularidade', () => {
     it('explica o que o antigo proprietário mantém em cada opção de "manter como admin"', async () => {
-      const api = buildApi({ get: vi.fn().mockResolvedValue(buildView({ owner: { id: '1', name: 'Dona Betinha', email: 'x@example.com', status: 'ACTIVE' } })) });
+      const api = buildApi({
+        get: vi.fn().mockResolvedValue(
+          buildView({
+            owner: { id: '1', name: 'Dona Betinha', email: 'x@example.com', status: 'ACTIVE' },
+          }),
+        ),
+      });
       render(<TenantOwnershipSection tenantId={TENANT_ID} api={api} />);
 
       fireEvent.click(await screen.findByRole('button', { name: /Transferir titularidade/ }));
       const dialog = await screen.findByRole('dialog', { name: 'Transferir titularidade' });
 
-      expect(within(dialog).getByText(/mantém um papel administrativo equivalente/)).toBeInTheDocument();
+      expect(
+        within(dialog).getByText(/mantém um papel administrativo equivalente/),
+      ).toBeInTheDocument();
     });
 
     it('exige novo proprietário e motivo antes de confirmar', async () => {
-      const api = buildApi({ get: vi.fn().mockResolvedValue(buildView({ owner: { id: '1', name: 'Dona Betinha', email: 'x@example.com', status: 'ACTIVE' } })) });
+      const api = buildApi({
+        get: vi.fn().mockResolvedValue(
+          buildView({
+            owner: { id: '1', name: 'Dona Betinha', email: 'x@example.com', status: 'ACTIVE' },
+          }),
+        ),
+      });
       render(<TenantOwnershipSection tenantId={TENANT_ID} api={api} />);
 
       fireEvent.click(await screen.findByRole('button', { name: /Transferir titularidade/ }));
@@ -246,15 +315,25 @@ describe('TenantOwnershipSection', () => {
       });
       expect(confirmButton).toBeDisabled();
 
-      fireEvent.change(within(dialog).getByLabelText(/^Motivo/), { target: { value: 'Alteração societária' } });
+      fireEvent.change(within(dialog).getByLabelText(/^Motivo/), {
+        target: { value: 'Alteração societária' },
+      });
       expect(confirmButton).toBeEnabled();
     });
 
     it('confirma a transferência e recarrega', async () => {
       const get = vi
         .fn()
-        .mockResolvedValueOnce(buildView({ owner: { id: '1', name: 'Dona Betinha', email: 'x@example.com', status: 'ACTIVE' } }))
-        .mockResolvedValueOnce(buildView({ owner: { id: '2', name: 'Novo Dono', email: 'novo@example.com', status: 'ACTIVE' } }));
+        .mockResolvedValueOnce(
+          buildView({
+            owner: { id: '1', name: 'Dona Betinha', email: 'x@example.com', status: 'ACTIVE' },
+          }),
+        )
+        .mockResolvedValueOnce(
+          buildView({
+            owner: { id: '2', name: 'Novo Dono', email: 'novo@example.com', status: 'ACTIVE' },
+          }),
+        );
       const transferOwnership = vi.fn().mockResolvedValue({
         previousOwnerUserId: '1',
         newOwnerUserId: transferHistory.newOwnerUserId,
@@ -270,7 +349,9 @@ describe('TenantOwnershipSection', () => {
       fireEvent.change(within(dialog).getByLabelText(/ID do novo proprietário/), {
         target: { value: transferHistory.newOwnerUserId },
       });
-      fireEvent.change(within(dialog).getByLabelText(/^Motivo/), { target: { value: 'Alteração societária' } });
+      fireEvent.change(within(dialog).getByLabelText(/^Motivo/), {
+        target: { value: 'Alteração societária' },
+      });
       fireEvent.click(within(dialog).getByRole('button', { name: 'Confirmar transferência' }));
 
       await waitFor(() =>
@@ -287,7 +368,13 @@ describe('TenantOwnershipSection', () => {
 
   describe('Desbloqueio administrativo', () => {
     it('botão só aparece quando o proprietário está bloqueado', async () => {
-      const api = buildApi({ get: vi.fn().mockResolvedValue(buildView({ owner: { id: '1', name: 'X', email: 'x@example.com', status: 'ACTIVE' } })) });
+      const api = buildApi({
+        get: vi
+          .fn()
+          .mockResolvedValue(
+            buildView({ owner: { id: '1', name: 'X', email: 'x@example.com', status: 'ACTIVE' } }),
+          ),
+      });
       render(<TenantOwnershipSection tenantId={TENANT_ID} api={api} />);
 
       await screen.findByText('Ativo');
@@ -297,16 +384,28 @@ describe('TenantOwnershipSection', () => {
     it('confirma desbloqueio e nunca envia/recebe valor de senha', async () => {
       const get = vi
         .fn()
-        .mockResolvedValueOnce(buildView({ owner: { id: '1', name: 'Dona Betinha', email: 'x@example.com', status: 'BLOCKED' } }))
-        .mockResolvedValueOnce(buildView({ owner: { id: '1', name: 'Dona Betinha', email: 'x@example.com', status: 'ACTIVE' } }));
+        .mockResolvedValueOnce(
+          buildView({
+            owner: { id: '1', name: 'Dona Betinha', email: 'x@example.com', status: 'BLOCKED' },
+          }),
+        )
+        .mockResolvedValueOnce(
+          buildView({
+            owner: { id: '1', name: 'Dona Betinha', email: 'x@example.com', status: 'ACTIVE' },
+          }),
+        );
       const unlock = vi.fn().mockResolvedValue({ userId: '1', status: 'ACTIVE' });
       const api = buildApi({ get, unlock });
       render(<TenantOwnershipSection tenantId={TENANT_ID} api={api} />);
 
       fireEvent.click(await screen.findByRole('button', { name: /Desbloquear acesso/ }));
-      const dialog = await screen.findByRole('dialog', { name: 'Desbloquear acesso do proprietário?' });
+      const dialog = await screen.findByRole('dialog', {
+        name: 'Desbloquear acesso do proprietário?',
+      });
 
-      fireEvent.change(within(dialog).getByLabelText(/^Motivo/), { target: { value: 'Chamado de suporte #12' } });
+      fireEvent.change(within(dialog).getByLabelText(/^Motivo/), {
+        target: { value: 'Chamado de suporte #12' },
+      });
       fireEvent.click(within(dialog).getByRole('button', { name: 'Sim, desbloquear' }));
 
       // unlock() só recebe (tenantId, reason) — a assinatura do cliente HTTP nem permite passar

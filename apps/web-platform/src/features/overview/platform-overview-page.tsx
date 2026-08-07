@@ -10,6 +10,8 @@ export interface PlatformOverviewPageProps {
   readonly onOpenTenants: () => void;
   readonly onOpenInstallations: () => void;
   readonly onOpenSupportAccess: () => void;
+  /** US-157 — leva direto à central de atenção (fila priorizada, filtrada por criticidade). */
+  readonly onOpenAttention: () => void;
 }
 
 /**
@@ -24,6 +26,7 @@ export function PlatformOverviewPage({
   onOpenTenants,
   onOpenInstallations,
   onOpenSupportAccess,
+  onOpenAttention,
 }: Readonly<PlatformOverviewPageProps>) {
   return (
     <main className="db-page nx-anim-in" aria-labelledby="overview-title">
@@ -56,10 +59,32 @@ export function PlatformOverviewPage({
             label="Precisam de atenção"
             value={summary.tenants.attention}
             icon="warning"
+            role="button"
+            tabIndex={0}
+            className="platform-overview__stat-link"
+            onClick={onOpenAttention}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onOpenAttention();
+              }
+            }}
           />
-          <StatTile label="Instalações saudáveis" value={summary.installations.healthy} icon="dns" />
-          <StatTile label="Instalações degradadas" value={summary.installations.degraded} icon="sync_problem" />
-          <StatTile label="Instalações fora do ar" value={summary.installations.offline} icon="cloud_off" />
+          <StatTile
+            label="Instalações saudáveis"
+            value={summary.installations.healthy}
+            icon="dns"
+          />
+          <StatTile
+            label="Instalações degradadas"
+            value={summary.installations.degraded}
+            icon="sync_problem"
+          />
+          <StatTile
+            label="Instalações fora do ar"
+            value={summary.installations.offline}
+            icon="cloud_off"
+          />
           <StatTile label="Convites pendentes" value={summary.pendingInvites} icon="mail" />
         </div>
       ) : (
@@ -69,6 +94,16 @@ export function PlatformOverviewPage({
       )}
 
       <div className="platform-overview__shortcuts nx-stagger">
+        <Card
+          as="article"
+          title="Central de atenção"
+          subtitle="Fila priorizada de pendências — instalação offline, convite expirado, provisionamento parado."
+          actions={
+            <Button type="button" variant="secondary" size="sm" onClick={onOpenAttention}>
+              Ver fila de atenção
+            </Button>
+          }
+        />
         <Card
           as="article"
           title="Estabelecimentos"

@@ -253,6 +253,11 @@ describe('tenantDirectoryQuerySchema', () => {
   it('recusa sort fora de name|createdAt|updatedAt|attention', () => {
     expect(() => tenantDirectoryQuerySchema.parse({ sort: 'popularity' })).toThrow();
   });
+
+  it('recusa intervalo de criação que não seja timestamp ISO com fuso', () => {
+    expect(() => tenantDirectoryQuerySchema.parse({ createdFrom: 'ontem' })).toThrow();
+    expect(() => tenantDirectoryQuerySchema.parse({ createdTo: '2026-08-06' })).toThrow();
+  });
 });
 
 describe('createTenantResponseSchema', () => {

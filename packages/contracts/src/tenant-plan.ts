@@ -26,12 +26,23 @@ export const tenantPlanScheduledSchema = z.object({
   effectiveAt: z.string().datetime({ offset: true }),
 });
 
+export const tenantPlanHistoryEntrySchema = z.object({
+  previous: z.string().min(1),
+  next: z.string().min(1),
+  requestedAt: z.string().datetime({ offset: true }),
+  effectiveAt: z.string().datetime({ offset: true }),
+  appliedAt: z.string().datetime({ offset: true }).nullable(),
+  reason: z.string().min(1),
+  actorId: idSchema.nullable(),
+});
+
 export const tenantPlanResponseSchema = z.object({
   current: z.string().min(1),
   effectiveCapabilities: z.array(z.string()),
   scheduled: tenantPlanScheduledSchema.nullable(),
   consistent: z.boolean(),
   version: z.number().int().positive(),
+  history: z.array(tenantPlanHistoryEntrySchema),
 });
 
 export const tenantPlanUpdateRequestSchema = z.object({
@@ -65,6 +76,7 @@ export const tenantPlanReconcileResponseSchema = z.object({
 export type PlatformPlanSummary = z.infer<typeof platformPlanSummarySchema>;
 export type PlatformPlanListResponse = z.infer<typeof platformPlanListResponseSchema>;
 export type TenantPlanScheduled = z.infer<typeof tenantPlanScheduledSchema>;
+export type TenantPlanHistoryEntry = z.infer<typeof tenantPlanHistoryEntrySchema>;
 export type TenantPlanResponse = z.infer<typeof tenantPlanResponseSchema>;
 export type TenantPlanUpdateRequest = z.infer<typeof tenantPlanUpdateRequestSchema>;
 export type TenantPlanUpdateResponse = z.infer<typeof tenantPlanUpdateResponseSchema>;

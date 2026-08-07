@@ -34,7 +34,11 @@ test.describe('visual baseline', () => {
   test('web-admin: papéis e permissões', async ({ page }) => {
     await mockLogin(page);
     await page.route('**/v1/devices', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ items: [] }) }),
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ items: [] }),
+      }),
     );
     await page.route('**/v1/roles', async (route) => {
       await route.fulfill({
@@ -59,7 +63,14 @@ test.describe('visual baseline', () => {
     await login(page);
     await page.getByRole('button', { name: 'Papéis e permissões' }).click();
     await expect(page.getByRole('heading', { name: 'Proprietário' })).toBeVisible();
-    await expect(page).toHaveScreenshot('web-admin-roles.png', { fullPage: true, animations: 'disabled' });
+    await page.getByRole('main').evaluate((element) => {
+      const scrollContainer = element.closest<HTMLElement>('.db-console__content');
+      if (scrollContainer) scrollContainer.scrollTop = 0;
+    });
+    await expect(page).toHaveScreenshot('web-admin-roles.png', {
+      fullPage: true,
+      animations: 'disabled',
+    });
   });
 
   test('web-platform: provisionar estabelecimento', async ({ page }) => {
@@ -76,29 +87,55 @@ test.describe('visual baseline', () => {
         }),
       });
     });
+    await page.route('**/v1/platform/templates', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [{ code: 'PIZZERIA', name: 'Pizzaria', version: 1 }],
+        }),
+      });
+    });
     await page.goto('http://127.0.0.1:49174');
     await login(page);
     // Raiz (US-150) é a visão geral; "Novo estabelecimento" leva ao mesmo formulário fotografado aqui.
     await page.getByRole('button', { name: 'Novo estabelecimento' }).first().click();
     await expect(page.getByRole('heading', { name: 'Provisionar estabelecimento' })).toBeVisible();
-    await expect(page).toHaveScreenshot('web-platform-provision.png', { fullPage: true, animations: 'disabled' });
+    await expect(page.getByLabel('Modelo de negócio').locator('option')).toHaveCount(1);
+    await page.getByRole('main').evaluate((element) => {
+      const scrollContainer = element.closest<HTMLElement>('.db-console__content');
+      if (scrollContainer) scrollContainer.scrollTop = 0;
+    });
+    await expect(page).toHaveScreenshot('web-platform-provision.png', {
+      fullPage: true,
+      animations: 'disabled',
+    });
   });
 
   test('web-pos: pareamento de dispositivo', async ({ page }) => {
     await page.goto('http://127.0.0.1:49175');
     await expect(page.getByRole('heading', { name: 'Autorizar dispositivo' })).toBeVisible();
-    await expect(page).toHaveScreenshot('web-pos-device-pairing.png', { fullPage: true, animations: 'disabled' });
+    await expect(page).toHaveScreenshot('web-pos-device-pairing.png', {
+      fullPage: true,
+      animations: 'disabled',
+    });
   });
 
   test('web-kds: pareamento de dispositivo', async ({ page }) => {
     await page.goto('http://127.0.0.1:49176');
     await expect(page.getByRole('heading', { name: 'Autorizar dispositivo' })).toBeVisible();
-    await expect(page).toHaveScreenshot('web-kds-device-pairing.png', { fullPage: true, animations: 'disabled' });
+    await expect(page).toHaveScreenshot('web-kds-device-pairing.png', {
+      fullPage: true,
+      animations: 'disabled',
+    });
   });
 
   test('web-menu: vitrine do cardápio', async ({ page }) => {
     await page.goto('http://127.0.0.1:49177');
     await expect(page.getByRole('heading', { name: 'Nosso cardápio' })).toBeVisible();
-    await expect(page).toHaveScreenshot('web-menu-home.png', { fullPage: true, animations: 'disabled' });
+    await expect(page).toHaveScreenshot('web-menu-home.png', {
+      fullPage: true,
+      animations: 'disabled',
+    });
   });
 });

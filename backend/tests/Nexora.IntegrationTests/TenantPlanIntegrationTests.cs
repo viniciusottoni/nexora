@@ -55,6 +55,92 @@ public sealed class TenantPlanIntegrationTests
         config.AppliedPlanVersion.Should().Be(1);
     }
 
+    [Fact]
+    public async Task GetTenantPlan_Como_PlatformAdmin_Sem_Tenant_No_Token_Le_Config_Protegida_Por_Rls()
+    {
+        var slug = UniqueSlug();
+        await using var provisionDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId: null));
+        await using var provisionProvider = MediatRTestContainerFactory.Build(
+            provisionDb, new StaticTenantContext(tenantId: null));
+        var provisionSender = provisionProvider.GetRequiredService<ISender>();
+        var provisioned = await provisionSender.Send(BuildProvisionCommand(slug, plan: "COMPLETO"));
+        var tenantId = provisioned.Value!.Tenant.Id;
+
+        await using var platformDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId: null));
+        await using var platformProvider = MediatRTestContainerFactory.Build(
+            platformDb, new StaticTenantContext(tenantId: null));
+        var platformSender = platformProvider.GetRequiredService<ISender>();
+
+        var result = await platformSender.Send(new GetTenantPlanQuery(tenantId));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.EffectiveCapabilities.Should().NotBeEmpty();
+        result.Value.Consistent.Should().BeTrue(
+            "o administrador de plataforma não carrega tenant_id no token, então o handler precisa fixar o contexto antes de consultar tenant_config");
+    }
+
+    [Fact]
+    public async Task ReconcileTenantPlan_Como_PlatformAdmin_Sem_Tenant_No_Token_Le_Config_Protegida_Por_Rls()
+    {
+        var slug = UniqueSlug();
+        await using var provisionDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId: null));
+        await using var provisionProvider = MediatRTestContainerFactory.Build(
+            provisionDb, new StaticTenantContext(tenantId: null));
+        var provisionSender = provisionProvider.GetRequiredService<ISender>();
+        var provisioned = await provisionSender.Send(BuildProvisionCommand(slug, plan: "COMPLETO"));
+        var tenantId = provisioned.Value!.Tenant.Id;
+
+        await DivergeTenantConfigCapabilitiesAsync(tenantId);
+
+        await using var platformDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId: null));
+        await using var platformProvider = MediatRTestContainerFactory.Build(
+            platformDb, new StaticTenantContext(tenantId: null));
+        var platformSender = platformProvider.GetRequiredService<ISender>();
+
+        var result = await platformSender.Send(new ReconcileTenantPlanConfigCommand(tenantId, Guid.NewGuid()));
+
+        result.IsSuccess.Should().BeTrue(
+            "o administrador de plataforma não carrega tenant_id no token, então o handler precisa fixar o contexto antes de consultar tenant_config");
+        result.Value!.Changed.Should().BeTrue();
+        result.Value.Consistent.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetTenantPlan_Detecta_Divergencia_De_Versao_Mesmo_Quando_Capacidades_Nao_Mudaram()
+    {
+        var slug = UniqueSlug();
+        var planCode = $"TEST_{Guid.NewGuid():N}"[..21].ToUpperInvariant();
+        await using (var seedDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId: null)))
+        {
+            seedDb.PlatformPlans.Add(PlatformPlan.Create(
+                planCode, "Plano de teste", """["online_ordering"]""", "{}"));
+            await seedDb.SaveChangesAsync(CancellationToken.None);
+        }
+
+        await using var provisionDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId: null));
+        await using var provisionProvider = MediatRTestContainerFactory.Build(
+            provisionDb, new StaticTenantContext(tenantId: null));
+        var provisionSender = provisionProvider.GetRequiredService<ISender>();
+        var provisioned = await provisionSender.Send(BuildProvisionCommand(slug, plan: planCode));
+        var tenantId = provisioned.Value!.Tenant.Id;
+
+        await using (var catalogDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId: null)))
+        {
+            var catalogPlan = await catalogDb.PlatformPlans.SingleAsync(p => p.Code == planCode);
+            catalogPlan.Update(catalogPlan.Name, catalogPlan.CapabilitiesJson, catalogPlan.LimitsJson);
+            await catalogDb.SaveChangesAsync(CancellationToken.None);
+        }
+
+        await using var platformDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId: null));
+        await using var platformProvider = MediatRTestContainerFactory.Build(
+            platformDb, new StaticTenantContext(tenantId: null));
+        var result = await platformProvider.GetRequiredService<ISender>().Send(new GetTenantPlanQuery(tenantId));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Consistent.Should().BeFalse(
+            "o catálogo é versionado e a versão aplicada faz parte da configuração efetiva, mesmo sem alteração no conjunto de capacidades");
+    }
+
     /// <summary>Cenário: "Plano desconhecido" — no provisionamento.</summary>
     [Fact]
     public async Task ProvisionTenant_Com_Plano_Fora_Do_Catalogo_Retorna_422_Sem_Persistir_Nada()
@@ -130,6 +216,15 @@ public sealed class TenantPlanIntegrationTests
         planAfterEffectuation.Value!.Current.Should().Be("COMPLETO");
         planAfterEffectuation.Value.Scheduled.Should().BeNull();
         planAfterEffectuation.Value.Consistent.Should().BeTrue();
+        planAfterEffectuation.Value.History.Should().ContainSingle();
+        planAfterEffectuation.Value.History[0].Should().BeEquivalentTo(new
+        {
+            Previous = "GESTAO",
+            Next = "COMPLETO",
+            Reason = "Aditivo contratual #32",
+            ActorId = (Guid?)actorId,
+        });
+        planAfterEffectuation.Value.History[0].AppliedAt.Should().NotBeNull();
 
         await using var finalDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId));
         (await finalDb.Tenants.AsNoTracking().SingleAsync(t => t.Id == tenantId)).Plan.Should().Be("COMPLETO");

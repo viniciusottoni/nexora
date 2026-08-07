@@ -10,6 +10,7 @@ import {
   StatTile,
   StatusPill,
   SyncStatus,
+  TableCard,
   type OperationalRequestIdentity,
 } from '@nexora/ui';
 import type { OpenSessionEntry, OpenSessionsSortBy, OpenSessionsSummary } from '@nexora/contracts';
@@ -29,6 +30,8 @@ export interface CashPanelPageProps {
   readonly identity: Readonly<OperationalRequestIdentity>;
   /** US-050 §3.2 "Fora desta história": montar a conta é a US-051 — este painel só abre a tela quando já existe uma. */
   readonly onOpenBilling?: (sessionId: string) => void;
+  /** Ajusta os textos quando o painel funciona como porta de entrada do recebimento. */
+  readonly mode?: 'overview' | 'receiving';
 }
 
 const SORT_OPTIONS = [
@@ -46,7 +49,7 @@ const SEARCH_DEBOUNCE_MS = 300;
  * MESMO hub SignalR do mapa de mesas (a fonte de dados é a mesma tabela `table_session`) — não abre
  * uma segunda conexão WebSocket para o mesmo canal, com o mesmo fallback de polling (ADR-011).
  */
-export function CashPanelPage({ baseUrl = '', identity, onOpenBilling }: Readonly<CashPanelPageProps>) {
+export function CashPanelPage({ baseUrl = '', identity, onOpenBilling, mode = 'overview' }: Readonly<CashPanelPageProps>) {
   const [sessions, setSessions] = useState<readonly OpenSessionEntry[] | null>(null);
   const [summary, setSummary] = useState<OpenSessionsSummary>();
   const [error, setError] = useState<string>();
@@ -56,6 +59,7 @@ export function CashPanelPage({ baseUrl = '', identity, onOpenBilling }: Readonl
   const [connectionMode, setConnectionMode] = useState<TableMapConnectionMode>('ws');
   const [lastSyncAt, setLastSyncAt] = useState<Date>();
   const [now, setNow] = useState(() => new Date());
+  const [selectedSessionId, setSelectedSessionId] = useState<string>();
 
   const api = useMemo(() => new CashPanelApi(baseUrl), [baseUrl]);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -118,136 +122,169 @@ export function CashPanelPage({ baseUrl = '', identity, onOpenBilling }: Readonl
   }, []);
 
   const hasSearch = appliedSearch.trim().length > 0;
+  const selectedSession =
+    sessions?.find((session) => session.sessionId === selectedSessionId) ??
+    sessions?.find((session) => session.status === 'BILL_REQUESTED') ??
+    sessions?.[0];
 
   return (
     <main className="cash-panel">
-      <header className="cash-panel__header">
-        <div>
-          <p className="cash-panel__eyebrow">Painel do caixa</p>
-          <h1>Mesas e comandas abertas</h1>
-          <SyncStatus
-            state={connectionMode === 'ws' ? 'online' : 'delayed'}
-            {...(lastSyncAt ? { lastSync: formatRelativeSync(lastSyncAt, now) } : {})}
-          />
-        </div>
-        {summary ? (
-          <div className="cash-panel__summary nx-anim-in">
-            <StatTile label="Sessões abertas" value={summary.openSessions} icon="table_restaurant" />
-            <StatTile
-              label="Total em aberto"
-              value={formatMoneyBrl(summary.totalOpen)}
-              icon="payments"
-              variant="pulse"
+      <div className="cash-panel__workspace">
+        <div className="cash-panel__main-column">
+          {connectionMode !== 'ws' ? (
+            <div className="cash-panel__status">
+              <SyncStatus
+                state="delayed"
+                {...(lastSyncAt ? { lastSync: formatRelativeSync(lastSyncAt, now) } : {})}
+              />
+            </div>
+          ) : null}
+
+          {summary ? (
+            <div className="cash-panel__summary nx-anim-in">
+              <StatTile
+                label="Sessões abertas"
+                value={summary.openSessions}
+                icon="table_restaurant"
+                comparison="mesas e comandas no salão"
+              />
+              <StatTile
+                label="Total em aberto"
+                value={formatMoneyBrl(summary.totalOpen)}
+                icon="payments"
+                comparison="consumo das sessões abertas"
+              />
+            </div>
+          ) : null}
+
+          <div className="cash-panel__controls">
+            <Input
+              ref={searchInputRef}
+              type="search"
+              placeholder="Buscar por mesa ou comanda…"
+              icon={<Icon name="search" size={18} />}
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              aria-label="Buscar por mesa ou comanda"
+            />
+            <SegmentedControl
+              options={SORT_OPTIONS}
+              value={sortBy}
+              onChange={(value) => setSortBy(value as OpenSessionsSortBy)}
             />
           </div>
-        ) : null}
-      </header>
 
-      <div className="cash-panel__controls">
-        <Input
-          ref={searchInputRef}
-          type="search"
-          placeholder="Buscar por mesa ou comanda…"
-          icon={<Icon name="search" size={18} />}
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          aria-label="Buscar por mesa ou comanda"
-        />
-        <SegmentedControl
-          options={SORT_OPTIONS}
-          value={sortBy}
-          onChange={(value) => setSortBy(value as OpenSessionsSortBy)}
-          size="lg"
-        />
-      </div>
+          {error ? (
+            <p className="cash-panel__error nx-anim-in" role="alert">
+              {error}
+            </p>
+          ) : null}
 
-      {error ? (
-        <p className="cash-panel__error nx-anim-in" role="alert">
-          {error}
-        </p>
-      ) : null}
-
-      <Card
-        title="Salão"
-        subtitle={sessions ? formatSessionsSubtitle(sessions.length, hasSearch) : undefined}
-      >
-        {sessions === null ? (
-          <p className="cash-panel__loading" role="status">
-            Carregando painel do caixa…
-          </p>
-        ) : sessions.length === 0 ? (
-          <EmptyState
-            icon={hasSearch ? 'search_off' : 'table_restaurant'}
-            title={hasSearch ? 'Nenhuma mesa ou comanda encontrada' : 'Nenhuma mesa aberta no momento'}
+          <Card
+            title={mode === 'receiving' ? 'Selecione a conta para receber' : 'Mesas abertas'}
+            subtitle={sessions ? formatSessionsSubtitle(sessions.length, hasSearch) : undefined}
+            padding="tight"
+            className="cash-panel__tables-card"
           >
-            {hasSearch ? 'Tente buscar por outro número de mesa ou comanda.' : 'O salão está livre — nenhuma sessão aberta agora.'}
-          </EmptyState>
-        ) : (
-          <div className="db-table-wrap">
-            <table className="db-table db-table--compact cash-panel__table">
-              <thead>
-                <tr>
-                  <th>Mesa</th>
-                  <th>Área</th>
-                  <th>Status</th>
-                  <th>Aberta há</th>
-                  <th>Pessoas</th>
-                  <th>Garçom</th>
-                  <th style={{ textAlign: 'right' }}>Total</th>
-                  <th>Pendências</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              {/* nx-stagger só afeta a MONTAGEM inicial da tabela (animation em nó não remontado não
-                  reinicia) — atualizações via SignalR trocam o conteúdo de linhas já existentes. */}
-              <tbody className="nx-stagger">
+            {sessions === null ? (
+              <p className="cash-panel__loading" role="status">
+                Carregando painel do caixa…
+              </p>
+            ) : sessions.length === 0 ? (
+              <EmptyState
+                icon={hasSearch ? 'search_off' : 'table_restaurant'}
+                title={hasSearch ? 'Nenhuma mesa ou comanda encontrada' : 'Nenhuma mesa aberta no momento'}
+              >
+                {hasSearch ? 'Tente buscar por outro número de mesa ou comanda.' : 'O salão está livre — nenhuma sessão aberta agora.'}
+              </EmptyState>
+            ) : (
+              <div className="cash-panel__table-grid nx-stagger">
                 {sessions.map((session) => (
-                  <tr
+                  <TableCard
                     key={session.sessionId}
-                    className={
-                      session.status === 'BILL_REQUESTED' ? 'cash-panel__row cash-panel__row--attention' : 'cash-panel__row'
+                    name={
+                      <>
+                        <span className="cash-panel__table-prefix">Mesa</span>{' '}
+                        <span>{session.table}</span>
+                      </>
                     }
-                  >
-                    <td>
-                      {session.table}
-                      {session.orderCode ? <span className="cash-panel__order-code">{session.orderCode}</span> : null}
-                    </td>
-                    <td>{session.area}</td>
-                    <td>
-                      <StatusPill status={session.status} />
-                      {session.status === 'BILL_REQUESTED' && session.waitingSeconds != null ? (
-                        <span className="cash-panel__waiting">{formatWaitingSince(session.waitingSeconds)}</span>
-                      ) : null}
-                    </td>
-                    <td>{formatMinutesOpen(session.minutesOpen)}</td>
-                    <td>{session.guestCount}</td>
-                    <td>{session.waiter?.name ?? '—'}</td>
-                    <td className="db-table__numeric">{formatMoneyBrl(session.total)}</td>
-                    <td>
-                      {session.pendingItems > 0 ? (
-                        <Badge tone="warning" size="sm">
-                          {formatPendingItems(session.pendingItems)}
-                        </Badge>
-                      ) : (
-                        <span className="cash-panel__no-pending">—</span>
-                      )}
-                    </td>
-                    <td>
-                      {session.status === 'BILL_REQUESTED' && onOpenBilling ? (
-                        <Button size="sm" variant="primary" onClick={() => onOpenBilling(session.sessionId)}>
-                          Dividir a conta
-                        </Button>
-                      ) : (
-                        <span className="cash-panel__no-pending">—</span>
-                      )}
-                    </td>
-                  </tr>
+                    status={session.status}
+                    elapsed={formatMinutesOpen(session.minutesOpen)}
+                    guests={session.guestCount}
+                    total={formatMoneyBrl(session.total)}
+                    {...(session.waiter ? { waiter: session.waiter.name } : {})}
+                    attention={session.status === 'BILL_REQUESTED'}
+                    aria-pressed={selectedSession?.sessionId === session.sessionId}
+                    className={selectedSession?.sessionId === session.sessionId ? 'cash-panel__table-card--selected' : ''}
+                    onClick={() => setSelectedSessionId(session.sessionId)}
+                  />
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {selectedSession ? (
+          <Card
+            className="cash-panel__account"
+            title={`Conta · Mesa ${selectedSession.table}`}
+            subtitle={`${selectedSession.guestCount} ${selectedSession.guestCount === 1 ? 'pessoa' : 'pessoas'} · ${formatMinutesOpen(selectedSession.minutesOpen)} · garçom ${selectedSession.waiter?.name ?? 'não informado'}`}
+            actions={<StatusPill status={selectedSession.status} live={selectedSession.status === 'BILL_REQUESTED'} />}
+            footer={
+              <Button
+                variant="primary"
+                disabled={selectedSession.status !== 'BILL_REQUESTED' || !onOpenBilling}
+                onClick={() => onOpenBilling?.(selectedSession.sessionId)}
+              >
+                <Icon name="point_of_sale" size={18} />
+                {selectedSession.status === 'BILL_REQUESTED'
+                  ? mode === 'receiving'
+                    ? 'Receber conta'
+                    : 'Dividir a conta'
+                  : 'Aguardando pedido da conta'}
+              </Button>
+            }
+          >
+            <dl className="cash-panel__account-details">
+              <div>
+                <dt>Comanda</dt>
+                <dd>{selectedSession.orderCode ?? 'Ainda sem código'}</dd>
+              </div>
+              <div>
+                <dt>Área</dt>
+                <dd>{selectedSession.area}</dd>
+              </div>
+              <div>
+                <dt>Pendências</dt>
+                <dd>
+                  {selectedSession.pendingItems > 0 ? (
+                    <Badge tone="warning" size="sm">
+                      {formatPendingItems(selectedSession.pendingItems)}
+                    </Badge>
+                  ) : (
+                    'Nenhuma'
+                  )}
+                </dd>
+              </div>
+            </dl>
+
+            {selectedSession.status === 'BILL_REQUESTED' && selectedSession.waitingSeconds != null ? (
+              <div className="cash-panel__bill-requested">
+                <Icon name="notifications_active" size={20} />
+                <div>
+                  <strong>Conta solicitada</strong>
+                  <span>{formatWaitingSince(selectedSession.waitingSeconds)}</span>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="cash-panel__account-total">
+              <span>Total em aberto</span>
+              <strong>{formatMoneyBrl(selectedSession.total)}</strong>
+            </div>
+          </Card>
+        ) : null}
+      </div>
     </main>
   );
 }

@@ -1,5 +1,7 @@
 # E-06 · Sincronizacao Local-Nuvem
 
+> ❌ **Épico cancelado em 06/08/2026.** Mudança de foco de negócio: o produto (agora iMenu) passa a operar 100% online, sem servidor local por loja e sem sincronização edge↔nuvem. Ver [ADR-040](../../adrs/ADR-040-arquitetura-100-online-api-unica.md) e [E-16 · iMenu Online](../E-16-iMenu-Online/README.md). As 9 histórias abaixo permanecem no repositório como registro histórico, cada uma com banner de cancelamento.
+
 |  |  |
 |---|---|
 | **Fase** | 1 — MVP |

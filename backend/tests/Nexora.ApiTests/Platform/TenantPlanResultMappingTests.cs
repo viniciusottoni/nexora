@@ -68,7 +68,8 @@ public sealed class TenantPlanResultMappingTests
             new[] { "online_ordering", "kds" },
             Scheduled: null,
             Consistent: true,
-            Version: 1);
+            Version: 1,
+            History: Array.Empty<TenantPlanHistoryEntryResponse>());
 
         var result = global::Nexora.Application.Abstractions.Messaging.Result<TenantPlanResponse>.Success(response);
 

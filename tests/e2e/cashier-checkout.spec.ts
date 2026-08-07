@@ -60,7 +60,12 @@ test.describe('US-052 · fechamento de conta com múltiplas formas de pagamento'
                 waiter: { id: '0198aabb-1111-7000-8000-000000000011', name: 'João' },
                 sessionId,
               },
-              flags: { waiterCalled: false, billRequested: true, itemsReadyToServe: 0, aboveAvgDuration: false },
+              flags: {
+                waiterCalled: false,
+                billRequested: true,
+                itemsReadyToServe: 0,
+                aboveAvgDuration: false,
+              },
             },
           ],
         }),
@@ -72,12 +77,22 @@ test.describe('US-052 · fechamento de conta com múltiplas formas de pagamento'
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          items: [{ id: '0198aabb-2222-7000-8000-000000000022', name: 'Pizza Grande', total: '100.00', pending: false, assignedPerson: null }],
+          items: [
+            {
+              id: '0198aabb-2222-7000-8000-000000000022',
+              name: 'Pizza Grande',
+              total: '100.00',
+              pending: false,
+              assignedPerson: null,
+            },
+          ],
           subtotal: '100.00',
           serviceFee: '10.00',
           total: '110.00',
           splitMode: 'BY_PERSON',
-          split: [{ person: 1, amount: '110.00', serviceFeeAmount: '10.00', serviceFeeWaived: false }],
+          split: [
+            { person: 1, amount: '110.00', serviceFeeAmount: '10.00', serviceFeeWaived: false },
+          ],
           pendingItems: [],
           hasPendingItems: false,
           amountPaid: null,
@@ -90,7 +105,9 @@ test.describe('US-052 · fechamento de conta com múltiplas formas de pagamento'
     );
 
     await page.route(`**/v1/sessions/${sessionId}/payments`, async (route) => {
-      const payload = route.request().postDataJSON() as { payments: Array<{ method: string; amount: number }> };
+      const payload = route.request().postDataJSON() as {
+        payments: Array<{ method: string; amount: number }>;
+      };
       expect(payload.payments).toHaveLength(1);
       expect(payload.payments[0]?.method).toBe('CASH');
       expect(payload.payments[0]?.amount).toBe(110);
@@ -137,7 +154,7 @@ test.describe('US-052 · fechamento de conta com múltiplas formas de pagamento'
     await page.getByRole('button', { name: 'Dividir a conta' }).click();
 
     // US-052: painel de fechamento sempre visível, independente do modo de divisão escolhido.
-    await expect(page.getByRole('heading', { name: 'Fechar conta' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Fechar conta' })).toBeVisible();
     await page.getByRole('spinbutton', { name: 'Valor', exact: true }).fill('110');
 
     const submitButton = page.getByRole('button', { name: 'Registrar pagamentos e fechar conta' });

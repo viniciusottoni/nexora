@@ -35,20 +35,38 @@ const tenantId = '0198aabb-3333-7000-8000-000000000001';
 const catalog = {
   data: [
     { code: 'STANDARD', name: 'Standard', active: true, capabilities: ['online_ordering', 'kds'] },
-    { code: 'GESTAO', name: 'Gestão', active: true, capabilities: ['online_ordering', 'kds', 'inventory'] },
-    { code: 'COMPLETO', name: 'Completo', active: true, capabilities: ['online_ordering', 'kds', 'inventory', 'multi_store'] },
+    {
+      code: 'GESTAO',
+      name: 'Gestão',
+      active: true,
+      capabilities: ['online_ordering', 'kds', 'inventory'],
+    },
+    {
+      code: 'COMPLETO',
+      name: 'Completo',
+      active: true,
+      capabilities: ['online_ordering', 'kds', 'inventory', 'multi_store'],
+    },
   ],
 };
 
 async function mockLogin(page: Page) {
   await page.route('**/v1/auth/login', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adminSession) });
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(adminSession),
+    });
   });
 }
 
 async function mockPlatformSummary(page: Page) {
   await page.route('**/v1/platform/summary', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(platformSummary) });
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(platformSummary),
+    });
   });
 }
 
@@ -83,7 +101,11 @@ async function mockTenantOverview(page: Page) {
 
 async function mockPlanCatalog(page: Page) {
   await page.route('**/v1/platform/plans', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(catalog) });
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(catalog),
+    });
   });
 }
 
@@ -104,11 +126,18 @@ test.describe('Plano comercial do estabelecimento (US-154)', () => {
     await mockTenantOverview(page);
     await mockPlanCatalog(page);
 
-    let currentPlan: { current: string; scheduled: unknown; consistent: boolean; version: number } = {
+    let currentPlan: {
+      current: string;
+      scheduled: unknown;
+      consistent: boolean;
+      version: number;
+      history: Array<Record<string, unknown>>;
+    } = {
       current: 'GESTAO',
       scheduled: null,
       consistent: true,
       version: 3,
+      history: [],
     };
 
     await page.route(`**/v1/platform/tenants/${tenantId}/plan`, async (route) => {
@@ -119,25 +148,52 @@ test.describe('Plano comercial do estabelecimento (US-154)', () => {
           contentType: 'application/json',
           body: JSON.stringify({
             current: currentPlan.current,
-            effectiveCapabilities: catalog.data.find((p) => p.code === currentPlan.current)?.capabilities ?? [],
+            effectiveCapabilities:
+              catalog.data.find((p) => p.code === currentPlan.current)?.capabilities ?? [],
             scheduled: currentPlan.scheduled,
             consistent: currentPlan.consistent,
             version: currentPlan.version,
+            history: currentPlan.history,
           }),
         });
         return;
       }
 
       if (request.method() === 'PUT') {
-        const body = request.postDataJSON() as { plan: string; effectiveAt?: string; reason: string };
+        const body = request.postDataJSON() as {
+          plan: string;
+          effectiveAt?: string;
+          reason: string;
+        };
         expect(request.headers()['if-match']).toBe(`"${currentPlan.version}"`);
         expect(body.reason.trim().length).toBeGreaterThan(0);
 
-        currentPlan = { current: body.plan, scheduled: null, consistent: true, version: currentPlan.version + 1 };
+        const previous = currentPlan.current;
+        currentPlan = {
+          current: body.plan,
+          scheduled: null,
+          consistent: true,
+          version: currentPlan.version + 1,
+          history: [
+            {
+              previous,
+              next: body.plan,
+              requestedAt: '2026-01-01T00:00:00Z',
+              effectiveAt: body.effectiveAt ?? '2026-01-01T00:00:00Z',
+              appliedAt: '2026-01-01T00:00:01Z',
+              reason: body.reason,
+              actorId: adminSession.user.id,
+            },
+          ],
+        };
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ current: currentPlan.current, scheduled: null, version: currentPlan.version }),
+          body: JSON.stringify({
+            current: currentPlan.current,
+            scheduled: null,
+            version: currentPlan.version,
+          }),
         });
         return;
       }
@@ -149,7 +205,9 @@ test.describe('Plano comercial do estabelecimento (US-154)', () => {
     await page.goto(`http://127.0.0.1:49174/estabelecimentos/${tenantId}`);
     await expect(page.getByRole('heading', { name: 'Pizzaria Dona Betinha' })).toBeVisible();
 
-    await expect(page.getByText('GESTAO')).toBeVisible();
+    // `GESTAO` também aparece nos campos "Plano" do cabeçalho/branding (US-152/153, fora desta
+    // seção) — escopo pelo badge da seção "Plano comercial" (US-154) para não ser ambíguo.
+    await expect(page.locator('.db-badge--brand').filter({ hasText: 'GESTAO' })).toBeVisible();
 
     await page.getByRole('button', { name: /Alterar plano/ }).click();
     await expect(page.getByRole('heading', { name: 'Alterar plano' })).toBeVisible();
@@ -169,10 +227,21 @@ test.describe('Plano comercial do estabelecimento (US-154)', () => {
     await confirmButton.click();
 
     await expect(page.getByRole('heading', { name: 'Alterar plano' })).not.toBeVisible();
-    await expect(page.getByText('COMPLETO')).toBeVisible();
+    await expect(
+      page
+        .getByText('Plano atual', { exact: true })
+        .locator('..')
+        .getByText('COMPLETO', { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Histórico de planos' })).toBeVisible();
+    await expect(
+      page.getByRole('table', { name: 'Histórico de planos' }).getByText('Aditivo contratual #32'),
+    ).toBeVisible();
   });
 
-  test('agendar mudança com vigência futura mantém o plano atual e mostra o agendamento', async ({ page }) => {
+  test('agendar mudança com vigência futura mantém o plano atual e mostra o agendamento', async ({
+    page,
+  }) => {
     await mockLogin(page);
     await mockPlatformSummary(page);
     await mockTenantOverview(page);
@@ -190,6 +259,7 @@ test.describe('Plano comercial do estabelecimento (US-154)', () => {
             scheduled: { plan: 'COMPLETO', effectiveAt: '2027-01-01T00:00:00Z' },
             consistent: true,
             version: 3,
+            history: [],
           }),
         });
         return;
@@ -215,10 +285,12 @@ test.describe('Plano comercial do estabelecimento (US-154)', () => {
     await page.goto(`http://127.0.0.1:49174/estabelecimentos/${tenantId}`);
 
     await expect(page.getByText(/COMPLETO a partir de/)).toBeVisible();
-    await expect(page.getByText('GESTAO')).toBeVisible();
+    await expect(page.locator('.db-badge--brand').filter({ hasText: 'GESTAO' })).toBeVisible();
   });
 
-  test('plano desconhecido: 422 PLAN_NOT_AVAILABLE aparece no modal e não fecha o diálogo', async ({ page }) => {
+  test('plano desconhecido: 422 PLAN_NOT_AVAILABLE aparece no modal e não fecha o diálogo', async ({
+    page,
+  }) => {
     await mockLogin(page);
     await mockPlatformSummary(page);
     await mockTenantOverview(page);
@@ -236,6 +308,7 @@ test.describe('Plano comercial do estabelecimento (US-154)', () => {
             scheduled: null,
             consistent: true,
             version: 3,
+            history: [],
           }),
         });
         return;
@@ -245,7 +318,10 @@ test.describe('Plano comercial do estabelecimento (US-154)', () => {
         await route.fulfill({
           status: 422,
           contentType: 'application/problem+json',
-          body: JSON.stringify({ detail: 'Plano comercial não disponível.', code: 'PLAN_NOT_AVAILABLE' }),
+          body: JSON.stringify({
+            detail: 'Plano comercial não disponível.',
+            code: 'PLAN_NOT_AVAILABLE',
+          }),
         });
         return;
       }
@@ -286,6 +362,7 @@ test.describe('Plano comercial do estabelecimento (US-154)', () => {
           scheduled: null,
           consistent: reconciled,
           version: 3,
+          history: [],
         }),
       });
     });

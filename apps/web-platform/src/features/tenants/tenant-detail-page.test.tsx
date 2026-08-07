@@ -28,12 +28,23 @@ const healthyOverview: TenantOverviewResponse = {
     updatedAt: '2026-02-01T09:00:00Z',
   },
   owner: { name: 'Betinha Silva', email: 'betinha@example.com', inviteStatus: 'ACCEPTED' },
-  stores: [{ id: '0198aabb-0002-7000-8000-000000000001', name: 'Matriz', timezone: 'America/Sao_Paulo' }],
+  stores: [
+    { id: '0198aabb-0002-7000-8000-000000000001', name: 'Matriz', timezone: 'America/Sao_Paulo' },
+  ],
   installations: [
-    { id: '0198aabb-0003-7000-8000-000000000001', label: 'Matriz — edge', status: 'ACTIVE', health: 'OK' },
+    {
+      id: '0198aabb-0003-7000-8000-000000000001',
+      label: 'Matriz — edge',
+      status: 'ACTIVE',
+      health: 'OK',
+    },
   ],
   deployment: { completed: 9, total: 9, nextAction: null },
-  links: { publicMenu: 'https://donabetinha.nexora.app/cardapio', admin: 'https://admin.donabetinha.nexora.app', health: null },
+  links: {
+    publicMenu: 'https://donabetinha.nexora.app/cardapio',
+    admin: 'https://admin.donabetinha.nexora.app',
+    health: null,
+  },
 };
 
 const incompleteOverview: TenantOverviewResponse = {
@@ -41,14 +52,23 @@ const incompleteOverview: TenantOverviewResponse = {
   tenant: { ...healthyOverview.tenant, status: 'INSTALLING', availableTransitions: [] },
   owner: { name: 'Betinha Silva', email: 'betinha@example.com', inviteStatus: 'PENDING' },
   installations: [
-    { id: '0198aabb-0003-7000-8000-000000000001', label: 'Matriz — edge', status: 'PENDING', health: 'UNKNOWN' },
+    {
+      id: '0198aabb-0003-7000-8000-000000000001',
+      label: 'Matriz — edge',
+      status: 'PENDING',
+      health: 'UNKNOWN',
+    },
   ],
   deployment: { completed: 4, total: 9, nextAction: 'EDGE_INSTALL' },
 };
 
 const suspendedOverview: TenantOverviewResponse = {
   ...healthyOverview,
-  tenant: { ...healthyOverview.tenant, status: 'SUSPENDED', availableTransitions: ['ACTIVE', 'CANCELLED'] },
+  tenant: {
+    ...healthyOverview.tenant,
+    status: 'SUSPENDED',
+    availableTransitions: ['ACTIVE', 'CANCELLED'],
+  },
 };
 
 const cancelledOverview: TenantOverviewResponse = {
@@ -93,7 +113,9 @@ describe('TenantDetailPage', () => {
       />,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Pizzaria Dona Betinha' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Pizzaria Dona Betinha' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('dona-betinha')).toBeInTheDocument();
     expect(screen.getByText('Ativo')).toBeInTheDocument();
     // "COMPLETO" aparece duas vezes de propósito (Cabeçalho e Resumo de branding/configuração).
@@ -152,7 +174,16 @@ describe('TenantDetailPage', () => {
 
     // RN-015: nunca exibe pedido, caixa, estoque ou financeiro do cliente — nem como link, nem como número.
     const text = container.textContent ?? '';
-    for (const forbidden of ['pedido', 'Pedido', 'caixa', 'Caixa', 'estoque', 'Estoque', 'financeiro', 'Financeiro']) {
+    for (const forbidden of [
+      'pedido',
+      'Pedido',
+      'caixa',
+      'Caixa',
+      'estoque',
+      'Estoque',
+      'financeiro',
+      'Financeiro',
+    ]) {
       expect(text).not.toContain(forbidden);
     }
   });
@@ -306,7 +337,10 @@ describe('TenantDetailPage', () => {
 
     it('suspender: mostra o impacto, exige motivo, envia If-Match com o statusVersion corrente e atualiza após sucesso (US-153 §4/§10)', async () => {
       const transitionStatus = vi.fn().mockResolvedValue(transitionResponse);
-      const get = vi.fn().mockResolvedValueOnce(healthyOverview).mockResolvedValueOnce(suspendedOverview);
+      const get = vi
+        .fn()
+        .mockResolvedValueOnce(healthyOverview)
+        .mockResolvedValueOnce(suspendedOverview);
       const api = buildApi({ get, transitionStatus });
       render(
         <TenantDetailPage
@@ -328,7 +362,9 @@ describe('TenantDetailPage', () => {
         ),
       ).toBeInTheDocument();
 
-      const confirmButton = within(dialog).getByRole('button', { name: 'Sim, suspender estabelecimento' });
+      const confirmButton = within(dialog).getByRole('button', {
+        name: 'Sim, suspender estabelecimento',
+      });
       expect(confirmButton).toBeDisabled();
 
       fireEvent.change(within(dialog).getByLabelText('Motivo'), {
@@ -364,7 +400,9 @@ describe('TenantDetailPage', () => {
 
       fireEvent.click(await screen.findByRole('button', { name: 'Suspender' }));
       const dialog = await screen.findByRole('dialog');
-      const confirmButton = within(dialog).getByRole('button', { name: 'Sim, suspender estabelecimento' });
+      const confirmButton = within(dialog).getByRole('button', {
+        name: 'Sim, suspender estabelecimento',
+      });
 
       fireEvent.change(within(dialog).getByLabelText('Motivo'), { target: { value: '   ' } });
       expect(confirmButton).toBeDisabled();
@@ -378,7 +416,10 @@ describe('TenantDetailPage', () => {
         version: 6,
         changedAt: '2026-08-05T12:00:00Z',
       });
-      const get = vi.fn().mockResolvedValueOnce(healthyOverview).mockResolvedValueOnce(cancelledOverview);
+      const get = vi
+        .fn()
+        .mockResolvedValueOnce(healthyOverview)
+        .mockResolvedValueOnce(cancelledOverview);
       const api = buildApi({ get, transitionStatus });
       render(
         <TenantDetailPage
@@ -400,8 +441,12 @@ describe('TenantDetailPage', () => {
         ),
       ).toBeInTheDocument();
 
-      const confirmButton = within(dialog).getByRole('button', { name: 'Sim, cancelar estabelecimento' });
-      fireEvent.change(within(dialog).getByLabelText('Motivo'), { target: { value: 'Encerramento contratual' } });
+      const confirmButton = within(dialog).getByRole('button', {
+        name: 'Sim, cancelar estabelecimento',
+      });
+      fireEvent.change(within(dialog).getByLabelText('Motivo'), {
+        target: { value: 'Encerramento contratual' },
+      });
       // Motivo preenchido, mas o slug de confirmação ainda não — continua desabilitado.
       expect(confirmButton).toBeDisabled();
 
@@ -441,11 +486,19 @@ describe('TenantDetailPage', () => {
 
       fireEvent.click(await screen.findByRole('button', { name: 'Suspender' }));
       const dialog = await screen.findByRole('dialog');
-      fireEvent.change(within(dialog).getByLabelText('Motivo'), { target: { value: 'Motivo válido' } });
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Sim, suspender estabelecimento' }));
+      fireEvent.change(within(dialog).getByLabelText('Motivo'), {
+        target: { value: 'Motivo válido' },
+      });
+      fireEvent.click(
+        within(dialog).getByRole('button', { name: 'Sim, suspender estabelecimento' }),
+      );
 
-      expect(await within(dialog).findByText('Informe um motivo para a transição.')).toBeInTheDocument();
-      expect(screen.getByRole('dialog', { name: 'Suspender estabelecimento?' })).toBeInTheDocument();
+      expect(
+        await within(dialog).findByText('Informe um motivo para a transição.'),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('dialog', { name: 'Suspender estabelecimento?' }),
+      ).toBeInTheDocument();
     });
 
     it('TENANT_STATUS_TRANSITION_INVALID do servidor aparece no AlertBanner e mantém o modal aberto', async () => {
@@ -466,11 +519,19 @@ describe('TenantDetailPage', () => {
 
       fireEvent.click(await screen.findByRole('button', { name: 'Suspender' }));
       const dialog = await screen.findByRole('dialog');
-      fireEvent.change(within(dialog).getByLabelText('Motivo'), { target: { value: 'Motivo válido' } });
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Sim, suspender estabelecimento' }));
+      fireEvent.change(within(dialog).getByLabelText('Motivo'), {
+        target: { value: 'Motivo válido' },
+      });
+      fireEvent.click(
+        within(dialog).getByRole('button', { name: 'Sim, suspender estabelecimento' }),
+      );
 
-      expect(await within(dialog).findByText('Esta transição não é permitida para o status atual.')).toBeInTheDocument();
-      expect(screen.getByRole('dialog', { name: 'Suspender estabelecimento?' })).toBeInTheDocument();
+      expect(
+        await within(dialog).findByText('Esta transição não é permitida para o status atual.'),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('dialog', { name: 'Suspender estabelecimento?' }),
+      ).toBeInTheDocument();
     });
 
     it('CONCURRENCY_CONFLICT mostra a dica de recarregar e mantém o modal aberto (US-153 §4 cenário "Concorrência")', async () => {
@@ -491,13 +552,21 @@ describe('TenantDetailPage', () => {
 
       fireEvent.click(await screen.findByRole('button', { name: 'Suspender' }));
       const dialog = await screen.findByRole('dialog');
-      fireEvent.change(within(dialog).getByLabelText('Motivo'), { target: { value: 'Motivo válido' } });
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Sim, suspender estabelecimento' }));
+      fireEvent.change(within(dialog).getByLabelText('Motivo'), {
+        target: { value: 'Motivo válido' },
+      });
+      fireEvent.click(
+        within(dialog).getByRole('button', { name: 'Sim, suspender estabelecimento' }),
+      );
 
       expect(
-        await within(dialog).findByText(/outro administrador já alterou este estabelecimento.*recarregue/i),
+        await within(dialog).findByText(
+          /outro administrador já alterou este estabelecimento.*recarregue/i,
+        ),
       ).toBeInTheDocument();
-      expect(screen.getByRole('dialog', { name: 'Suspender estabelecimento?' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('dialog', { name: 'Suspender estabelecimento?' }),
+      ).toBeInTheDocument();
     });
 
     it('botão "Cancelar" do modal fecha o diálogo sem chamar a API', async () => {
@@ -520,6 +589,28 @@ describe('TenantDetailPage', () => {
 
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
       expect(transitionStatus).not.toHaveBeenCalled();
+    });
+
+    it('identifica campos administrativos para preenchimento e gerenciadores de formulario', async () => {
+      render(
+        <TenantDetailPage
+          tenantId={TENANT_ID}
+          api={buildApi()}
+          onBack={vi.fn()}
+          onRequestSupportAccess={vi.fn()}
+          onOpenInstallations={vi.fn()}
+          onOpenBusinessTemplates={vi.fn()}
+        />,
+      );
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Suspender' }));
+      const dialog = await screen.findByRole('dialog');
+
+      expect(within(dialog).getByLabelText('Motivo')).toHaveAttribute(
+        'name',
+        'tenant-status-reason',
+      );
+      expect(within(dialog).getByLabelText('Motivo')).toHaveAttribute('autocomplete', 'off');
     });
   });
 });

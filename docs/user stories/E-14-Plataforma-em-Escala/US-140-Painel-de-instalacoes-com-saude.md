@@ -1,8 +1,10 @@
 # US-140 · Painel de instalacoes com saude
 
+> ⚠️ **Marcada para redesenho em 06/08/2026 — não cancelada.** Sem edge, não existe mais hardware físico por loja para monitorar (ver [ADR-040](../../adrs/ADR-040-arquitetura-100-online-api-unica.md) e [E-16 · iMenu Online](../E-16-iMenu-Online/README.md)). A tabela `edge_installation` que sustenta esta história é removida (E-16/US-169). O valor original — "descobrir o problema antes de o cliente ligar" — provavelmente continua válido para a Fase 5, mas precisa ser redesenhado em torno de saúde de tenant/API (taxa de erro, latência, jobs de background por tenant), não de hardware de loja. Esta história **não deve ser implementada como está** — precisa de refinamento próprio quando a Fase 5 for planejada.
+
 |  |  |
 |---|---|
-| **Épico** | [E-14 · Plataforma em Escala](./README.md) |
+| **Épico** | [E-14 · Plataforma em Escala](./README.md) — ⚠️ **PENDENTE DE REDESENHO** |
 | **Fase** | 5 — Produto replicável em escala |
 | **Prioridade** | M — Must have |
 | **Estimativa** | 8 pontos |

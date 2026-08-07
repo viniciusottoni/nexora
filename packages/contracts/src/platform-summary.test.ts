@@ -24,4 +24,15 @@ describe('platformSummaryResponseSchema', () => {
       }),
     ).toThrow();
   });
+
+  it('recusa generatedAt que não seja timestamp ISO com fuso', () => {
+    expect(() =>
+      platformSummaryResponseSchema.parse({
+        tenants: { total: 1, active: 1, attention: 0 },
+        installations: { healthy: 1, degraded: 0, offline: 0 },
+        pendingInvites: 0,
+        generatedAt: 'agora',
+      }),
+    ).toThrow();
+  });
 });

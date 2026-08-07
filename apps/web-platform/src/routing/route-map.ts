@@ -12,6 +12,7 @@ export type PlatformRouteId =
   | 'tenants-new'
   | 'tenant-detail'
   | 'installations'
+  | 'attention'
   | 'support-access'
   | 'business-templates'
   | 'releases'
@@ -39,6 +40,7 @@ const ROUTES: readonly RouteDefinition[] = [
   // `TenantDetailPage`).
   { id: 'tenant-detail', pattern: /^\/estabelecimentos\/([^/]+)\/?$/, paramNames: ['tenantId'] },
   { id: 'installations', pattern: /^\/instalacoes\/?$/ },
+  { id: 'attention', pattern: /^\/central-de-atencao\/?$/ },
   { id: 'support-access', pattern: /^\/auditoria-suporte\/?$/ },
   { id: 'business-templates', pattern: /^\/modelos-de-negocio\/?$/ },
   { id: 'releases', pattern: /^\/versoes\/?$/ },
@@ -50,19 +52,28 @@ const PATH_BY_ROUTE: Record<Exclude<PlatformRouteId, 'onboarding' | 'tenant-deta
   tenants: '/estabelecimentos',
   'tenants-new': '/estabelecimentos/novo',
   installations: '/instalacoes',
+  attention: '/central-de-atencao',
   'support-access': '/auditoria-suporte',
   'business-templates': '/modelos-de-negocio',
   releases: '/versoes',
 };
 
 /** Rota canônica de um destino de navegação (não cobre rotas com parâmetro na URL: `onboarding`, `tenant-detail`). */
-export function pathForRoute(routeId: Exclude<PlatformRouteId, 'onboarding' | 'tenant-detail'>): string {
+export function pathForRoute(
+  routeId: Exclude<PlatformRouteId, 'onboarding' | 'tenant-detail'>,
+): string {
   return PATH_BY_ROUTE[routeId];
 }
 
 /** US-151 — destino de uma linha do diretório. */
 export function pathForTenantDetail(tenantId: string): string {
   return `/estabelecimentos/${tenantId}`;
+}
+
+/** Mantém a consulta reproduzível do diretório ao navegar para o detalhe e voltar (US-151 §3.1/§12). */
+export function pathWithSearch(path: string, search: string): string {
+  if (!search || search === '?') return path;
+  return `${path}${search.startsWith('?') ? search : `?${search}`}`;
 }
 
 /** Casa um `pathname` contra o mapa de rotas — `undefined` quando nenhuma rota reconhece o caminho ("recurso inexistente"). */

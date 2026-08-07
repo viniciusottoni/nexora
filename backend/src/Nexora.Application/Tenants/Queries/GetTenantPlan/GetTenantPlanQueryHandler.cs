@@ -59,6 +59,11 @@ internal sealed class GetTenantPlanQueryHandler
             return Result<TenantPlanResponse>.Failure("Estabelecimento não encontrado.", ApiErrorCodes.TenantNotFound);
         }
 
+        // O administrador de plataforma não carrega `tenant_id` no token. `tenant_config` e
+        // `tenant_plan_history` são protegidas por RLS, portanto o contexto precisa ser fixado a
+        // partir do tenant já autorizado pela rota ANTES da primeira consulta a essas tabelas.
+        await _db.SetTenantContextAsync(tenant.Id, cancellationToken);
+
         var tenantConfig = await _db.TenantConfigs
             .SingleOrDefaultAsync(c => c.TenantId == tenant.Id, cancellationToken);
 
@@ -73,8 +78,6 @@ internal sealed class GetTenantPlanQueryHandler
         if (pending is not null && pending.EffectiveAt <= now)
         {
             // Efetivação preguiçosa/idempotente — ver docstring da classe.
-            await _db.SetTenantContextAsync(tenant.Id, cancellationToken);
-
             var newPlanCatalogEntry = await _db.PlatformPlans
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Code == pending.NextPlan, cancellationToken);
@@ -147,14 +150,30 @@ internal sealed class GetTenantPlanQueryHandler
         var catalogCapabilities = DeserializeCapabilities(platformPlan?.CapabilitiesJson);
         var consistent = platformPlan is not null
             && tenantConfig is not null
+            && tenantConfig.AppliedPlanVersion == platformPlan.Version
             && CapabilitySetsEqual(effectiveCapabilities, catalogCapabilities);
+
+        var history = await _db.TenantPlanHistories
+            .AsNoTracking()
+            .Where(h => h.TenantId == tenant.Id)
+            .OrderByDescending(h => h.RequestedAt)
+            .Select(h => new TenantPlanHistoryEntryResponse(
+                h.PreviousPlan,
+                h.NextPlan,
+                h.RequestedAt,
+                h.EffectiveAt,
+                h.AppliedAt,
+                h.Reason,
+                h.ActorId))
+            .ToListAsync(cancellationToken);
 
         var response = new TenantPlanResponse(
             tenant.Plan,
             effectiveCapabilities,
             scheduled,
             consistent,
-            tenant.PlanVersion);
+            tenant.PlanVersion,
+            history);
 
         return Result<TenantPlanResponse>.Success(response);
     }

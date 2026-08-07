@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './app.js';
@@ -12,6 +12,11 @@ function jsonResponse(body: unknown, status = 200): Response {
     status,
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+function requestUrl(input: RequestInfo | URL): string {
+  if (typeof input === 'string') return input;
+  return input instanceof URL ? input.toString() : input.url;
 }
 
 const SUMMARY_BODY = {
@@ -39,24 +44,61 @@ describe('App (US-150 — estrutura e navegação do painel de plataforma)', () 
     vi.restoreAllMocks();
   });
 
-  it('sem sessão, mostra a tela de login (nunca o shell)', () => {
+  it('sem sessão, mostra a tela de login (nunca o shell)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse({ otp: '123456', expiresInSeconds: 19 })),
+    );
+
     render(<App />);
     expect(screen.getByRole('heading', { name: 'Entrar na gestão' })).toBeInTheDocument();
+    // Aguarda o efeito assíncrono do OTP de desenvolvimento terminar dentro do `act` da Testing Library.
+    expect(await screen.findByText('OTP atual: 123456')).toBeInTheDocument();
   });
 
   it('entrada pela raiz: visão geral com navegação para Estabelecimentos, Instalações e Auditoria e suporte; "Novo estabelecimento" é uma ação', async () => {
     localStorage.setItem(ACCESS_KEY, 'token-admin');
-    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(SUMMARY_BODY)));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse(SUMMARY_BODY)),
+    );
 
     render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Visão geral' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Estabelecimentos' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Instalações' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Central de atenção' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Auditoria e suporte' })).toBeInTheDocument();
+    expect(screen.getByText('Administrador da plataforma')).toBeInTheDocument();
+    expect(screen.getByText('Ambiente local')).toBeInTheDocument();
     // A raiz mostra a visão geral, e "Novo estabelecimento" é uma AÇÃO — não o conteúdo da rota.
-    expect(screen.queryByRole('heading', { name: 'Provisionar estabelecimento' })).not.toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /Novo estabelecimento/ }).length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole('heading', { name: 'Provisionar estabelecimento' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Novo estabelecimento/ }).length).toBeGreaterThan(
+      0,
+    );
+  });
+
+  it('abre um drawer acessível em telas menores e o fecha depois da navegação', async () => {
+    localStorage.setItem(ACCESS_KEY, 'token-admin');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse(SUMMARY_BODY)),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Visão geral' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir navegação' }));
+
+    const drawer = screen.getByRole('dialog', { name: 'Navegação principal' });
+    expect(drawer).toBeInTheDocument();
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Estabelecimentos' }));
+
+    expect(window.location.pathname).toBe('/estabelecimentos');
+    expect(screen.queryByRole('dialog', { name: 'Navegação principal' })).not.toBeInTheDocument();
   });
 
   it('usuário sem policy PlatformAdmin recebe acesso negado, sem nenhum dado de plataforma', async () => {
@@ -78,7 +120,10 @@ describe('App (US-150 — estrutura e navegação do painel de plataforma)', () 
   it('acesso direto a uma rota protegida (deep link) renderiza a rota com o shell, mantendo o caminho após reload', async () => {
     localStorage.setItem(ACCESS_KEY, 'token-admin');
     window.history.pushState({}, '', '/instalacoes');
-    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(SUMMARY_BODY)));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse(SUMMARY_BODY)),
+    );
 
     render(<App />);
 
@@ -91,7 +136,9 @@ describe('App (US-150 — estrutura e navegação do painel de plataforma)', () 
   it('sessão expirada (401 na sonda) encerra a sessão local e volta ao login sem loop de redirecionamento', async () => {
     localStorage.setItem(ACCESS_KEY, 'token-expirado');
     // Sem refresh token: authenticatedFetch (packages/ui) não tenta renovar, devolve o 401 direto.
-    const fetchMock = vi.fn(async (_input: RequestInfo | URL) => jsonResponse({ detail: 'Sessão expirada.' }, 401));
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL) =>
+      jsonResponse({ detail: 'Sessão expirada.' }, 401),
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     render(<App />);
@@ -138,7 +185,7 @@ describe('App (US-150 — estrutura e navegação do painel de plataforma)', () 
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
+        const url = requestUrl(input);
         if (url.includes('/v1/platform/summary')) return jsonResponse(SUMMARY_BODY);
         if (url.includes('/overview')) return jsonResponse(overviewBody);
         return jsonResponse({ detail: 'not found' }, 404);
@@ -147,24 +194,62 @@ describe('App (US-150 — estrutura e navegação do painel de plataforma)', () 
 
     render(<App />);
 
-    expect(await screen.findByRole('heading', { name: 'Pizzaria Dona Betinha' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Pizzaria Dona Betinha' }),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Solicitar acesso de suporte/ }));
 
-    expect(await screen.findByRole('heading', { name: 'Solicitar acesso de suporte' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Solicitar acesso de suporte' }),
+    ).toBeInTheDocument();
     expect(window.location.pathname).toBe('/auditoria-suporte');
     expect(window.location.search).toBe(`?tenantId=${tenantId}`);
     expect(screen.getByLabelText('Estabelecimento (id)')).toHaveValue(tenantId);
   });
 
-  it('rota desconhecida mostra "recurso inexistente" sem derrubar o shell', async () => {
+  it('US-157 — acesso direto à central de atenção renderiza a fila com o shell, e o atalho "Ver fila de atenção" da visão geral leva até lá', async () => {
     localStorage.setItem(ACCESS_KEY, 'token-admin');
-    window.history.pushState({}, '', '/rota-desconhecida');
-    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(SUMMARY_BODY)));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = requestUrl(input);
+        if (url.includes('/v1/platform/summary')) return jsonResponse(SUMMARY_BODY);
+        if (url.includes('/v1/platform/attention')) {
+          return jsonResponse({
+            data: [],
+            nextCursor: null,
+            meta: { collectedAt: '2026-08-06T12:00:00Z', unavailableSources: [] },
+          });
+        }
+        return jsonResponse({ detail: 'not found' }, 404);
+      }),
+    );
 
     render(<App />);
 
-    expect(await screen.findByRole('heading', { name: 'Página não encontrada' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Visão geral' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver fila de atenção' }));
+
+    expect(await screen.findByRole('heading', { name: 'Central de atenção' })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/central-de-atencao');
+    const activeItem = screen.getByRole('button', { name: 'Central de atenção' });
+    expect(activeItem).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('rota desconhecida mostra "recurso inexistente" sem derrubar o shell', async () => {
+    localStorage.setItem(ACCESS_KEY, 'token-admin');
+    window.history.pushState({}, '', '/rota-desconhecida');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse(SUMMARY_BODY)),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Página não encontrada' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Estabelecimentos' })).toBeInTheDocument();
   });
 });

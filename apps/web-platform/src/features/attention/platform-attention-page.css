@@ -1,0 +1,132 @@
+/* US-157 · Central operacional, auditoria e atalhos de suporte — casca/página vêm de console.css
+   (@nexora/ui); aqui só o que é específico desta tela: chips de filtro de severidade e a lista
+   priorizada. Só tokens já existentes (sem cor/tamanho/duração "solta") — ver
+   packages/ui/src/tokens/*.css e components/motion.css. Entrada em cascata via .nx-stagger. */
+
+.platform-attention__filters-card {
+  margin-bottom: var(--sp-5);
+}
+
+.platform-attention__filters {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.platform-attention__filter-chip {
+  appearance: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full, 999px);
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
+}
+
+.platform-attention__filter-chip:hover {
+  border-color: var(--border-strong, var(--border-subtle));
+}
+
+.platform-attention__filter-chip:active {
+  transform: translateY(1px);
+}
+
+.platform-attention__filter-chip--active {
+  border-color: var(--border-brand, var(--border-subtle));
+  outline: 2px solid transparent;
+}
+
+.platform-attention__collected-at {
+  margin: var(--sp-3) 0 0;
+}
+
+.platform-attention__list {
+  display: grid;
+  gap: var(--sp-4);
+  margin: 0 0 var(--sp-5);
+  padding: 0;
+  list-style: none;
+}
+
+.platform-attention__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--surface-card);
+}
+
+.platform-attention__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-full, 999px);
+  background: var(--surface-brand-subtle);
+  color: var(--text-brand, var(--text-primary));
+}
+
+.platform-attention__content {
+  display: grid;
+  gap: var(--sp-2);
+  min-width: 0;
+  flex: 1;
+}
+
+.platform-attention__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.platform-attention__type {
+  font: var(--type-caption);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.platform-attention__tenant {
+  font: var(--type-body-strong, var(--type-body));
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.platform-attention__reason {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+
+.platform-attention__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--sp-2);
+  flex: none;
+}
+
+.platform-attention__load-more {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--sp-6);
+}
+
+@media (max-width: 40rem) {
+  .platform-attention__item {
+    flex-direction: column;
+  }
+
+  .platform-attention__actions {
+    align-items: stretch;
+    width: 100%;
+  }
+}

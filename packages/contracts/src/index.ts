@@ -38,3 +38,8 @@ export * from './platform-summary.js';
 export * from './tenant-overview.js';
 export * from './business-templates.js';
 export * from './releases.js';
+export * from './tenant-plan.js';
+export * from './tenant-ownership.js';
+export * from './installation-credentials.js';
+export * from './platform-attention.js';
+export * from './administrative-timeline.js';

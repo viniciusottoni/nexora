@@ -19,7 +19,6 @@ erDiagram
     tenant ||--o{ tenant_secret : "guarda"
     tenant ||--o{ audit_log : "registra"
     store  ||--o{ device : "hospeda"
-    store  ||--o| edge_installation : "roda"
     app_user }o--o{ role : "user_role"
     device }o--|| store : "pertence"
 
@@ -51,15 +50,6 @@ erDiagram
         text name
         jsonb address
         bool is_default
-    }
-    edge_installation {
-        uuid id PK
-        uuid store_id FK
-        text public_key
-        text version
-        timestamptz last_seen_at
-        bigint last_synced_seq
-        jsonb health
     }
     app_user {
         uuid id PK
@@ -188,7 +178,7 @@ Estrutura esperada de `operation` (validada por FluentValidation na aplicação)
 ```
 
 Estrutura esperada de `thresholds` (E-08/US-080 — leitura tipada em
-`Nexora.Application.Alerts.Support.AlertThresholds`; chave ausente usa o padrão do template de
+`iMenu.Application.Alerts.Support.AlertThresholds`; chave ausente usa o padrão do template de
 negócio, US-080 §4 "Limiar padrão do modelo de negócio"):
 
 ```json
@@ -199,7 +189,6 @@ negócio, US-080 §4 "Limiar padrão do modelo de negócio"):
   "tableIdleMinutes": 10,
   "cashDivergenceAlert": 20.00,
   "cmvDivergencePercent": 5,
-  "syncDelayMinutes": 5,
   "dineInPromiseMinutes": 10,
   "deliveryPromiseMinutes": 25,
   "avgTimeAboveTargetPercent": 20,
@@ -241,31 +230,7 @@ CREATE UNIQUE INDEX uq_store_default ON store (tenant_id)
 
 > Preparado para rede multi-unidade. Na Fase 1, todo tenant tem uma única loja.
 
-### edge_installation
-
-```sql
-CREATE TABLE edge_installation (
-  id               UUID PRIMARY KEY,
-  tenant_id        UUID NOT NULL REFERENCES tenant(id),
-  store_id         UUID NOT NULL REFERENCES store(id),
-  label            TEXT NOT NULL,
-  public_key       TEXT NOT NULL,                 -- Ed25519 (ADR-031)
-  version          VARCHAR(20),
-  last_seen_at     TIMESTAMPTZ,
-  last_synced_seq  BIGINT NOT NULL DEFAULT 0,
-  clock_offset_ms  INT,                           -- ADR-034
-  health           JSONB NOT NULL DEFAULT '{}'::jsonb,
-  install_token    TEXT,                          -- uso único
-  installed_at     TIMESTAMPTZ,
-  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-  CONSTRAINT uq_edge_store UNIQUE (store_id)
-);
-
-CREATE INDEX idx_edge_last_seen ON edge_installation (last_seen_at)
-  WHERE last_seen_at IS NOT NULL;
-```
+> **`edge_installation` removida em 06/08/2026** ([ADR-040](../adrs/ADR-040-arquitetura-100-online-api-unica.md), [E-16/US-169](../user%20stories/E-16-iMenu-Online/US-169-Migracao-do-modelo-de-dados.md)). Sem servidor local por loja, não há mais instalação de edge a registrar.
 
 ### app_user
 
@@ -391,7 +356,7 @@ REVOKE UPDATE, DELETE ON audit_log FROM app_user_role;
 > alteração de preço e alteração de permissão já emitem registro. Movimentação de estoque, ajuste
 > financeiro e abertura/fechamento de caixa **não têm caso de uso de Application implementado
 > ainda** (só entidade de domínio) — pendência conhecida e documentada em
-> `Nexora.IntegrationTests.AuditCoverageTests`, não esquecida; depende de `Docs/User Stories/`
+> `iMenu.IntegrationTests.AuditCoverageTests`, não esquecida; depende de `Docs/User Stories/`
 > próprias para Caixa/Estoque/Financeiro, fora do escopo de E-09.
 
 ### tenant_secret
@@ -422,6 +387,5 @@ COMMENT ON TABLE tenant_secret IS
 | 1 | Usuário precisa ter senha **ou** PIN | `ck_app_user_credential` |
 | 2 | PIN único entre usuários ativos do tenant | `uq_app_user_pin` |
 | 3 | Uma única loja padrão por tenant | `uq_store_default` |
-| 4 | Uma instalação de edge por loja | `uq_edge_store` |
-| 5 | Auditoria não aceita UPDATE nem DELETE | Documento 10 |
-| 6 | Papel de sistema não pode ser excluído | Aplicação + `is_system` |
+| 4 | Auditoria não aceita UPDATE nem DELETE | Documento 10 |
+| 5 | Papel de sistema não pode ser excluído | Aplicação + `is_system` |

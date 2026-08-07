@@ -24,7 +24,7 @@ export const platformSummaryResponseSchema = z.object({
   tenants: platformTenantsSummarySchema,
   installations: platformInstallationsSummarySchema,
   pendingInvites: z.number().int().nonnegative(),
-  generatedAt: z.string(),
+  generatedAt: z.string().datetime({ offset: true }),
 });
 
 export type PlatformTenantsSummary = z.infer<typeof platformTenantsSummarySchema>;

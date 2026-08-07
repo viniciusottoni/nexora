@@ -61,6 +61,15 @@ public sealed class PlatformSummaryIntegrationTests
     [Fact]
     public async Task Convite_Ja_Consumido_Ou_Expirado_Nao_Conta_Como_Pendente()
     {
+        int pendingBefore;
+        await using (var baselineDb = _fixture.CreateAppDbContext(tenantContext: null))
+        await using (var baselineProvider = BuildContainer(baselineDb))
+        {
+            var baseline = await baselineProvider.GetRequiredService<ISender>().Send(new GetPlatformSummaryQuery());
+            baseline.IsSuccess.Should().BeTrue();
+            pendingBefore = baseline.Value!.PendingInvites;
+        }
+
         var tenantId = Guid.NewGuid();
 
         await using (var db = _fixture.CreateAppDbContext(tenantContext: null))
@@ -89,9 +98,12 @@ public sealed class PlatformSummaryIntegrationTests
         await using var provider = BuildContainer(readDb);
         var sender = provider.GetRequiredService<ISender>();
 
-        var before = await sender.Send(new GetPlatformSummaryQuery());
+        var after = await sender.Send(new GetPlatformSummaryQuery());
 
-        before.IsSuccess.Should().BeTrue();
+        after.IsSuccess.Should().BeTrue();
+        after.Value!.PendingInvites.Should().Be(
+            pendingBefore,
+            "convites consumidos ou expirados não podem alterar o contador de pendências");
 
         // owner_invite tem RLS (ADR-004) — sem app.tenant_id fixado no contexto, a política nega
         // leitura por padrão ("falha fechada") e a contagem viria sempre 0, mesmo com os dois

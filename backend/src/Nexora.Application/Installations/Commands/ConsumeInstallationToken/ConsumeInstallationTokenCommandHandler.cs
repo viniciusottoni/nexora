@@ -1,6 +1,7 @@
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Installations.Abstractions;
+using Nexora.Application.Installations.Support;
 using Nexora.Contracts.Installations;
 using Nexora.Domain.Platform;
 using Nexora.Shared.Errors;
@@ -39,8 +40,8 @@ internal sealed class ConsumeInstallationTokenCommandHandler
     {
         var tokenHash = _tokenDigester.Digest(request.RawToken);
 
-        var installation = await _db.EdgeInstallations
-            .FirstOrDefaultAsync(e => e.InstallTokenHash == tokenHash, cancellationToken);
+        var installation = await PlatformInstallationLookup.FindByTokenHashAsync(
+            _db, tokenHash, cancellationToken);
 
         if (installation is null)
         {

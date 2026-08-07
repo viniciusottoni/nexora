@@ -2,13 +2,16 @@
 
 | | |
 |---|---|
-| **Status** | Aceito |
+| **Status** | Substituído |
 | **Data** | 31/07/2026 |
 | **Decisores** | Tech Lead, DevOps, PO |
+| **Substituído por** | [ADR-040](./ADR-040-arquitetura-100-online-api-unica.md) |
 | **Relacionados** | ADR-001, ADR-007, ADR-019, ADR-027 |
 | **Requisitos afetados** | RNF-DIS-04, RNF-DIS-05, RNF-IMP-06, RNF-IMP-07 |
 
 ---
+
+> ⚠️ **Substituído em 06/08/2026 pelo [ADR-040](./ADR-040-arquitetura-100-online-api-unica.md).** Sem hardware físico por loja, backup e recuperação passam a ser os de um banco gerenciado em nuvem — prática padrão do provedor de infraestrutura, sem justificar ADR dedicado. Conteúdo mantido como registro histórico do risco T1 que motivou este desenho.
 
 ## Contexto
 

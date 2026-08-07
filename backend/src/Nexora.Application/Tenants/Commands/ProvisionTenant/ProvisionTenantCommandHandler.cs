@@ -4,6 +4,7 @@ using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Notifications;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Abstractions.Security;
+using Nexora.Application.Installations.Abstractions;
 using Nexora.Application.Provisioning;
 using Nexora.Application.Tenants.Support;
 using Nexora.Contracts.Tenants;
@@ -27,17 +28,20 @@ internal sealed class ProvisionTenantCommandHandler
 
     private readonly IApplicationDbContext _db;
     private readonly ISecretDigester _secretDigester;
+    private readonly IInstallationTokenDigester _installationTokenDigester;
     private readonly IEmailSender _emailSender;
     private readonly ILogger<ProvisionTenantCommandHandler> _logger;
 
     public ProvisionTenantCommandHandler(
         IApplicationDbContext db,
         ISecretDigester secretDigester,
+        IInstallationTokenDigester installationTokenDigester,
         IEmailSender emailSender,
         ILogger<ProvisionTenantCommandHandler> logger)
     {
         _db = db;
         _secretDigester = secretDigester;
+        _installationTokenDigester = installationTokenDigester;
         _emailSender = emailSender;
         _logger = logger;
     }
@@ -213,7 +217,7 @@ internal sealed class ProvisionTenantCommandHandler
         _db.UserRoles.Add(ownerUserRole);
 
         var installTokenRaw = CreateRawSecret();
-        var installTokenHash = _secretDigester.Digest(installTokenRaw);
+        var installTokenHash = _installationTokenDigester.Digest(installTokenRaw);
         var edgeInstallation = EdgeInstallation.Create(tenant.Id, store.Id, label: $"Servidor local — {store.Name}");
         edgeInstallation.IssueInstallToken(installTokenHash, now.Add(InstallTokenTtl));
         _db.EdgeInstallations.Add(edgeInstallation);

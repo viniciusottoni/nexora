@@ -2,13 +2,16 @@
 
 | | |
 |---|---|
-| **Status** | Aceito |
+| **Status** | Substituído |
 | **Data** | 31/07/2026 |
 | **Decisores** | Tech Lead, DevOps |
+| **Substituído por** | [ADR-040](./ADR-040-arquitetura-100-online-api-unica.md) |
 | **Relacionados** | ADR-005, ADR-029, ADR-033 |
 | **Requisitos afetados** | RNF-MAN-04, RNF-MAN-05, RNF-IMP-02, RNF-IMP-03 |
 
 ---
+
+> ⚠️ **Substituído em 06/08/2026 pelo [ADR-040](./ADR-040-arquitetura-100-online-api-unica.md).** Sem parque de bancos distribuídos, a complexidade de compatibilidade "duas versões" tratada aqui deixa de ser um problema de escala — migração volta a ser rotina de banco único, com práticas usuais de zero-downtime deploy (RNF-MAN-04/05 permanecem como boa prática geral, não como necessidade estrutural). Conteúdo mantido como registro histórico.
 
 ## Contexto
 

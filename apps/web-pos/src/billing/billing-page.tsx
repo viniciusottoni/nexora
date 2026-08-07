@@ -248,7 +248,7 @@ export function BillingPage({
 
   return (
     <main className="billing-page">
-      <header className="billing-page__header">
+      <header className="billing-page__header billing-page__header--embedded">
         <div>
           <p className="billing-eyebrow">Fechamento da comanda</p>
           <h1>Dividir a conta</h1>

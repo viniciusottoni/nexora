@@ -2,13 +2,16 @@
 
 | | |
 |---|---|
-| **Status** | Aceito |
+| **Status** | Substituído |
 | **Data** | 31/07/2026 |
 | **Decisores** | Tech Lead |
+| **Substituído por** | [ADR-040](./ADR-040-arquitetura-100-online-api-unica.md) |
 | **Relacionados** | ADR-001, ADR-009, ADR-011, ADR-020, ADR-028 |
 | **Requisitos afetados** | RF-OFF-08, RNF-DIS-06, RNF-OFF-01 |
 
 ---
+
+> ⚠️ **Substituído em 06/08/2026 pelo [ADR-040](./ADR-040-arquitetura-100-online-api-unica.md).** Decisão de negócio: sem internet, o sistema fica indisponível — igual a qualquer cardápio web comum, sem fila de ações nem cache de contingência. As duas camadas de resiliência descritas aqui (cache de leitura e fila de escrita) são removidas, não apenas a parte específica de queda do edge. Conteúdo mantido como registro histórico.
 
 ## Contexto
 

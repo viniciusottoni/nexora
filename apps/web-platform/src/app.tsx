@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Badge,
   BrandMark,
   Button,
   clearCloudSession,
@@ -7,6 +8,7 @@ import {
   CreatedByFooter,
   hasCloudSession,
   Icon,
+  IconButton,
   readCloudSessionClaims,
   SideNav,
   ThemeProvider,
@@ -15,6 +17,7 @@ import {
 } from '@nexora/ui';
 import type { PlatformSummaryResponse } from '@nexora/contracts';
 
+import { PlatformAttentionPage } from './features/attention/platform-attention-page.js';
 import { BusinessTemplateManagementPage } from './features/business-templates/business-template-management-page.js';
 import { createBusinessTemplatesApi } from './features/business-templates/business-templates-api.js';
 import { InstallationsPanelPage } from './features/installations/installations-panel-page.js';
@@ -34,6 +37,7 @@ import {
   navItemIdForRoute,
   pathForRoute,
   pathForTenantDetail,
+  pathWithSearch,
   type PlatformRouteId,
   type PlatformRouteMatch,
 } from './routing/route-map.js';
@@ -44,6 +48,7 @@ const PLATFORM_NAV_ITEMS: readonly SideNavItem[] = [
   { id: 'overview', label: 'Visão geral', icon: 'space_dashboard' },
   { id: 'tenants', label: 'Estabelecimentos', icon: 'storefront' },
   { id: 'installations', label: 'Instalações', icon: 'dns' },
+  { id: 'attention', label: 'Central de atenção', icon: 'priority_high' },
   { id: 'support-access', label: 'Auditoria e suporte', icon: 'verified_user' },
   { group: 'Configuração da plataforma' },
   { id: 'business-templates', label: 'Modelos de negócio', icon: 'category' },
@@ -56,6 +61,7 @@ const ROUTE_LABEL: Record<PlatformRouteId, string> = {
   'tenants-new': 'Novo estabelecimento',
   'tenant-detail': 'Estabelecimento',
   installations: 'Instalações',
+  attention: 'Central de atenção',
   'support-access': 'Auditoria e suporte',
   'business-templates': 'Modelos de negócio',
   releases: 'Versões',
@@ -64,6 +70,15 @@ const ROUTE_LABEL: Record<PlatformRouteId, string> = {
 
 const summaryApi = createPlatformSummaryApi();
 const businessTemplatesApi = createBusinessTemplatesApi();
+
+function platformEnvironmentLabel(): string {
+  const hostname = (globalThis.location?.hostname ?? '').toLowerCase();
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '')
+    return 'Ambiente local';
+  if (hostname.includes('staging') || hostname.includes('homolog'))
+    return 'Ambiente de homologação';
+  return 'Ambiente de produção';
+}
 
 /**
  * US-150 "Estrutura e navegação do painel de plataforma" — raiz do `web-platform`. Login sempre
@@ -138,7 +153,9 @@ function PlatformAdminGate({ onSignOut }: Readonly<{ onSignOut: () => void }>) {
         // apenas a estrutura visual"). A claim do token já decodificada localmente é o único
         // sinal disponível offline — nunca mais permissivo do que a resposta do backend seria.
         const claims = readCloudSessionClaims();
-        setState(claims?.isPlatformAdmin ? { kind: 'ready', summary: undefined } : { kind: 'denied' });
+        setState(
+          claims?.isPlatformAdmin ? { kind: 'ready', summary: undefined } : { kind: 'denied' },
+        );
       });
     return () => {
       cancelled = true;
@@ -182,32 +199,61 @@ function PlatformShell({
 }>) {
   const matched = matchRoute(pathname);
   const activeNavId = matched ? navItemIdForRoute(matched.routeId) : undefined;
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
+
+  const selectNavigationItem = (id: string) => {
+    setMobileNavigationOpen(false);
+    navigate(pathForRoute(id as Exclude<PlatformRouteId, 'onboarding' | 'tenant-detail'>));
+  };
 
   return (
-    <div className="db-console">
+    <div className="db-console db-console--responsive-drawer">
       <SideNav
+        aria-label="Navegação da plataforma"
+        className="db-console__desktop-nav"
         variant="dark"
         brand={<BrandMark inverse subtitle="Plataforma" />}
         items={PLATFORM_NAV_ITEMS}
         {...(activeNavId ? { activeId: activeNavId } : {})}
-        onSelect={(id) => navigate(pathForRoute(id as Exclude<PlatformRouteId, 'onboarding' | 'tenant-detail'>))}
+        onSelect={selectNavigationItem}
         footer={<span className="db-sidenav__foot-note">Replay Studio · plataforma</span>}
       />
+      {mobileNavigationOpen ? (
+        <MobileNavigationDrawer
+          {...(activeNavId ? { activeNavId } : {})}
+          onSelect={selectNavigationItem}
+          onClose={() => setMobileNavigationOpen(false)}
+        />
+      ) : null}
       <div className="db-console__main">
         <TopBar
           left={
-            <nav className="db-crumbs" aria-label="Trilha de navegação">
-              <span>Plataforma</span>
-              <Icon name="chevron_right" size={16} />
-              <span className="db-crumbs__current">
-                {matched ? ROUTE_LABEL[matched.routeId] : 'Página não encontrada'}
-              </span>
-            </nav>
+            <>
+              <IconButton
+                className="db-navigation-trigger"
+                icon="menu"
+                label="Abrir navegação"
+                aria-controls="platform-mobile-navigation"
+                aria-expanded={mobileNavigationOpen}
+                onClick={() => setMobileNavigationOpen(true)}
+              />
+              <nav className="db-crumbs" aria-label="Trilha de navegação">
+                <span>Plataforma</span>
+                <Icon name="chevron_right" size={16} />
+                <span className="db-crumbs__current">
+                  {matched ? ROUTE_LABEL[matched.routeId] : 'Página não encontrada'}
+                </span>
+              </nav>
+            </>
           }
           right={
-            <Button type="button" variant="ghost" size="sm" onClick={onSignOut}>
-              Sair
-            </Button>
+            <>
+              <span className="db-hint">Administrador da plataforma</span>
+              <Badge tone="neutral">{platformEnvironmentLabel()}</Badge>
+              <Button type="button" variant="ghost" size="sm" onClick={onSignOut}>
+                Sair
+              </Button>
+            </>
           }
         />
         <div className="db-console__content">
@@ -221,9 +267,71 @@ function PlatformShell({
   );
 }
 
+function MobileNavigationDrawer({
+  activeNavId,
+  onSelect,
+  onClose,
+}: Readonly<{
+  activeNavId?: string;
+  onSelect: (id: string) => void;
+  onClose: () => void;
+}>) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+
+    return () => {
+      if (dialog.open && typeof dialog.close === 'function') dialog.close();
+    };
+  }, []);
+
+  return (
+    <dialog
+      ref={dialogRef}
+      id="platform-mobile-navigation"
+      className="db-navigation-dialog"
+      aria-label="Navegação principal"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div className="db-navigation-dialog__panel">
+        <IconButton
+          autoFocus
+          className="db-navigation-dialog__close"
+          icon="close"
+          label="Fechar navegação"
+          onClick={onClose}
+        />
+        <SideNav
+          aria-label="Navegação da plataforma"
+          variant="dark"
+          brand={<BrandMark inverse subtitle="Plataforma" />}
+          items={PLATFORM_NAV_ITEMS}
+          {...(activeNavId ? { activeId: activeNavId } : {})}
+          onSelect={onSelect}
+          footer={<span className="db-sidenav__foot-note">Replay Studio · plataforma</span>}
+        />
+      </div>
+    </dialog>
+  );
+}
+
 function renderRoute(
   matched: PlatformRouteMatch | undefined,
-  ctx: { readonly summary: PlatformSummaryResponse | undefined; readonly navigate: (path: string) => void },
+  ctx: {
+    readonly summary: PlatformSummaryResponse | undefined;
+    readonly navigate: (path: string) => void;
+  },
 ) {
   if (!matched) {
     return <NotFoundPage onGoToOverview={() => ctx.navigate(pathForRoute('overview'))} />;
@@ -238,13 +346,18 @@ function renderRoute(
           onOpenTenants={() => ctx.navigate(pathForRoute('tenants'))}
           onOpenInstallations={() => ctx.navigate(pathForRoute('installations'))}
           onOpenSupportAccess={() => ctx.navigate(pathForRoute('support-access'))}
+          onOpenAttention={() => ctx.navigate(pathForRoute('attention'))}
         />
       );
     case 'tenants':
       return (
         <TenantsDirectoryPage
           onCreateTenant={() => ctx.navigate(pathForRoute('tenants-new'))}
-          onOpenTenant={(tenantId) => ctx.navigate(pathForTenantDetail(tenantId))}
+          onOpenTenant={(tenantId) =>
+            ctx.navigate(
+              pathWithSearch(pathForTenantDetail(tenantId), globalThis.location?.search ?? ''),
+            )
+          }
         />
       );
     case 'tenants-new':
@@ -253,9 +366,13 @@ function renderRoute(
       return (
         <TenantDetailPage
           tenantId={matched.params.tenantId ?? ''}
-          onBack={() => ctx.navigate(pathForRoute('tenants'))}
+          onBack={() =>
+            ctx.navigate(pathWithSearch(pathForRoute('tenants'), globalThis.location?.search ?? ''))
+          }
           onRequestSupportAccess={(tenantId) =>
-            ctx.navigate(`${pathForRoute('support-access')}?tenantId=${encodeURIComponent(tenantId)}`)
+            ctx.navigate(
+              `${pathForRoute('support-access')}?tenantId=${encodeURIComponent(tenantId)}`,
+            )
           }
           onOpenInstallations={() => ctx.navigate(pathForRoute('installations'))}
           onOpenBusinessTemplates={() => ctx.navigate(pathForRoute('business-templates'))}
@@ -263,6 +380,17 @@ function renderRoute(
       );
     case 'installations':
       return <InstallationsPanelPage />;
+    case 'attention':
+      return (
+        <PlatformAttentionPage
+          navigate={ctx.navigate}
+          onRequestSupportAccess={(tenantId) =>
+            ctx.navigate(
+              `${pathForRoute('support-access')}?tenantId=${encodeURIComponent(tenantId)}`,
+            )
+          }
+        />
+      );
     case 'support-access':
       return <GrantSupportAccessPage />;
     case 'business-templates':

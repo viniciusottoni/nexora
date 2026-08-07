@@ -1,8 +1,10 @@
 # US-034 · Operar pedido integralmente offline
 
+> ❌ **Cancelada em 06/08/2026.** Mudança de foco de negócio: o produto passa a operar 100% online. Sem internet, a resposta operacional é ficar sem o serviço e voltar ao controle manual em papel — não há mais fila de contingência nem operação sem conexão. Ver [ADR-040](../../adrs/ADR-040-arquitetura-100-online-api-unica.md) e [E-16 · iMenu Online](../E-16-iMenu-Online/README.md). Conteúdo mantido como registro histórico.
+
 |  |  |
 |---|---|
-| **Épico** | [E-03 · Pedido e Roteamento](./README.md) |
+| **Épico** | [E-03 · Pedido e Roteamento](./README.md) — ❌ **CANCELADA** |
 | **Fase** | 1 — MVP |
 | **Prioridade** | M — Must have |
 | **Estimativa** | 13 pontos |

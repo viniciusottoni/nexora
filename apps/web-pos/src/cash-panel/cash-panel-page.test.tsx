@@ -76,10 +76,8 @@ describe('CashPanelPage', () => {
 
     expect(await screen.findByText('12')).toBeInTheDocument();
     expect(screen.getByText('Ana')).toBeInTheDocument();
-    // Aparece duas vezes: no totalizador do salão (StatTile) e na coluna Total da linha — os dois
-    // batem porque só há uma sessão aberta neste fixture (mesma asserção do Gherkin "Totalizador
-    // bate com a soma das sessões").
-    expect(screen.getAllByText('R$ 186,40')).toHaveLength(2);
+    // Com uma sessão, o valor aparece no KPI, no card da mesa e no painel lateral da conta.
+    expect(screen.getAllByText('R$ 186,40')).toHaveLength(3);
     expect(screen.getByText('47 min')).toBeInTheDocument();
   });
 
@@ -238,8 +236,6 @@ describe('CashPanelPage', () => {
 
     render(<CashPanelPage identity={identity} />);
     await waitFor(() => expect(screen.getByText('12')).toBeInTheDocument());
-    expect(screen.getByText('Sincronizado')).toBeInTheDocument();
-
     act(() => {
       capturedOptions?.onModeChange?.('polling');
     });

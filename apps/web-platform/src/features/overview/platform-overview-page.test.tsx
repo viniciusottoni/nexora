@@ -21,6 +21,7 @@ describe('PlatformOverviewPage', () => {
         onOpenTenants={vi.fn()}
         onOpenInstallations={vi.fn()}
         onOpenSupportAccess={vi.fn()}
+        onOpenAttention={vi.fn()}
       />,
     );
 
@@ -42,6 +43,7 @@ describe('PlatformOverviewPage', () => {
         onOpenTenants={vi.fn()}
         onOpenInstallations={vi.fn()}
         onOpenSupportAccess={vi.fn()}
+        onOpenAttention={vi.fn()}
       />,
     );
 
@@ -49,10 +51,11 @@ describe('PlatformOverviewPage', () => {
     expect(onCreateTenant).toHaveBeenCalledOnce();
   });
 
-  it('navega para estabelecimentos, instalações e auditoria/suporte pelos atalhos', () => {
+  it('navega para estabelecimentos, instalações, auditoria/suporte e central de atenção pelos atalhos', () => {
     const onOpenTenants = vi.fn();
     const onOpenInstallations = vi.fn();
     const onOpenSupportAccess = vi.fn();
+    const onOpenAttention = vi.fn();
     render(
       <PlatformOverviewPage
         summary={SUMMARY}
@@ -60,16 +63,36 @@ describe('PlatformOverviewPage', () => {
         onOpenTenants={onOpenTenants}
         onOpenInstallations={onOpenInstallations}
         onOpenSupportAccess={onOpenSupportAccess}
+        onOpenAttention={onOpenAttention}
       />,
     );
 
     screen.getByRole('button', { name: 'Ver diretório' }).click();
     screen.getByRole('button', { name: 'Ver instalações' }).click();
     screen.getByRole('button', { name: 'Ver auditoria e suporte' }).click();
+    screen.getByRole('button', { name: 'Ver fila de atenção' }).click();
 
     expect(onOpenTenants).toHaveBeenCalledOnce();
     expect(onOpenInstallations).toHaveBeenCalledOnce();
     expect(onOpenSupportAccess).toHaveBeenCalledOnce();
+    expect(onOpenAttention).toHaveBeenCalledOnce();
+  });
+
+  it('US-157 — o cartão "Precisam de atenção" também leva direto à fila filtrada', () => {
+    const onOpenAttention = vi.fn();
+    render(
+      <PlatformOverviewPage
+        summary={SUMMARY}
+        onCreateTenant={vi.fn()}
+        onOpenTenants={vi.fn()}
+        onOpenInstallations={vi.fn()}
+        onOpenSupportAccess={vi.fn()}
+        onOpenAttention={onOpenAttention}
+      />,
+    );
+
+    screen.getByRole('button', { name: /Precisam de atenção/ }).click();
+    expect(onOpenAttention).toHaveBeenCalledOnce();
   });
 
   it('modo offline (sem resumo) mantém a estrutura visual e avisa que os dados não atualizaram', () => {
@@ -80,6 +103,7 @@ describe('PlatformOverviewPage', () => {
         onOpenTenants={vi.fn()}
         onOpenInstallations={vi.fn()}
         onOpenSupportAccess={vi.fn()}
+        onOpenAttention={vi.fn()}
       />,
     );
 

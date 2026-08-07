@@ -167,14 +167,14 @@ public sealed class ReissueInstallationTokenIntegrationTests
         var taskA = senderA.Send(new ReissueInstallationTokenCommand(installationId, "Requisição A", 24, Guid.NewGuid()));
         var taskB = senderB.Send(new ReissueInstallationTokenCommand(installationId, "Requisição B", 24, Guid.NewGuid()));
 
-        await Task.WhenAll(taskA, taskB);
+        var results = await Task.WhenAll(taskA, taskB);
 
         // SELECT ... FOR UPDATE (LockEdgeInstallationForUpdateAsync) serializa as duas transações —
         // nenhuma delas falha (não é uma corrida de "quem chega primeiro vence, o outro recebe
         // erro"), as duas emitem uma credencial, mas a segunda a COMMITAR revoga a que a primeira
         // acabou de criar antes de emitir a sua própria.
-        taskA.Result.IsSuccess.Should().BeTrue();
-        taskB.Result.IsSuccess.Should().BeTrue();
+        results[0].IsSuccess.Should().BeTrue();
+        results[1].IsSuccess.Should().BeTrue();
 
         await using var readDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId));
         var credentials = await readDb.InstallationCredentials

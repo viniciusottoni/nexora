@@ -138,6 +138,36 @@ public sealed class IdempotencyMiddlewareTests
     }
 
     [Fact]
+    public async Task Campo_Secreto_E_Exibido_Na_Primeira_Resposta_E_Redatado_No_Replay()
+    {
+        var executions = 0;
+        var middleware = new IdempotencyMiddleware(async context =>
+        {
+            executions++;
+            context.Response.StatusCode = StatusCodes.Status201Created;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(
+                """{"credentialId":"credential-1","installToken":"secret-value","installCommand":"install secret-value"}""");
+        });
+        var store = new FakeIdempotencyStore();
+        var tenantContext = new FakeTenantContext();
+
+        var first = CreateContext("POST", "/v1/platform/installations/installation-1/tokens", "intent-secret", "{}");
+        SetSecretRedactionEndpoint(first);
+        await middleware.InvokeAsync(first, store, tenantContext);
+
+        var second = CreateContext("POST", "/v1/platform/installations/installation-1/tokens", "intent-secret", "{}");
+        SetSecretRedactionEndpoint(second);
+        await middleware.InvokeAsync(second, store, tenantContext);
+
+        executions.Should().Be(1);
+        (await ReadResponseAsync(first)).Should().Contain("secret-value");
+        (await ReadResponseAsync(second)).Should().Be(
+            """{"credentialId":"credential-1","installToken":null,"installCommand":null}""");
+        second.Response.Headers["Idempotent-Replay"].ToString().Should().Be("true");
+    }
+
+    [Fact]
     public async Task Mesma_Chave_Com_Payload_Diferente_Retorna_422_Idempotency_Key_Reused()
     {
         var executions = 0;
@@ -215,6 +245,14 @@ public sealed class IdempotencyMiddlewareTests
     {
         using var sha = System.Security.Cryptography.SHA256.Create();
         return Convert.ToHexString(sha.ComputeHash(Encoding.UTF8.GetBytes(body)));
+    }
+
+    private static void SetSecretRedactionEndpoint(HttpContext context)
+    {
+        context.SetEndpoint(new Endpoint(
+            _ => Task.CompletedTask,
+            new EndpointMetadataCollection(new IdempotencyRedactFieldsAttribute("installToken", "installCommand")),
+            "installation-token-reissue"));
     }
 
     private static DefaultHttpContext CreateContext(string method, string path, string? idempotencyKey, string? body)

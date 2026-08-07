@@ -3654,6 +3654,52 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                     b.ToTable("table_session", (string)null);
                 });
 
+            modelBuilder.Entity("Nexora.Domain.Platform.AdministrativeAttentionAcknowledgement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("AcknowledgedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("acknowledged_at");
+
+                    b.Property<Guid?>("ActorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ItemId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("item_id");
+
+                    b.Property<string>("ItemType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("item_type");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_administrative_attention_acknowledgement");
+
+                    b.HasIndex("TenantId", "ItemId", "AcknowledgedAt")
+                        .HasDatabaseName("idx_administrative_attention_ack_tenant_item");
+
+                    b.ToTable("administrative_attention_acknowledgement", (string)null);
+                });
+
             modelBuilder.Entity("Nexora.Domain.Platform.AppUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -6186,6 +6232,18 @@ namespace Nexora.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_table_session_dining_table_table_id");
 
                     b.Navigation("Table");
+                });
+
+            modelBuilder.Entity("Nexora.Domain.Platform.AdministrativeAttentionAcknowledgement", b =>
+                {
+                    b.HasOne("Nexora.Domain.Platform.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_administrative_attention_acknowledgement_tenants_tenant_id");
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("Nexora.Domain.Platform.AppUser", b =>

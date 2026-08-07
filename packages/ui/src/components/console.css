@@ -31,6 +31,11 @@
   min-width: 0;
 }
 
+.db-navigation-trigger,
+.db-navigation-dialog {
+  display: none;
+}
+
 /* Só o conteúdo rola — a nav e a barra ficam. */
 .db-console__content {
   flex: 1 1 auto;
@@ -383,8 +388,51 @@
     overflow: visible;
     flex-direction: column;
   }
+  .db-console--responsive-drawer {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    flex-direction: row;
+  }
   .db-console > .db-sidenav {
     width: 100%;
+  }
+  .db-console > .db-console__desktop-nav {
+    display: none;
+  }
+  .db-navigation-trigger {
+    display: inline-flex;
+  }
+  .db-navigation-dialog[open] {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .db-navigation-dialog::backdrop {
+    background: rgb(15 23 42 / 56%);
+  }
+  .db-navigation-dialog__panel {
+    position: relative;
+    width: min(20rem, 88vw);
+    min-height: 100%;
+  }
+  .db-navigation-dialog__panel > .db-sidenav {
+    width: 100%;
+    min-height: 100%;
+  }
+  .db-navigation-dialog__close {
+    position: absolute;
+    z-index: 1;
+    top: var(--sp-5);
+    right: var(--sp-4);
+    color: #fff;
   }
   .db-console__content {
     padding: var(--gutter-page-mobile);

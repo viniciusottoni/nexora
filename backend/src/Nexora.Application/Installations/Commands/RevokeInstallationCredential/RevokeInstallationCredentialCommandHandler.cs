@@ -61,7 +61,12 @@ internal sealed class RevokeInstallationCredentialCommandHandler
             installation.InstallTokenHash == credential.TokenHash &&
             !installation.IsTokenConsumed)
         {
-            installation.InvalidateInstallToken();
+            // `installation` veio de PlatformInstallationLookup.FindAsync, que lê com
+            // AsNoTracking() (varre tenants até achar, US-140 §7) — mutar aquela instância não
+            // seria persistido pelo SaveChangesAsync do TransactionBehavior. Precisa de uma cópia
+            // RASTREADA, mesma técnica de ReissueInstallationTokenCommandHandler.
+            var tracked = await _db.LockEdgeInstallationForUpdateAsync(installation.Id, cancellationToken);
+            tracked?.InvalidateInstallToken();
         }
 
         _db.AuditLogs.Add(AuditLog.Create(

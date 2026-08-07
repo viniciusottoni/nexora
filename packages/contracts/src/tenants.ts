@@ -64,7 +64,13 @@ export const provisioningChecklistItemSchema = z.object({
 // renomeado para `PROVISIONED` e `INSTALLING` foi adicionado — pelo conjunto canônico único usado
 // em todas as camadas (.NET e TypeScript, doc. §12 "Estado canônico idêntico"):
 // `PROVISIONED → INSTALLING → ACTIVE ⇄ SUSPENDED → CANCELLED`.
-export const tenantStatusSchema = z.enum(['PROVISIONED', 'INSTALLING', 'ACTIVE', 'SUSPENDED', 'CANCELLED']);
+export const tenantStatusSchema = z.enum([
+  'PROVISIONED',
+  'INSTALLING',
+  'ACTIVE',
+  'SUSPENDED',
+  'CANCELLED',
+]);
 
 // US-151 §7 — saúde resumida da instalação, usada como coluna e filtro do diretório.
 export const tenantHealthSchema = z.enum(['OK', 'DEGRADED', 'DOWN', 'UNKNOWN']);
@@ -126,8 +132,8 @@ export const tenantDirectoryAppliedFiltersSchema = z.object({
   plan: z.array(z.string()).default([]),
   template: z.array(z.string()).default([]),
   health: z.array(tenantHealthSchema).default([]),
-  createdFrom: z.string().nullable().optional(),
-  createdTo: z.string().nullable().optional(),
+  createdFrom: z.string().datetime({ offset: true }).nullable().optional(),
+  createdTo: z.string().datetime({ offset: true }).nullable().optional(),
   sort: tenantDirectorySortSchema,
   limit: z.number().int().positive(),
 });
@@ -145,8 +151,8 @@ export const tenantDirectoryQuerySchema = z.object({
   plan: z.array(z.string().min(1)).optional(),
   template: z.array(z.string().min(1)).optional(),
   health: z.array(tenantHealthSchema).optional(),
-  createdFrom: z.string().optional(),
-  createdTo: z.string().optional(),
+  createdFrom: z.string().datetime({ offset: true }).optional(),
+  createdTo: z.string().datetime({ offset: true }).optional(),
   sort: tenantDirectorySortSchema.optional(),
   limit: z.number().int().positive().max(100).optional(),
   cursor: z.string().optional(),

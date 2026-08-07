@@ -25,13 +25,11 @@ internal sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderIte
             // cobria.
             table.HasCheckConstraint(
                 "ck_item_sequence",
-                """
-                (fired_at IS NULL OR fired_at >= placed_at)
-                AND (oven_in_at IS NULL OR (fired_at IS NOT NULL AND oven_in_at >= fired_at))
-                AND (oven_out_at IS NULL OR (oven_in_at IS NOT NULL AND oven_out_at >= oven_in_at))
-                AND (ready_at IS NULL OR (fired_at IS NOT NULL AND ready_at >= fired_at AND (oven_out_at IS NULL OR ready_at >= oven_out_at)))
-                AND (served_at IS NULL OR (ready_at IS NOT NULL AND served_at >= ready_at))
-                """);
+                "(fired_at IS NULL OR fired_at >= placed_at)\n" +
+                "AND (oven_in_at IS NULL OR (fired_at IS NOT NULL AND oven_in_at >= fired_at))\n" +
+                "AND (oven_out_at IS NULL OR (oven_in_at IS NOT NULL AND oven_out_at >= oven_in_at))\n" +
+                "AND (ready_at IS NULL OR (fired_at IS NOT NULL AND ready_at >= fired_at AND (oven_out_at IS NULL OR ready_at >= oven_out_at)))\n" +
+                "AND (served_at IS NULL OR (ready_at IS NOT NULL AND served_at >= ready_at))");
         });
 
         builder.HasKey(i => i.Id);

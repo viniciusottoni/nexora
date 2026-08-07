@@ -2,6 +2,7 @@ using System.Text.Json;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Installations.Abstractions;
+using Nexora.Application.Installations.Support;
 using Nexora.Application.Tenants.Support;
 using Nexora.Contracts.Installations;
 using Nexora.Domain.Platform;
@@ -45,9 +46,17 @@ internal sealed class RegisterInstallationCommandHandler
         RegisterInstallationCommand request,
         CancellationToken cancellationToken)
     {
-        var installation = await _db.EdgeInstallations
-            .FirstOrDefaultAsync(e => e.Id == request.InstallationId, cancellationToken);
+        var locatedInstallation = await PlatformInstallationLookup.FindAsync(
+            _db, request.InstallationId, cancellationToken);
 
+        if (locatedInstallation is null)
+        {
+            return Result<RegisterInstallationResponse>.Failure(
+                "Instalação não encontrada.", ApiErrorCodes.InstallationNotFound);
+        }
+
+        var installation = await _db.LockEdgeInstallationForUpdateAsync(
+            locatedInstallation.Id, cancellationToken);
         if (installation is null)
         {
             return Result<RegisterInstallationResponse>.Failure(

@@ -1,10 +1,12 @@
 .billing-page {
-  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  max-width: 40rem;
-  margin: 0 auto;
+  gap: var(--sp-4);
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: var(--gutter-page);
+  background: var(--surface-page);
   animation: nx-slide-in var(--dur-slow) var(--ease-out) both;
 }
 
@@ -13,6 +15,37 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.billing-page__header--embedded {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.billing-page > .checkout-panel {
+  order: 1;
+}
+
+.billing-page > .db-segmented-control {
+  order: 3;
+  align-self: flex-start;
+}
+
+.billing-page > .billing-mode-panel {
+  order: 4;
+  width: min(760px, 100%);
+}
+
+.billing-page > .billing-pending-warning,
+.billing-page > .billing-pending-block,
+.billing-page > .billing-error {
+  order: 0;
 }
 
 .billing-eyebrow {
@@ -47,6 +80,11 @@
   margin: 0;
 }
 
+/* O resumo completo já aparece na faixa Total/Recebido/Falta do recebimento. */
+.billing-page > .billing-summary {
+  display: none;
+}
+
 .billing-summary dt {
   color: var(--text-muted);
 }
@@ -67,7 +105,7 @@
 .billing-mode-panel {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--sp-4);
 }
 
 .billing-split-list,
@@ -187,4 +225,14 @@
 
 .billing-summary__total dd {
   transition: var(--transition-control);
+}
+
+@media (max-width: 720px) {
+  .billing-page {
+    padding: var(--sp-4);
+  }
+
+  .billing-page > .db-segmented-control {
+    align-self: stretch;
+  }
 }

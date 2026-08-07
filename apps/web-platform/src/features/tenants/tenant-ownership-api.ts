@@ -94,7 +94,10 @@ export interface TenantOwnershipApi {
   /** `POST` com `Idempotency-Key` por intenção — mesmo padrão de `tenant-plan-api.ts` `update`. */
   createInvite(tenantId: string, input: CreateOwnerInviteInput): Promise<CreateOwnerInviteResult>;
   revokeInvite(tenantId: string, inviteId: string, reason: string): Promise<void>;
-  transferOwnership(tenantId: string, input: TransferTenantOwnershipInput): Promise<TransferTenantOwnershipResult>;
+  transferOwnership(
+    tenantId: string,
+    input: TransferTenantOwnershipInput,
+  ): Promise<TransferTenantOwnershipResult>;
   unlock(tenantId: string, reason: string): Promise<UnlockOwnerAccessResult>;
 }
 
@@ -111,7 +114,15 @@ export function createTenantOwnershipApi(baseUrl = ''): TenantOwnershipApi {
         { credentials: 'include' },
       );
       if (!response.ok) throw await toApiError(response);
-      return (await response.json()) as TenantOwnershipView;
+      const payload = (await response.json()) as Partial<TenantOwnershipView>;
+      // Normaliza campos ausentes em vez de confiar cegamente no cast — uma resposta 200 com forma
+      // inesperada (ex.: contrato divergente) não deve virar TypeError de render (`.length` de
+      // `undefined`), e sim uma seção vazia/benigna.
+      return {
+        owner: payload.owner ?? { id: null, name: null, email: null, status: 'NONE' },
+        invites: payload.invites ?? [],
+        transfers: payload.transfers ?? [],
+      };
     },
 
     async createInvite(tenantId, input) {
@@ -125,7 +136,10 @@ export function createTenantOwnershipApi(baseUrl = ''): TenantOwnershipApi {
         {
           method: 'POST',
           credentials: 'include',
-          headers: { 'content-type': 'application/json', 'idempotency-key': pendingCreateInvite.key },
+          headers: {
+            'content-type': 'application/json',
+            'idempotency-key': pendingCreateInvite.key,
+          },
           body,
         },
       );

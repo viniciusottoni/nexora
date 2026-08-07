@@ -1,6 +1,23 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from 'react';
-import { AlertBanner, Badge, Button, Card, DataTable, EmptyState, Field, Icon, IconButton, Input, Select } from '@nexora/ui';
-import type { TenantDirectoryItem, TenantDirectorySort, TenantHealth, TenantStatus } from '@nexora/contracts';
+import {
+  AlertBanner,
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  Field,
+  Icon,
+  IconButton,
+  Input,
+  Select,
+} from '@nexora/ui';
+import type {
+  TenantDirectoryItem,
+  TenantDirectorySort,
+  TenantHealth,
+  TenantStatus,
+} from '@nexora/contracts';
 
 import { useSearchParams } from '../../routing/use-search-params.js';
 import { createTenantsApi, type TenantsApi } from './tenants-api.js';
@@ -79,7 +96,9 @@ function formatUpdatedAt(iso: string): string {
 }
 
 function toMessage(reason: unknown): string {
-  return reason instanceof Error ? reason.message : 'Não foi possível carregar os estabelecimentos.';
+  return reason instanceof Error
+    ? reason.message
+    : 'Não foi possível carregar os estabelecimentos.';
 }
 
 function Chip({ label, onRemove }: Readonly<{ label: string; onRemove: () => void }>) {
@@ -156,7 +175,16 @@ export function TenantsDirectoryPage({
       createdTo,
       sort,
     }),
-    [debouncedQuery, statusFilters, planFilters, templateFilters, healthFilters, createdFrom, createdTo, sort],
+    [
+      debouncedQuery,
+      statusFilters,
+      planFilters,
+      templateFilters,
+      healthFilters,
+      createdFrom,
+      createdTo,
+      sort,
+    ],
   );
   const activeFilterCount = activeDirectoryFilterCount(filtersState);
 
@@ -177,8 +205,12 @@ export function TenantsDirectoryPage({
           plan: filtersState.plan.length > 0 ? [...filtersState.plan] : undefined,
           template: filtersState.template.length > 0 ? [...filtersState.template] : undefined,
           health: filtersState.health.length > 0 ? [...filtersState.health] : undefined,
-          createdFrom: filtersState.createdFrom ? dateInputToRangeStartUtc(filtersState.createdFrom) : undefined,
-          createdTo: filtersState.createdTo ? dateInputToRangeEndUtc(filtersState.createdTo) : undefined,
+          createdFrom: filtersState.createdFrom
+            ? dateInputToRangeStartUtc(filtersState.createdFrom)
+            : undefined,
+          createdTo: filtersState.createdTo
+            ? dateInputToRangeEndUtc(filtersState.createdTo)
+            : undefined,
           sort: filtersState.sort,
           cursor,
         });
@@ -201,7 +233,6 @@ export function TenantsDirectoryPage({
   useEffect(() => {
     setCursorStack([]);
     void fetchPage(undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchPage já inclui os filtros nas suas próprias deps.
   }, [fetchPage]);
 
   const goToNextPage = () => {
@@ -262,8 +293,10 @@ export function TenantsDirectoryPage({
 
   const showInitialLoading = rows === undefined && loading;
   const showInitialError = rows === undefined && !loading && Boolean(error);
-  const isBaseEmpty = rows !== undefined && rows.length === 0 && !hasActiveSearchOrFilters(filtersState);
-  const isNoResults = rows !== undefined && rows.length === 0 && hasActiveSearchOrFilters(filtersState);
+  const isBaseEmpty =
+    rows !== undefined && rows.length === 0 && !hasActiveSearchOrFilters(filtersState);
+  const isNoResults =
+    rows !== undefined && rows.length === 0 && hasActiveSearchOrFilters(filtersState);
 
   return (
     <main className="db-page nx-anim-in" aria-labelledby="tenants-title">
@@ -273,7 +306,9 @@ export function TenantsDirectoryPage({
           <h1 className="db-page__title" id="tenants-title">
             Estabelecimentos
           </h1>
-          <p className="db-page__lead">Busque, filtre e ordene todos os estabelecimentos provisionados na plataforma.</p>
+          <p className="db-page__lead">
+            Busque, filtre e ordene todos os estabelecimentos provisionados na plataforma.
+          </p>
         </div>
         <div className="db-page__actions">
           <Button type="button" onClick={onCreateTenant}>
@@ -291,7 +326,12 @@ export function TenantsDirectoryPage({
             onChange={(event) => setQueryInput(event.target.value)}
             suffix={
               queryInput ? (
-                <IconButton icon="close" label="Limpar busca" size="sm" onClick={() => setQueryInput('')} />
+                <IconButton
+                  icon="close"
+                  label="Limpar busca"
+                  size="sm"
+                  onClick={() => setQueryInput('')}
+                />
               ) : (
                 <Icon name="search" size={18} />
               )
@@ -343,7 +383,14 @@ export function TenantsDirectoryPage({
                 addPlan();
               }
             }}
-            suffix={<IconButton icon="add" label="Adicionar filtro de plano" size="sm" onClick={addPlan} />}
+            suffix={
+              <IconButton
+                icon="add"
+                label="Adicionar filtro de plano"
+                size="sm"
+                onClick={addPlan}
+              />
+            }
           />
         </Field>
         <Field label="Modelo" htmlFor={templateFieldId}>
@@ -358,7 +405,14 @@ export function TenantsDirectoryPage({
                 addTemplate();
               }
             }}
-            suffix={<IconButton icon="add" label="Adicionar filtro de modelo" size="sm" onClick={addTemplate} />}
+            suffix={
+              <IconButton
+                icon="add"
+                label="Adicionar filtro de modelo"
+                size="sm"
+                onClick={addTemplate}
+              />
+            }
           />
         </Field>
         <Field label="Criado a partir de" htmlFor={createdFromFieldId}>
@@ -370,13 +424,20 @@ export function TenantsDirectoryPage({
           />
         </Field>
         <Field label="Criado até" htmlFor={createdToFieldId}>
-          <Input id={createdToFieldId} type="date" value={createdTo} onChange={(event) => setCreatedTo(event.target.value)} />
+          <Input
+            id={createdToFieldId}
+            type="date"
+            value={createdTo}
+            onChange={(event) => setCreatedTo(event.target.value)}
+          />
         </Field>
       </div>
 
       {activeFilterCount > 0 ? (
         <div className="tenants-directory__chips nx-stagger" aria-label="Filtros ativos">
-          <Badge tone="brand">{activeFilterCount === 1 ? '1 filtro ativo' : `${activeFilterCount} filtros ativos`}</Badge>
+          <Badge tone="brand">
+            {activeFilterCount === 1 ? '1 filtro ativo' : `${activeFilterCount} filtros ativos`}
+          </Badge>
           {statusFilters.map((value) => (
             <Chip
               key={`status-${value}`}
@@ -406,10 +467,16 @@ export function TenantsDirectoryPage({
             />
           ))}
           {createdFrom ? (
-            <Chip label={`Criado a partir de ${formatDateInputPtBr(createdFrom)}`} onRemove={() => setCreatedFrom('')} />
+            <Chip
+              label={`Criado a partir de ${formatDateInputPtBr(createdFrom)}`}
+              onRemove={() => setCreatedFrom('')}
+            />
           ) : null}
           {createdTo ? (
-            <Chip label={`Criado até ${formatDateInputPtBr(createdTo)}`} onRemove={() => setCreatedTo('')} />
+            <Chip
+              label={`Criado até ${formatDateInputPtBr(createdTo)}`}
+              onRemove={() => setCreatedTo('')}
+            />
           ) : null}
           <Button type="button" variant="ghost" size="sm" onClick={clearAllFilters}>
             Limpar filtros
@@ -454,7 +521,13 @@ export function TenantsDirectoryPage({
               title="Estabelecimentos"
               subtitle={`${rows.length} nesta página${nextCursor ? ' · há mais resultados' : ''}`}
               actions={
-                <Button type="button" variant="ghost" size="sm" onClick={handleExportCsv} disabled={rows.length === 0}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleExportCsv}
+                  disabled={rows.length === 0}
+                >
                   <Icon name="download" /> Exportar CSV
                 </Button>
               }
@@ -462,9 +535,30 @@ export function TenantsDirectoryPage({
               <DataTable
                 rowKey="id"
                 rows={rows}
-                {...(onOpenTenant ? { onRowClick: (row: TenantDirectoryItem) => onOpenTenant(row.id) } : {})}
+                {...(onOpenTenant
+                  ? { onRowClick: (row: TenantDirectoryItem) => onOpenTenant(row.id) }
+                  : {})}
                 columns={[
-                  { key: 'name', header: 'Nome', render: (row) => row.name },
+                  {
+                    key: 'name',
+                    header: 'Nome',
+                    render: (row) =>
+                      onOpenTenant ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onOpenTenant(row.id);
+                          }}
+                        >
+                          {row.name}
+                        </Button>
+                      ) : (
+                        row.name
+                      ),
+                  },
                   {
                     key: 'slug',
                     header: 'Endereço',
@@ -475,7 +569,9 @@ export function TenantsDirectoryPage({
                   {
                     key: 'status',
                     header: 'Status',
-                    render: (row) => <Badge tone={STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</Badge>,
+                    render: (row) => (
+                      <Badge tone={STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</Badge>
+                    ),
                   },
                   {
                     key: 'ownerEmail',
@@ -483,7 +579,13 @@ export function TenantsDirectoryPage({
                     hideCompact: true,
                     render: (row) => maskOwnerEmail(row.ownerEmail),
                   },
-                  { key: 'storesCount', header: 'Lojas', numeric: true, hideCompact: true, render: (row) => row.storesCount },
+                  {
+                    key: 'storesCount',
+                    header: 'Lojas',
+                    numeric: true,
+                    hideCompact: true,
+                    render: (row) => row.storesCount,
+                  },
                   {
                     key: 'installationsCount',
                     header: 'Instalações',
@@ -500,7 +602,9 @@ export function TenantsDirectoryPage({
                 ]}
               />
               <div className="db-editor__footer">
-                <p className="db-hint">{cursorStack.length > 0 ? `Página ${cursorStack.length + 1}` : 'Primeira página'}</p>
+                <p className="db-hint">
+                  {cursorStack.length > 0 ? `Página ${cursorStack.length + 1}` : 'Primeira página'}
+                </p>
                 <div className="tenants-directory__pager-actions">
                   <Button
                     type="button"
@@ -511,7 +615,13 @@ export function TenantsDirectoryPage({
                   >
                     <Icon name="chevron_left" /> Página anterior
                   </Button>
-                  <Button type="button" variant="secondary" size="sm" disabled={!nextCursor || loading} onClick={goToNextPage}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={!nextCursor || loading}
+                    onClick={goToNextPage}
+                  >
                     Próxima página <Icon name="chevron_right" />
                   </Button>
                 </div>

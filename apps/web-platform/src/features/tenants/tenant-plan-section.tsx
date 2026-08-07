@@ -3,7 +3,6 @@ import { AlertBanner, Badge, Button, Card, Field, Icon, Input, Modal, Select } f
 
 import {
   createTenantPlanApi,
-  type ApiProblem,
   type PlatformPlanSummary,
   type TenantPlanApi,
   type TenantPlanView,
@@ -44,7 +43,10 @@ function formatDateTime(iso: string): string {
  * motivo obrigatório, classes `db-page`/`db-stack`/`db-hint`/`db-code`, animação `nx-anim-in`/
  * `nx-stagger` (`packages/ui/src/components/motion.css`).
  */
-export function TenantPlanSection({ tenantId, api: providedApi }: Readonly<TenantPlanSectionProps>) {
+export function TenantPlanSection({
+  tenantId,
+  api: providedApi,
+}: Readonly<TenantPlanSectionProps>) {
   const api = useMemo(() => providedApi ?? createTenantPlanApi(), [providedApi]);
 
   const [plan, setPlan] = useState<TenantPlanView>();
@@ -154,12 +156,14 @@ export function TenantPlanSection({ tenantId, api: providedApi }: Readonly<Tenan
 
   const selectedPlanSummary = catalog.find((candidate) => candidate.code === targetPlanCode);
   const currentCapabilities = plan?.effectiveCapabilities ?? [];
+  const history = plan?.history ?? [];
   const targetCapabilities = selectedPlanSummary?.capabilities ?? [];
   const gainedCapabilities = targetCapabilities.filter((cap) => !currentCapabilities.includes(cap));
   const lostCapabilities = currentCapabilities.filter((cap) => !targetCapabilities.includes(cap));
   const isDowngrade = lostCapabilities.length > 0;
 
-  const canConfirm = targetPlanCode.length > 0 && effectiveAtLocal.length > 0 && reason.trim().length > 0;
+  const canConfirm =
+    targetPlanCode.length > 0 && effectiveAtLocal.length > 0 && reason.trim().length > 0;
 
   return (
     <Card
@@ -225,12 +229,65 @@ export function TenantPlanSection({ tenantId, api: providedApi }: Readonly<Tenan
             )}
           </div>
 
+          <section className="tenant-plan__history" aria-labelledby="tenant-plan-history-title">
+            <div className="tenant-plan__section-head">
+              <div>
+                <h3 id="tenant-plan-history-title">Histórico de planos</h3>
+                <p className="db-hint">
+                  Solicitações em ordem da mais recente, com vigência e autoria.
+                </p>
+              </div>
+            </div>
+
+            {history.length === 0 ? (
+              <p className="db-hint">Nenhuma alteração de plano registrada.</p>
+            ) : (
+              <div className="db-table-wrap">
+                <table className="db-table" aria-label="Histórico de planos">
+                  <thead>
+                    <tr>
+                      <th scope="col">Alteração</th>
+                      <th scope="col">Vigência</th>
+                      <th scope="col">Motivo</th>
+                      <th scope="col">Autor</th>
+                      <th scope="col">Situação</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.map((entry) => (
+                      <tr key={`${entry.requestedAt}:${entry.next}`}>
+                        <td>
+                          <span className="db-code">{entry.previous}</span> para{' '}
+                          <span className="db-code">{entry.next}</span>
+                        </td>
+                        <td>{formatDateTime(entry.effectiveAt)}</td>
+                        <td>{entry.reason}</td>
+                        <td className="db-code">{entry.actorId ?? 'Sistema'}</td>
+                        <td>
+                          <Badge tone={entry.appliedAt ? 'success' : 'warning'}>
+                            {entry.appliedAt ? 'Efetivado' : 'Agendado'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
           {!plan.consistent ? (
             <AlertBanner
               tone="warning"
               title="Divergência entre plano e configuração"
               actions={
-                <Button type="button" variant="secondary" size="sm" busy={reconcileBusy} onClick={() => void reconcile()}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  busy={reconcileBusy}
+                  onClick={() => void reconcile()}
+                >
                   Reconciliar agora
                 </Button>
               }
@@ -296,7 +353,12 @@ export function TenantPlanSection({ tenantId, api: providedApi }: Readonly<Tenan
             </Field>
           </div>
 
-          <Field label="Motivo" htmlFor={reasonFieldId} required hint="Obrigatório — registrado no histórico com autor e data.">
+          <Field
+            label="Motivo"
+            htmlFor={reasonFieldId}
+            required
+            hint="Obrigatório — registrado no histórico com autor e data."
+          >
             <Input
               id={reasonFieldId}
               required
@@ -347,7 +409,8 @@ export function TenantPlanSection({ tenantId, api: providedApi }: Readonly<Tenan
 
           {isDowngrade ? (
             <AlertBanner tone="warning" title="Este é um downgrade">
-              As capacidades riscadas acima ({lostCapabilities.join(', ')}) serão perdidas nesta mudança.
+              As capacidades riscadas acima ({lostCapabilities.join(', ')}) serão perdidas nesta
+              mudança.
             </AlertBanner>
           ) : null}
         </Modal>

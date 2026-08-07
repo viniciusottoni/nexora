@@ -77,11 +77,16 @@ describe('TenantsDirectoryPage', () => {
     expect(onCreateTenant).toHaveBeenCalledOnce();
   });
 
-  it('clique na linha abre o detalhe do estabelecimento', async () => {
+  it('linha expõe ação focável por teclado e abre o detalhe do estabelecimento', async () => {
     const onOpenTenant = vi.fn();
-    render(<TenantsDirectoryPage api={stubApi()} onCreateTenant={vi.fn()} onOpenTenant={onOpenTenant} />);
+    render(
+      <TenantsDirectoryPage api={stubApi()} onCreateTenant={vi.fn()} onOpenTenant={onOpenTenant} />,
+    );
 
-    fireEvent.click(await screen.findByText('Pizzaria Dona Betinha'));
+    const openButton = await screen.findByRole('button', { name: 'Pizzaria Dona Betinha' });
+    openButton.focus();
+    expect(openButton).toHaveFocus();
+    fireEvent.click(openButton);
     expect(onOpenTenant).toHaveBeenCalledWith(TENANT.id);
   });
 
@@ -90,7 +95,9 @@ describe('TenantsDirectoryPage', () => {
     const search = vi.fn().mockResolvedValue(directoryResponse([]));
     render(<TenantsDirectoryPage api={stubApi({ search })} onCreateTenant={onCreateTenant} />);
 
-    expect(await screen.findByText('Nenhum estabelecimento provisionado ainda')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Nenhum estabelecimento provisionado ainda'),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Provisionar o primeiro estabelecimento' }));
     expect(onCreateTenant).toHaveBeenCalledOnce();
   });
@@ -110,7 +117,9 @@ describe('TenantsDirectoryPage', () => {
       await vi.advanceTimersByTimeAsync(400);
     });
 
-    expect(await screen.findByText('Nenhum resultado para os filtros aplicados')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Nenhum resultado para os filtros aplicados'),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Nenhum estabelecimento provisionado ainda')).not.toBeInTheDocument();
   });
 
@@ -216,7 +225,9 @@ describe('TenantsDirectoryPage', () => {
     const createObjectURL = vi.fn().mockReturnValue('blob:mock');
     const revokeObjectURL = vi.fn();
     vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL });
-    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
 
     render(<TenantsDirectoryPage api={stubApi()} onCreateTenant={vi.fn()} />);
 

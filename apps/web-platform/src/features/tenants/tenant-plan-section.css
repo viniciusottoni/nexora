@@ -39,6 +39,21 @@
   color: var(--text-primary);
 }
 
+.tenant-plan__history {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.tenant-plan__section-head h3 {
+  margin: 0;
+  font: var(--type-h3);
+  color: var(--text-primary);
+}
+
+.tenant-plan__section-head .db-hint {
+  margin: var(--sp-1) 0 0;
+}
+
 /* Comparação antes/depois no modal de mudança de plano — duas colunas lado a lado. */
 .tenant-plan__compare {
   display: grid;

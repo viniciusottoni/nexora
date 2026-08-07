@@ -1,9 +1,20 @@
 import { useEffect, useId, useMemo, useState } from 'react';
-import { AlertBanner, Badge, Button, Card, DataTable, EmptyState, Field, Icon, Input, Modal, Switch } from '@nexora/ui';
+import {
+  AlertBanner,
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  Field,
+  Icon,
+  Input,
+  Modal,
+  Switch,
+} from '@nexora/ui';
 
 import {
   createTenantOwnershipApi,
-  type ApiProblem,
   type TenantOwnershipApi,
   type TenantOwnershipDeliveryStatus,
   type TenantOwnershipInvite,
@@ -28,7 +39,10 @@ const OWNER_STATUS_LABEL: Record<TenantOwnershipOwnerStatus, string> = {
   BLOCKED: 'Bloqueado',
 };
 
-const OWNER_STATUS_TONE: Record<TenantOwnershipOwnerStatus, 'neutral' | 'warning' | 'success' | 'danger'> = {
+const OWNER_STATUS_TONE: Record<
+  TenantOwnershipOwnerStatus,
+  'neutral' | 'warning' | 'success' | 'danger'
+> = {
   NONE: 'neutral',
   INVITED: 'warning',
   ACTIVE: 'success',
@@ -43,7 +57,10 @@ const INVITE_STATUS_LABEL: Record<TenantOwnershipInviteStatus, string> = {
   REVOKED: 'Revogado',
 };
 
-const INVITE_STATUS_TONE: Record<TenantOwnershipInviteStatus, 'warning' | 'success' | 'danger' | 'neutral'> = {
+const INVITE_STATUS_TONE: Record<
+  TenantOwnershipInviteStatus,
+  'warning' | 'success' | 'danger' | 'neutral'
+> = {
   PENDING: 'warning',
   ACCEPTED: 'success',
   EXPIRED: 'danger',
@@ -57,7 +74,10 @@ const DELIVERY_STATUS_LABEL: Record<TenantOwnershipDeliveryStatus, string> = {
   UNKNOWN: 'Sem informação',
 };
 
-const DELIVERY_STATUS_TONE: Record<TenantOwnershipDeliveryStatus, 'warning' | 'success' | 'danger' | 'neutral'> = {
+const DELIVERY_STATUS_TONE: Record<
+  TenantOwnershipDeliveryStatus,
+  'warning' | 'success' | 'danger' | 'neutral'
+> = {
   PENDING: 'warning',
   SENT: 'success',
   FAILED: 'danger',
@@ -71,7 +91,9 @@ function formatDateTime(iso: string): string {
 }
 
 function toMessage(reason: unknown): string {
-  return reason instanceof Error ? reason.message : 'Não foi possível carregar a titularidade do estabelecimento.';
+  return reason instanceof Error
+    ? reason.message
+    : 'Não foi possível carregar a titularidade do estabelecimento.';
 }
 
 /**
@@ -82,7 +104,10 @@ function toMessage(reason: unknown): string {
  * bloqueado/sem proprietário), histórico de convites (nunca segredo — só metadados), reenvio/
  * correção, revogação, transferência de titularidade e desbloqueio administrativo (nunca senha).
  */
-export function TenantOwnershipSection({ tenantId, api: providedApi }: Readonly<TenantOwnershipSectionProps>) {
+export function TenantOwnershipSection({
+  tenantId,
+  api: providedApi,
+}: Readonly<TenantOwnershipSectionProps>) {
   const api = useMemo(() => providedApi ?? createTenantOwnershipApi(), [providedApi]);
 
   const [view, setView] = useState<TenantOwnershipView>();
@@ -317,31 +342,51 @@ export function TenantOwnershipSection({ tenantId, api: providedApi }: Readonly<
                 rowKey="id"
                 rows={view.invites}
                 columns={[
-                  { key: 'sentTo', header: 'Enviado para', render: (row) => maskOwnerEmail(row.sentTo) },
+                  {
+                    key: 'sentTo',
+                    header: 'Enviado para',
+                    render: (row) => maskOwnerEmail(row.sentTo),
+                  },
                   {
                     key: 'status',
                     header: 'Status',
-                    render: (row) => <Badge tone={INVITE_STATUS_TONE[row.status]}>{INVITE_STATUS_LABEL[row.status]}</Badge>,
+                    render: (row) => (
+                      <Badge tone={INVITE_STATUS_TONE[row.status]}>
+                        {INVITE_STATUS_LABEL[row.status]}
+                      </Badge>
+                    ),
                   },
                   {
                     key: 'deliveryStatus',
                     header: 'Entrega',
                     render: (row) => (
-                      <Badge tone={DELIVERY_STATUS_TONE[row.deliveryStatus]}>{DELIVERY_STATUS_LABEL[row.deliveryStatus]}</Badge>
+                      <Badge tone={DELIVERY_STATUS_TONE[row.deliveryStatus]}>
+                        {DELIVERY_STATUS_LABEL[row.deliveryStatus]}
+                      </Badge>
                     ),
                   },
-                  { key: 'expiresAt', header: 'Expira em', render: (row) => formatDateTime(row.expiresAt) },
+                  {
+                    key: 'expiresAt',
+                    header: 'Expira em',
+                    render: (row) => formatDateTime(row.expiresAt),
+                  },
                   {
                     key: 'reason',
                     header: 'Motivo',
-                    render: (row) => row.revokedReason ?? row.reason ?? <span className="db-hint">—</span>,
+                    render: (row) =>
+                      row.revokedReason ?? row.reason ?? <span className="db-hint">—</span>,
                   },
                   {
                     key: 'actions',
                     header: '',
                     render: (row) =>
                       row.status === 'PENDING' ? (
-                        <Button type="button" variant="ghost" size="sm" onClick={() => openRevoke(row)}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openRevoke(row)}
+                        >
                           Revogar
                         </Button>
                       ) : null,
@@ -360,9 +405,21 @@ export function TenantOwnershipSection({ tenantId, api: providedApi }: Readonly<
                 rowKey="id"
                 rows={view.transfers}
                 columns={[
-                  { key: 'transferredAt', header: 'Data', render: (row) => formatDateTime(row.transferredAt) },
-                  { key: 'previousOwnerUserId', header: 'Anterior', render: (row) => <span className="db-code">{row.previousOwnerUserId}</span> },
-                  { key: 'newOwnerUserId', header: 'Novo', render: (row) => <span className="db-code">{row.newOwnerUserId}</span> },
+                  {
+                    key: 'transferredAt',
+                    header: 'Data',
+                    render: (row) => formatDateTime(row.transferredAt),
+                  },
+                  {
+                    key: 'previousOwnerUserId',
+                    header: 'Anterior',
+                    render: (row) => <span className="db-code">{row.previousOwnerUserId}</span>,
+                  },
+                  {
+                    key: 'newOwnerUserId',
+                    header: 'Novo',
+                    render: (row) => <span className="db-code">{row.newOwnerUserId}</span>,
+                  },
                   { key: 'reason', header: 'Motivo', render: (row) => row.reason },
                   {
                     key: 'previousKeptAsAdmin',
@@ -384,7 +441,12 @@ export function TenantOwnershipSection({ tenantId, api: providedApi }: Readonly<
           title="Reenviar ou corrigir convite"
           actions={
             <>
-              <Button type="button" variant="ghost" onClick={() => setReissueOpen(false)} disabled={reissueBusy}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setReissueOpen(false)}
+                disabled={reissueBusy}
+              >
                 Cancelar
               </Button>
               <Button
@@ -406,20 +468,42 @@ export function TenantOwnershipSection({ tenantId, api: providedApi }: Readonly<
             não conseguirá mais usá-lo.
           </AlertBanner>
           <Field label="Nome" htmlFor={reissueNameFieldId} required>
-            <Input id={reissueNameFieldId} required value={reissueName} onChange={(event) => setReissueName(event.target.value)} />
+            <Input
+              id={reissueNameFieldId}
+              name="owner-invite-name"
+              autoComplete="name"
+              required
+              value={reissueName}
+              onChange={(event) => setReissueName(event.target.value)}
+            />
           </Field>
-          <Field label="E-mail" htmlFor={reissueEmailFieldId} required hint="Se for diferente do atual, isto corrige o convite antes da aceitação.">
+          <Field
+            label="E-mail"
+            htmlFor={reissueEmailFieldId}
+            required
+            hint="Se for diferente do atual, isto corrige o convite antes da aceitação."
+          >
             <Input
               id={reissueEmailFieldId}
+              name="owner-invite-email"
               type="email"
+              autoComplete="email"
+              spellCheck={false}
               required
               value={reissueEmail}
               onChange={(event) => setReissueEmail(event.target.value)}
             />
           </Field>
-          <Field label="Motivo" htmlFor={reissueReasonFieldId} required hint="Obrigatório — registrado no histórico com autor e data.">
+          <Field
+            label="Motivo"
+            htmlFor={reissueReasonFieldId}
+            required
+            hint="Obrigatório — registrado no histórico com autor e data."
+          >
             <Input
               id={reissueReasonFieldId}
+              name="owner-invite-reissue-reason"
+              autoComplete="off"
               required
               value={reissueReason}
               onChange={(event) => setReissueReason(event.target.value)}
@@ -437,7 +521,12 @@ export function TenantOwnershipSection({ tenantId, api: providedApi }: Readonly<
           title="Revogar convite pendente?"
           actions={
             <>
-              <Button type="button" variant="ghost" onClick={() => setRevokeTarget(undefined)} disabled={revokeBusy}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setRevokeTarget(undefined)}
+                disabled={revokeBusy}
+              >
                 Cancelar
               </Button>
               <Button
@@ -458,7 +547,14 @@ export function TenantOwnershipSection({ tenantId, api: providedApi }: Readonly<
             poder ser aceito.
           </p>
           <Field label="Motivo" htmlFor={revokeReasonFieldId} required>
-            <Input id={revokeReasonFieldId} required value={revokeReason} onChange={(event) => setRevokeReason(event.target.value)} />
+            <Input
+              id={revokeReasonFieldId}
+              name="owner-invite-revoke-reason"
+              autoComplete="off"
+              required
+              value={revokeReason}
+              onChange={(event) => setRevokeReason(event.target.value)}
+            />
           </Field>
         </Modal>
       ) : null}
@@ -471,7 +567,12 @@ export function TenantOwnershipSection({ tenantId, api: providedApi }: Readonly<
           title="Transferir titularidade"
           actions={
             <>
-              <Button type="button" variant="ghost" onClick={() => setTransferOpen(false)} disabled={transferBusy}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setTransferOpen(false)}
+                disabled={transferBusy}
+              >
                 Cancelar
               </Button>
               <Button
@@ -495,15 +596,25 @@ export function TenantOwnershipSection({ tenantId, api: providedApi }: Readonly<
           >
             <Input
               id={transferNewOwnerFieldId}
+              name="ownership-transfer-new-owner-id"
+              autoComplete="off"
+              spellCheck={false}
               required
               value={transferNewOwnerId}
               onChange={(event) => setTransferNewOwnerId(event.target.value)}
               placeholder="00000000-0000-0000-0000-000000000000"
             />
           </Field>
-          <Field label="Motivo" htmlFor={transferReasonFieldId} required hint="Obrigatório — registrado no histórico com autor e data.">
+          <Field
+            label="Motivo"
+            htmlFor={transferReasonFieldId}
+            required
+            hint="Obrigatório — registrado no histórico com autor e data."
+          >
             <Input
               id={transferReasonFieldId}
+              name="ownership-transfer-reason"
+              autoComplete="off"
               required
               value={transferReason}
               onChange={(event) => setTransferReason(event.target.value)}
@@ -511,6 +622,7 @@ export function TenantOwnershipSection({ tenantId, api: providedApi }: Readonly<
             />
           </Field>
           <Switch
+            name="ownership-transfer-keep-previous-as-admin"
             checked={transferKeepAsAdmin}
             onChange={(event) => setTransferKeepAsAdmin(event.target.checked)}
             label="Manter proprietário anterior com acesso administrativo"
@@ -526,10 +638,21 @@ export function TenantOwnershipSection({ tenantId, api: providedApi }: Readonly<
         title="Desbloquear acesso do proprietário?"
         actions={
           <>
-            <Button type="button" variant="ghost" onClick={() => setUnlockOpen(false)} disabled={unlockBusy}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setUnlockOpen(false)}
+              disabled={unlockBusy}
+            >
               Cancelar
             </Button>
-            <Button type="button" variant="primary" busy={unlockBusy} disabled={!unlockReason.trim()} onClick={() => void confirmUnlock()}>
+            <Button
+              type="button"
+              variant="primary"
+              busy={unlockBusy}
+              disabled={!unlockReason.trim()}
+              onClick={() => void confirmUnlock()}
+            >
               Sim, desbloquear
             </Button>
           </>
@@ -541,7 +664,14 @@ export function TenantOwnershipSection({ tenantId, api: providedApi }: Readonly<
           este fluxo — continua sendo a mesma que ele já tinha.
         </p>
         <Field label="Motivo" htmlFor={unlockReasonFieldId} required>
-          <Input id={unlockReasonFieldId} required value={unlockReason} onChange={(event) => setUnlockReason(event.target.value)} />
+          <Input
+            id={unlockReasonFieldId}
+            name="owner-access-unlock-reason"
+            autoComplete="off"
+            required
+            value={unlockReason}
+            onChange={(event) => setUnlockReason(event.target.value)}
+          />
         </Field>
       </Modal>
     </Card>

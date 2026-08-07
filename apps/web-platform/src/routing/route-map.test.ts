@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { matchRoute, navItemIdForRoute, pathForRoute, pathForTenantDetail } from './route-map.js';
+import {
+  matchRoute,
+  navItemIdForRoute,
+  pathForRoute,
+  pathForTenantDetail,
+  pathWithSearch,
+} from './route-map.js';
 
 describe('matchRoute', () => {
   it.each([
@@ -51,11 +57,37 @@ describe('pathForTenantDetail', () => {
       params: { tenantId: 'abc-123' },
     });
   });
+
+  it('preserva a busca e os filtros da URL ao abrir o detalhe', () => {
+    expect(pathWithSearch(pathForTenantDetail('abc-123'), '?query=betinha&status=ACTIVE')).toBe(
+      '/estabelecimentos/abc-123?query=betinha&status=ACTIVE',
+    );
+  });
+});
+
+describe('pathWithSearch', () => {
+  it('preserva os filtros ao voltar do detalhe para o diretório', () => {
+    expect(pathWithSearch(pathForRoute('tenants'), '?query=betinha&status=ACTIVE')).toBe(
+      '/estabelecimentos?query=betinha&status=ACTIVE',
+    );
+  });
+
+  it('não acrescenta separador quando não há querystring', () => {
+    expect(pathWithSearch(pathForRoute('tenants'), '')).toBe('/estabelecimentos');
+  });
 });
 
 describe('pathForRoute', () => {
   it('é a inversa de matchRoute para rotas sem parâmetro', () => {
-    for (const routeId of ['overview', 'tenants', 'tenants-new', 'installations', 'support-access', 'business-templates', 'releases'] as const) {
+    for (const routeId of [
+      'overview',
+      'tenants',
+      'tenants-new',
+      'installations',
+      'support-access',
+      'business-templates',
+      'releases',
+    ] as const) {
       expect(matchRoute(pathForRoute(routeId))?.routeId).toBe(routeId);
     }
   });

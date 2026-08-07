@@ -18,6 +18,16 @@ public sealed record PlatformPlanListResponse(IReadOnlyList<PlatformPlanSummaryR
 /// <summary>Agendamento pendente de um tenant — nulo quando não há mudança de plano aguardando vigência.</summary>
 public sealed record TenantPlanScheduledResponse(string Plan, DateTimeOffset EffectiveAt);
 
+/// <summary>Linha temporal imutável de uma solicitação de mudança de plano, pendente ou já efetivada.</summary>
+public sealed record TenantPlanHistoryEntryResponse(
+    string Previous,
+    string Next,
+    DateTimeOffset RequestedAt,
+    DateTimeOffset EffectiveAt,
+    DateTimeOffset? AppliedAt,
+    string Reason,
+    Guid? ActorId);
+
 /// <summary>
 /// Resposta de <c>GET /v1/platform/tenants/{id}/plan</c>. <see cref="Version"/> não aparece no
 /// exemplo abreviado da US (§7), mas é necessário na prática para o próximo <c>If-Match</c> do
@@ -32,7 +42,8 @@ public sealed record TenantPlanResponse(
     IReadOnlyList<string> EffectiveCapabilities,
     TenantPlanScheduledResponse? Scheduled,
     bool Consistent,
-    int Version);
+    int Version,
+    IReadOnlyList<TenantPlanHistoryEntryResponse> History);
 
 /// <summary>Corpo de <c>PUT /v1/platform/tenants/{id}/plan</c> — motivo e vigência obrigatórios (§10).</summary>
 public sealed record TenantPlanUpdateRequest(string Plan, DateTimeOffset? EffectiveAt, string Reason);

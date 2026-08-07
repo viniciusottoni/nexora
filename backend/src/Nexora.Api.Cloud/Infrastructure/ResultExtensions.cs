@@ -298,6 +298,25 @@ public static class ResultExtensions
         ApiErrorCodes.ConcurrencyConflict => (StatusCodes.Status409Conflict, true, false),
         ApiErrorCodes.ReasonRequired => (StatusCodes.Status422UnprocessableEntity, true, false),
 
+        // Gestão de planos e configuração comercial (US-154).
+        ApiErrorCodes.PlanNotAvailable => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Proprietários, usuários iniciais e convites (US-155).
+        ApiErrorCodes.OwnershipOwnerNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.OwnershipOwnerAlreadyActive => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnershipEmailAlreadyInUse => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnershipInviteNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.OwnershipInviteAlreadyConsumed => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnershipInviteAlreadyRevoked => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnershipTargetUserNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.OwnershipSameOwner => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnershipNoOwnerRoleConfigured => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnershipOwnerNotBlocked => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Recuperação do provisionamento e token de instalação (US-156).
+        ApiErrorCodes.InstallationAlreadyRegistered => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.InstallationCredentialNotFound => (StatusCodes.Status404NotFound, false, false),
+
         // Operação — ambientes e mesas do salão (US-020).
         ApiErrorCodes.AreaNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.AreaHasActiveTables => (StatusCodes.Status422UnprocessableEntity, true, false),
@@ -411,6 +430,9 @@ public static class ResultExtensions
 
         ApiErrorCodes.ReleaseNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.ReleaseRolloutCannotDecrease => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // US-157 · Central operacional, auditoria e atalhos de suporte.
+        ApiErrorCodes.AttentionItemNotFound => (StatusCodes.Status404NotFound, false, false),
 
         // Legados do cloud (placeholders de módulos ainda não portados — mantidos do arquivo
         // anterior a esta tarefa; nenhum handler emite hoje, mas preservam o comportamento

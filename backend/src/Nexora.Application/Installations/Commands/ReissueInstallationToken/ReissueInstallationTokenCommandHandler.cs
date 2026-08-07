@@ -31,18 +31,10 @@ namespace Nexora.Application.Installations.Commands.ReissueInstallationToken;
 /// única coluna que <c>ConsumeInstallationTokenCommandHandler</c> compara.
 /// </para>
 /// <para>
-/// <b>Por que o digest é <see cref="IInstallationTokenDigester"/>, não <c>ISecretDigester</c>:</b>
-/// <c>ProvisionTenantCommandHandler</c> hasheia o token ORIGINAL com <c>ISecretDigester</c>
-/// (<c>HmacSecretDigester</c>, HMAC-SHA256 com pepper) — mas <c>ConsumeInstallationTokenCommandHandler</c>/
-/// <c>RegisterInstallationCommandHandler</c> validam o token comparando contra um digest calculado
-/// com <see cref="IInstallationTokenDigester"/> (SHA-256 puro, sem pepper). São algoritmos
-/// DIFERENTES — uma inconsistência PRÉ-EXISTENTE (não introduzida por esta tarefa; nenhum teste de
-/// integração hoje exercita o fluxo completo provisionamento→consumo→registro com o token real, o
-/// que teria pego a divergência) que, no código atual, torna o token emitido no provisionamento
-/// original impossível de consumir pelo protocolo padrão. Documentado em detalhe no relatório desta
-/// tarefa, com sugestão de correção separada. Para a credencial REEMITIDA aqui, usa-se
-/// deliberadamente o MESMO digest que a verificação (<see cref="IInstallationTokenDigester"/>) —
-/// assim, ao contrário do token original, um token reemitido por esta rota É de fato consumível.
+/// <b>Digest canônico:</b> provisionamento, reemissão, consumo e registro usam
+/// <see cref="IInstallationTokenDigester"/>. Convites e outros segredos continuam usando
+/// <c>ISecretDigester</c>. Manter algoritmos separados impede que um token emitido seja persistido
+/// com um digest diferente daquele calculado pelo protocolo de instalação.
 /// </para>
 /// </remarks>
 internal sealed class ReissueInstallationTokenCommandHandler

@@ -23,12 +23,23 @@ export interface TenantPlanScheduled {
   readonly effectiveAt: string;
 }
 
+export interface TenantPlanHistoryEntry {
+  readonly previous: string;
+  readonly next: string;
+  readonly requestedAt: string;
+  readonly effectiveAt: string;
+  readonly appliedAt: string | null;
+  readonly reason: string;
+  readonly actorId: string | null;
+}
+
 export interface TenantPlanView {
   readonly current: string;
   readonly effectiveCapabilities: readonly string[];
   readonly scheduled: TenantPlanScheduled | null;
   readonly consistent: boolean;
   readonly version: number;
+  readonly history: readonly TenantPlanHistoryEntry[];
 }
 
 export interface TenantPlanUpdateInput {
@@ -60,7 +71,11 @@ export interface TenantPlanApi {
   listPlans(): Promise<PlatformPlanSummary[]>;
   get(tenantId: string): Promise<TenantPlanView>;
   /** `PUT` com `Idempotency-Key` por intenção e `If-Match` com a versão corrente — mesmo padrão de `tenant-detail-api.ts` `transitionStatus`. */
-  update(tenantId: string, version: number, input: TenantPlanUpdateInput): Promise<TenantPlanUpdateResult>;
+  update(
+    tenantId: string,
+    version: number,
+    input: TenantPlanUpdateInput,
+  ): Promise<TenantPlanUpdateResult>;
   /** Endpoint adicional (ver docstring do backend) que corrige a divergência detectada — idempotente por conteúdo, `Idempotency-Key` protege contra reenvio de rede duplicado. */
   reconcile(tenantId: string): Promise<TenantPlanReconcileResult>;
 }
@@ -71,7 +86,9 @@ export function createTenantPlanApi(baseUrl = ''): TenantPlanApi {
 
   return {
     async listPlans() {
-      const response = await authenticatedFetch(`${baseUrl}/v1/platform/plans`, { credentials: 'include' });
+      const response = await authenticatedFetch(`${baseUrl}/v1/platform/plans`, {
+        credentials: 'include',
+      });
       if (!response.ok) throw await toApiError(response);
       const payload = (await response.json()) as { data: PlatformPlanSummary[] };
       return payload.data;

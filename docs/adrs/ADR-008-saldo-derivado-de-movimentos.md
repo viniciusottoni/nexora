@@ -2,13 +2,15 @@
 
 | | |
 |---|---|
-| **Status** | Aceito |
+| **Status** | Aceito (revisado) |
 | **Data** | 31/07/2026 |
 | **Decisores** | Tech Lead, PO |
-| **Relacionados** | ADR-006, ADR-007 |
+| **Relacionados** | ADR-006, ADR-007, ADR-040 |
 | **Requisitos afetados** | RF-EST-04 a 08, RN-007, RN-008, RNF-OFF-08 |
 
 ---
+
+> **Nota de revisão (06/08/2026, [ADR-040](./ADR-040-arquitetura-100-online-api-unica.md)):** o cenário de conflito descrito no Contexto abaixo (produção offline na loja vs. compra registrada na nuvem, sincronizadas depois) deixou de existir — sem edge, há uma única transação de banco por movimento, sem duas pontas a reconciliar. **A decisão em si (nunca sincronizar saldo, sempre derivar de movimentos) continua adotada**, agora por razão diferente: auditabilidade completa de estoque (origem, autor, horário de cada baixa) e um CMV confiável continuam valendo por si, independente de haver ou não sincronização a resolver.
 
 ## Contexto
 

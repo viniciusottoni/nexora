@@ -1,4 +1,6 @@
 using Nexora.Application.Abstractions.Security;
+using Nexora.Application.Installations.Commands.ConsumeInstallationToken;
+using Nexora.Application.Installations.Commands.RegisterInstallation;
 using Nexora.Application.Tenants.Commands.ProvisionTenant;
 using Nexora.Domain.Platform;
 using Nexora.IntegrationTests.Fakes;
@@ -103,6 +105,63 @@ public sealed class ProvisionTenantIntegrationTests
 
         (await readDb.DomainEvents.CountAsync(e => e.TenantId == tenantId && e.Type == "tenant.config_updated")).Should().Be(1);
         (await readDb.DomainEvents.CountAsync(e => e.TenantId == tenantId && e.Type == "permission.changed")).Should().Be(7);
+    }
+
+    [Fact]
+    public async Task ProvisionTenant_Token_Original_E_Consumivel_Sem_Contexto_De_Tenant()
+    {
+        await using var provisionDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId: null));
+        await using var provisionProvider = MediatRTestContainerFactory.Build(
+            provisionDb,
+            new StaticTenantContext(tenantId: null));
+
+        var provision = await provisionProvider.GetRequiredService<ISender>().Send(BuildCommand(UniqueSlug()));
+        provision.IsSuccess.Should().BeTrue();
+
+        await using var consumeDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId: null));
+        await using var consumeProvider = MediatRTestContainerFactory.Build(
+            consumeDb,
+            new StaticTenantContext(tenantId: null));
+
+        var consume = await consumeProvider.GetRequiredService<ISender>()
+            .Send(new ConsumeInstallationTokenCommand(provision.Value!.InstallToken));
+
+        consume.IsSuccess.Should().BeTrue("o endpoint anonimo nao conhece o tenant antes de validar o token");
+        consume.Value!.TenantId.Should().Be(provision.Value.Tenant.Id);
+    }
+
+    [Fact]
+    public async Task ProvisionTenant_Token_Original_Registra_Instalacao_Sem_Contexto_De_Tenant()
+    {
+        await using var provisionDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId: null));
+        await using var provisionProvider = MediatRTestContainerFactory.Build(
+            provisionDb,
+            new StaticTenantContext(tenantId: null));
+
+        var provision = await provisionProvider.GetRequiredService<ISender>().Send(BuildCommand(UniqueSlug()));
+        provision.IsSuccess.Should().BeTrue();
+
+        var tenantId = provision.Value!.Tenant.Id;
+        await using var lookupDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId));
+        var installationId = await lookupDb.EdgeInstallations
+            .Where(item => item.TenantId == tenantId)
+            .Select(item => item.Id)
+            .SingleAsync();
+
+        await using var registerDb = _fixture.CreateAppDbContext(new StaticTenantContext(tenantId: null));
+        await using var registerProvider = MediatRTestContainerFactory.Build(
+            registerDb,
+            new StaticTenantContext(tenantId: null));
+
+        var register = await registerProvider.GetRequiredService<ISender>().Send(new RegisterInstallationCommand(
+            provision.Value.InstallToken,
+            installationId,
+            "edge-matriz",
+            "1.0.0",
+            "public-key-integration-test-00000000"));
+
+        register.IsSuccess.Should().BeTrue("o script de instalacao chama a rota publica antes de existir contexto de tenant");
+        register.Value!.Tenant.Id.Should().Be(tenantId);
     }
 
     /// <summary>Cenário: "Slug duplicado".</summary>

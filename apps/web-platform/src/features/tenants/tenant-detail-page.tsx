@@ -1,5 +1,17 @@
 import { useEffect, useId, useMemo, useState } from 'react';
-import { AlertBanner, Badge, Button, Card, DataTable, EmptyState, Field, Icon, Input, Modal, ProgressMeter } from '@nexora/ui';
+import {
+  AlertBanner,
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  Field,
+  Icon,
+  Input,
+  Modal,
+  ProgressMeter,
+} from '@nexora/ui';
 import {
   ONBOARDING_STEP_LABELS,
   type TenantOverviewInstallation,
@@ -19,6 +31,10 @@ import {
   type TenantStatusTransitionTarget,
 } from './tenant-detail-api.js';
 import { maskOwnerEmail } from './tenants-directory-view-model.js';
+import { TenantPlanSection } from './tenant-plan-section.js';
+import { TenantOwnershipSection } from './tenant-ownership-section.js';
+import { TenantInstallationCredentialsSection } from './tenant-installation-credentials-section.js';
+import { TenantAdministrativeTimelineSection } from './tenant-administrative-timeline-section.js';
 import './tenant-detail-page.css';
 
 export interface TenantDetailPageProps {
@@ -65,7 +81,8 @@ const TRANSITION_MODAL_TITLE: Record<TenantStatusTransitionTarget, string> = {
 
 /** §10 "Modal mostra impacto antes da confirmação" — texto substantivo, em PT-BR, por alvo. */
 const TRANSITION_IMPACT_COPY: Record<TenantStatusTransitionTarget, string> = {
-  SUSPENDED: 'Novas sessões de gestão e operação seguirão a política de suspensão até a reativação.',
+  SUSPENDED:
+    'Novas sessões de gestão e operação seguirão a política de suspensão até a reativação.',
   ACTIVE: 'As dependências técnicas serão validadas antes de reativar.',
   CANCELLED:
     'Esta ação é permanente. O estabelecimento e seus dados de histórico são preservados, mas o encerramento não pode ser desfeito.',
@@ -89,7 +106,10 @@ const INSTALLATION_STATUS_LABEL: Record<TenantOverviewInstallationStatus, string
   OFFLINE: 'Offline',
 };
 
-const INSTALLATION_STATUS_TONE: Record<TenantOverviewInstallationStatus, 'neutral' | 'success' | 'warning'> = {
+const INSTALLATION_STATUS_TONE: Record<
+  TenantOverviewInstallationStatus,
+  'neutral' | 'success' | 'warning'
+> = {
   PENDING: 'neutral',
   ACTIVE: 'success',
   OFFLINE: 'warning',
@@ -261,7 +281,11 @@ export function TenantDetailPage({
         </div>
         <div className="db-page__actions">
           {overview ? (
-            <Button type="button" variant="secondary" onClick={() => onRequestSupportAccess(tenantId)}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => onRequestSupportAccess(tenantId)}
+            >
               <Icon name="support_agent" /> Solicitar acesso de suporte
             </Button>
           ) : null}
@@ -294,19 +318,22 @@ export function TenantDetailPage({
           <Card
             title="Cabeçalho"
             actions={
-              overview.tenant.availableTransitions.filter(isTenantStatusTransitionTarget).length > 0 ? (
+              overview.tenant.availableTransitions.filter(isTenantStatusTransitionTarget).length >
+              0 ? (
                 <div className="tenant-detail__status-actions">
-                  {overview.tenant.availableTransitions.filter(isTenantStatusTransitionTarget).map((target) => (
-                    <Button
-                      key={target}
-                      type="button"
-                      variant={target === 'CANCELLED' ? 'danger' : 'secondary'}
-                      size="sm"
-                      onClick={() => openTransition(target)}
-                    >
-                      {TRANSITION_ACTION_LABEL[target]}
-                    </Button>
-                  ))}
+                  {overview.tenant.availableTransitions
+                    .filter(isTenantStatusTransitionTarget)
+                    .map((target) => (
+                      <Button
+                        key={target}
+                        type="button"
+                        variant={target === 'CANCELLED' ? 'danger' : 'secondary'}
+                        size="sm"
+                        onClick={() => openTransition(target)}
+                      >
+                        {TRANSITION_ACTION_LABEL[target]}
+                      </Button>
+                    ))}
                 </div>
               ) : null
             }
@@ -323,7 +350,9 @@ export function TenantDetailPage({
               <div>
                 <dt>Status</dt>
                 <dd>
-                  <Badge tone={STATUS_TONE[overview.tenant.status]}>{STATUS_LABEL[overview.tenant.status]}</Badge>
+                  <Badge tone={STATUS_TONE[overview.tenant.status]}>
+                    {STATUS_LABEL[overview.tenant.status]}
+                  </Badge>
                 </dd>
               </div>
               <div>
@@ -373,6 +402,8 @@ export function TenantDetailPage({
             </dl>
           </Card>
 
+          <TenantPlanSection tenantId={tenantId} />
+
           <Card title="Proprietário">
             {overview.owner ? (
               <dl className="tenant-detail__kv">
@@ -398,6 +429,8 @@ export function TenantDetailPage({
             )}
           </Card>
 
+          <TenantOwnershipSection tenantId={tenantId} />
+
           <Card title="Lojas" padding={overview.stores.length === 0 ? 'default' : 'none'}>
             {overview.stores.length === 0 ? (
               <EmptyState icon="storefront" title="Nenhuma loja cadastrada">
@@ -410,13 +443,20 @@ export function TenantDetailPage({
                 columns={[
                   { key: 'name', header: 'Nome', render: (row) => row.name },
                   { key: 'timezone', header: 'Fuso horário', render: (row) => row.timezone },
-                  { key: 'id', header: 'ID', render: (row) => <span className="db-code">{row.id}</span> },
+                  {
+                    key: 'id',
+                    header: 'ID',
+                    render: (row) => <span className="db-code">{row.id}</span>,
+                  },
                 ]}
               />
             )}
           </Card>
 
-          <Card title="Instalações" padding={overview.installations.length === 0 ? 'default' : 'none'}>
+          <Card
+            title="Instalações"
+            padding={overview.installations.length === 0 ? 'default' : 'none'}
+          >
             {overview.installations.length === 0 ? (
               <EmptyState icon="dns" title="Nenhuma instalação registrada">
                 Este estabelecimento ainda não tem servidor local instalado.
@@ -431,15 +471,23 @@ export function TenantDetailPage({
                     key: 'status',
                     header: 'Status',
                     render: (row) => (
-                      <Badge tone={INSTALLATION_STATUS_TONE[row.status]}>{INSTALLATION_STATUS_LABEL[row.status]}</Badge>
+                      <Badge tone={INSTALLATION_STATUS_TONE[row.status]}>
+                        {INSTALLATION_STATUS_LABEL[row.status]}
+                      </Badge>
                     ),
                   },
                   {
                     key: 'health',
                     header: 'Saúde',
-                    render: (row) => <Badge tone={HEALTH_TONE[row.health]}>{HEALTH_LABEL[row.health]}</Badge>,
+                    render: (row) => (
+                      <Badge tone={HEALTH_TONE[row.health]}>{HEALTH_LABEL[row.health]}</Badge>
+                    ),
                   },
-                  { key: 'id', header: 'ID', render: (row) => <span className="db-code">{row.id}</span> },
+                  {
+                    key: 'id',
+                    header: 'ID',
+                    render: (row) => <span className="db-code">{row.id}</span>,
+                  },
                 ]}
               />
             )}
@@ -451,12 +499,14 @@ export function TenantDetailPage({
               value={overview.deployment.completed}
               max={overview.deployment.total}
               display={`${overview.deployment.completed}/${overview.deployment.total}`}
-              tone={overview.deployment.completed === overview.deployment.total ? 'success' : 'brand'}
+              tone={
+                overview.deployment.completed === overview.deployment.total ? 'success' : 'brand'
+              }
             />
             {overview.deployment.nextAction ? (
               <AlertBanner tone="warning" title="Próxima ação recomendada">
-                {ONBOARDING_STEP_LABELS[overview.deployment.nextAction]} — outras pendências do checklist
-                podem continuar em aberto além desta.
+                {ONBOARDING_STEP_LABELS[overview.deployment.nextAction]} — outras pendências do
+                checklist podem continuar em aberto além desta.
               </AlertBanner>
             ) : (
               <AlertBanner tone="success" title="Implantação concluída">
@@ -464,6 +514,10 @@ export function TenantDetailPage({
               </AlertBanner>
             )}
           </Card>
+
+          <TenantInstallationCredentialsSection tenantId={tenantId} />
+
+          <TenantAdministrativeTimelineSection tenantId={tenantId} />
 
           <Card title="Links">
             <ul className="tenant-detail__links">
@@ -524,7 +578,12 @@ export function TenantDetailPage({
           title={TRANSITION_MODAL_TITLE[transitionTarget]}
           actions={
             <>
-              <Button type="button" variant="ghost" onClick={closeTransition} disabled={transitionBusy}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={closeTransition}
+                disabled={transitionBusy}
+              >
                 {TRANSITION_DISMISS_LABEL[transitionTarget]}
               </Button>
               <Button
@@ -544,6 +603,8 @@ export function TenantDetailPage({
           <Field label="Motivo" htmlFor={transitionReasonFieldId}>
             <Input
               id={transitionReasonFieldId}
+              name="tenant-status-reason"
+              autoComplete="off"
               required
               value={transitionReason}
               onChange={(event) => setTransitionReason(event.target.value)}
@@ -557,6 +618,9 @@ export function TenantDetailPage({
             >
               <Input
                 id={slugConfirmationFieldId}
+                name="tenant-status-slug-confirmation"
+                autoComplete="off"
+                spellCheck={false}
                 value={slugConfirmation}
                 onChange={(event) => setSlugConfirmation(event.target.value)}
               />

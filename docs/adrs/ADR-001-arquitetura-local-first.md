@@ -2,13 +2,16 @@
 
 | | |
 |---|---|
-| **Status** | Aceito |
+| **Status** | Substituído |
 | **Data** | 31/07/2026 |
 | **Decisores** | Tech Lead, PO |
+| **Substituído por** | [ADR-040](./ADR-040-arquitetura-100-online-api-unica.md) |
 | **Relacionados** | ADR-007, ADR-011, ADR-027, ADR-033, ADR-034 |
 | **Requisitos afetados** | RF-OFF-01 a 08, RF-PED-09, RNF-DIS-03, RNF-PER-01 |
 
 ---
+
+> ⚠️ **Substituído em 06/08/2026 pelo [ADR-040](./ADR-040-arquitetura-100-online-api-unica.md).** Mudança de foco de negócio (produto passa a competir com cardápio web, 100% online) elimina o requisito de operação sem internet que fundamenta esta decisão. Conteúdo mantido como registro histórico — não reflete a arquitetura atual. Ver também E-16.
 
 ## Contexto
 

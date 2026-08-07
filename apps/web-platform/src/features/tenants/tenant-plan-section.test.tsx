@@ -21,8 +21,18 @@ const TENANT_ID = '0198aabb-0001-7000-8000-000000000001';
 
 const catalog: PlatformPlanSummary[] = [
   { code: 'STANDARD', name: 'Standard', active: true, capabilities: ['online_ordering', 'kds'] },
-  { code: 'GESTAO', name: 'Gestão', active: true, capabilities: ['online_ordering', 'kds', 'inventory'] },
-  { code: 'COMPLETO', name: 'Completo', active: true, capabilities: ['online_ordering', 'kds', 'inventory', 'multi_store'] },
+  {
+    code: 'GESTAO',
+    name: 'Gestão',
+    active: true,
+    capabilities: ['online_ordering', 'kds', 'inventory'],
+  },
+  {
+    code: 'COMPLETO',
+    name: 'Completo',
+    active: true,
+    capabilities: ['online_ordering', 'kds', 'inventory', 'multi_store'],
+  },
 ];
 
 const consistentPlan: TenantPlanView = {
@@ -31,6 +41,7 @@ const consistentPlan: TenantPlanView = {
   scheduled: null,
   consistent: true,
   version: 3,
+  history: [],
 };
 
 const divergentPlan: TenantPlanView = {
@@ -42,6 +53,21 @@ const divergentPlan: TenantPlanView = {
 const scheduledPlan: TenantPlanView = {
   ...consistentPlan,
   scheduled: { plan: 'COMPLETO', effectiveAt: '2026-09-01T00:00:00Z' },
+};
+
+const planWithHistory = {
+  ...consistentPlan,
+  history: [
+    {
+      previous: 'STANDARD',
+      next: 'GESTAO',
+      requestedAt: '2026-08-01T10:00:00Z',
+      effectiveAt: '2026-08-01T10:00:00Z',
+      appliedAt: '2026-08-01T10:00:01Z',
+      reason: 'Ampliação dos módulos contratados',
+      actorId: '0198aabb-1111-7000-8000-000000000001',
+    },
+  ],
 };
 
 const updateResult: TenantPlanUpdateResult = {
@@ -68,7 +94,7 @@ function buildApi(overrides: Partial<TenantPlanApi> = {}): TenantPlanApi {
 }
 
 function genericError(): ApiProblem {
-  return new Error('Falha de rede') as ApiProblem;
+  return new Error('Falha de rede');
 }
 
 describe('TenantPlanSection', () => {
@@ -91,6 +117,22 @@ describe('TenantPlanSection', () => {
     render(<TenantPlanSection tenantId={TENANT_ID} api={api} />);
 
     expect(await screen.findByText(/COMPLETO a partir de/)).toBeInTheDocument();
+  });
+
+  it('exibe o histórico temporal com antes/depois, vigência, motivo, autor e situação', async () => {
+    const api = buildApi({ get: vi.fn().mockResolvedValue(planWithHistory) });
+    render(<TenantPlanSection tenantId={TENANT_ID} api={api} />);
+
+    expect(await screen.findByRole('heading', { name: 'Histórico de planos' })).toBeInTheDocument();
+    const historyTable = screen.getByRole('table', { name: 'Histórico de planos' });
+    expect(
+      within(historyTable).getByRole('row', { name: /STANDARD para GESTAO/ }),
+    ).toBeInTheDocument();
+    expect(within(historyTable).getByText('Ampliação dos módulos contratados')).toBeInTheDocument();
+    expect(within(historyTable).getByText('Efetivado')).toBeInTheDocument();
+    expect(
+      within(historyTable).getByText('0198aabb-1111-7000-8000-000000000001'),
+    ).toBeInTheDocument();
   });
 
   it('divergência mostra AlertBanner com ação de reconciliar (US-154 §4, "sem correção automática silenciosa")', async () => {
@@ -134,7 +176,9 @@ describe('TenantPlanSection', () => {
 
       expect(confirmButton).toBeDisabled();
 
-      fireEvent.change(within(dialog).getByLabelText(/^Novo plano/), { target: { value: 'COMPLETO' } });
+      fireEvent.change(within(dialog).getByLabelText(/^Novo plano/), {
+        target: { value: 'COMPLETO' },
+      });
       expect(confirmButton).toBeDisabled();
 
       fireEvent.change(within(dialog).getByLabelText(/^Data de vigência/), {
@@ -155,7 +199,9 @@ describe('TenantPlanSection', () => {
       fireEvent.click(await screen.findByRole('button', { name: /Alterar plano/ }));
       const dialog = await screen.findByRole('dialog', { name: 'Alterar plano' });
 
-      fireEvent.change(within(dialog).getByLabelText(/^Novo plano/), { target: { value: 'STANDARD' } });
+      fireEvent.change(within(dialog).getByLabelText(/^Novo plano/), {
+        target: { value: 'STANDARD' },
+      });
 
       expect(within(dialog).getByText('Antes (GESTAO)')).toBeInTheDocument();
       expect(within(dialog).getByText('Depois (Standard)')).toBeInTheDocument();
@@ -164,7 +210,10 @@ describe('TenantPlanSection', () => {
     });
 
     it('confirma a mudança com Idempotency-Key/If-Match implícitos no client e recarrega o plano depois', async () => {
-      const get = vi.fn().mockResolvedValueOnce(consistentPlan).mockResolvedValueOnce(scheduledPlan);
+      const get = vi
+        .fn()
+        .mockResolvedValueOnce(consistentPlan)
+        .mockResolvedValueOnce(scheduledPlan);
       const update = vi.fn().mockResolvedValue(updateResult);
       const api = buildApi({ get, update });
       render(<TenantPlanSection tenantId={TENANT_ID} api={api} />);
@@ -172,7 +221,9 @@ describe('TenantPlanSection', () => {
       fireEvent.click(await screen.findByRole('button', { name: /Alterar plano/ }));
       const dialog = await screen.findByRole('dialog', { name: 'Alterar plano' });
 
-      fireEvent.change(within(dialog).getByLabelText(/^Novo plano/), { target: { value: 'COMPLETO' } });
+      fireEvent.change(within(dialog).getByLabelText(/^Novo plano/), {
+        target: { value: 'COMPLETO' },
+      });
       fireEvent.change(within(dialog).getByLabelText(/^Data de vigência/), {
         target: { value: '2026-09-01T00:00' },
       });
@@ -203,14 +254,18 @@ describe('TenantPlanSection', () => {
       fireEvent.click(await screen.findByRole('button', { name: /Alterar plano/ }));
       const dialog = await screen.findByRole('dialog', { name: 'Alterar plano' });
 
-      fireEvent.change(within(dialog).getByLabelText(/^Novo plano/), { target: { value: 'COMPLETO' } });
+      fireEvent.change(within(dialog).getByLabelText(/^Novo plano/), {
+        target: { value: 'COMPLETO' },
+      });
       fireEvent.change(within(dialog).getByLabelText(/^Data de vigência/), {
         target: { value: '2026-09-01T00:00' },
       });
       fireEvent.change(within(dialog).getByLabelText(/^Motivo/), { target: { value: 'Teste' } });
       fireEvent.click(within(dialog).getByRole('button', { name: 'Confirmar mudança' }));
 
-      expect(await within(dialog).findByText('Plano comercial não disponível.')).toBeInTheDocument();
+      expect(
+        await within(dialog).findByText('Plano comercial não disponível.'),
+      ).toBeInTheDocument();
       expect(screen.getByRole('dialog', { name: 'Alterar plano' })).toBeInTheDocument();
     });
 

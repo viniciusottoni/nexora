@@ -1,0 +1,103 @@
+/* US-157 · Central operacional, auditoria e atalhos de suporte — casca/página vêm de console.css
+   (@nexora/ui); aqui só o que é específico desta seção: o filtro de tipo e a lista de fatos
+   cronológicos. Só tokens já existentes (sem cor/tamanho/duração "solta") — ver
+   packages/ui/src/tokens/*.css e components/motion.css. Entrada em cascata via .nx-stagger (já
+   aplicado no <ol>), sem animação própria. */
+
+.tenant-timeline__filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  align-items: end;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+.tenant-timeline__filter-actions {
+  display: flex;
+  align-items: end;
+}
+
+.tenant-timeline__list {
+  display: grid;
+  gap: var(--sp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tenant-timeline__item {
+  display: flex;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--surface-card);
+}
+
+.tenant-timeline__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-full, 999px);
+  background: var(--surface-brand-subtle);
+  color: var(--text-brand, var(--text-primary));
+}
+
+.tenant-timeline__content {
+  display: grid;
+  gap: var(--sp-2);
+  min-width: 0;
+  flex: 1;
+}
+
+.tenant-timeline__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.tenant-timeline__when {
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+
+.tenant-timeline__summary {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+
+.tenant-timeline__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--sp-2) var(--sp-5);
+  margin: 0;
+}
+
+.tenant-timeline__meta dt {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+
+.tenant-timeline__meta dd {
+  margin: 0;
+  font: var(--type-body-sm, var(--type-body));
+  color: var(--text-primary);
+}
+
+.tenant-timeline__load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--sp-5);
+}
+
+@media (max-width: 40rem) {
+  .tenant-timeline__item {
+    flex-direction: column;
+  }
+}

@@ -22,9 +22,20 @@ describe('tenantOverviewResponseSchema', () => {
       tenantOverviewResponseSchema.parse({
         tenant: baseTenant,
         owner: { name: 'Betina Souza', email: 'betina@example.com', inviteStatus: 'ACCEPTED' },
-        stores: [{ id: '22222222-2222-2222-2222-222222222222', name: 'Matriz', timezone: 'America/Sao_Paulo' }],
+        stores: [
+          {
+            id: '22222222-2222-2222-2222-222222222222',
+            name: 'Matriz',
+            timezone: 'America/Sao_Paulo',
+          },
+        ],
         installations: [
-          { id: '33333333-3333-3333-3333-333333333333', label: 'Servidor local — Matriz', status: 'ACTIVE', health: 'OK' },
+          {
+            id: '33333333-3333-3333-3333-333333333333',
+            label: 'Servidor local — Matriz',
+            status: 'ACTIVE',
+            health: 'OK',
+          },
         ],
         deployment: { completed: 9, total: 9, nextAction: null },
         links: { publicMenu: 'https://dona-betinha.plataforma.com.br', admin: null, health: null },
@@ -36,9 +47,20 @@ describe('tenantOverviewResponseSchema', () => {
     const parsed = tenantOverviewResponseSchema.parse({
       tenant: baseTenant,
       owner: { name: 'Betina Souza', email: 'betina@example.com', inviteStatus: 'PENDING' },
-      stores: [{ id: '22222222-2222-2222-2222-222222222222', name: 'Matriz', timezone: 'America/Sao_Paulo' }],
+      stores: [
+        {
+          id: '22222222-2222-2222-2222-222222222222',
+          name: 'Matriz',
+          timezone: 'America/Sao_Paulo',
+        },
+      ],
       installations: [
-        { id: '33333333-3333-3333-3333-333333333333', label: 'Servidor local — Matriz', status: 'PENDING', health: 'UNKNOWN' },
+        {
+          id: '33333333-3333-3333-3333-333333333333',
+          label: 'Servidor local — Matriz',
+          status: 'PENDING',
+          health: 'UNKNOWN',
+        },
       ],
       deployment: { completed: 4, total: 9, nextAction: 'EDGE_INSTALL' },
       links: { publicMenu: null, admin: null, health: null },
@@ -66,7 +88,14 @@ describe('tenantOverviewResponseSchema', () => {
         tenant: baseTenant,
         owner: null,
         stores: [],
-        installations: [{ id: '33333333-3333-3333-3333-333333333333', label: 'x', status: 'UNKNOWN', health: 'OK' }],
+        installations: [
+          {
+            id: '33333333-3333-3333-3333-333333333333',
+            label: 'x',
+            status: 'UNKNOWN',
+            health: 'OK',
+          },
+        ],
         deployment: { completed: 0, total: 9, nextAction: 'BRANDING' },
         links: { publicMenu: null, admin: null, health: null },
       }),
@@ -90,7 +119,7 @@ describe('tenantOverviewResponseSchema', () => {
   });
 
   it('recusa availableTransitions sem statusVersion e vice-versa (ambos obrigatórios)', () => {
-    const { statusVersion, ...tenantWithoutVersion } = baseTenant;
+    const { statusVersion: _statusVersion, ...tenantWithoutVersion } = baseTenant;
     expect(() =>
       tenantOverviewResponseSchema.parse({
         tenant: tenantWithoutVersion,
@@ -102,7 +131,7 @@ describe('tenantOverviewResponseSchema', () => {
       }),
     ).toThrow();
 
-    const { availableTransitions, ...tenantWithoutTransitions } = baseTenant;
+    const { availableTransitions: _availableTransitions, ...tenantWithoutTransitions } = baseTenant;
     expect(() =>
       tenantOverviewResponseSchema.parse({
         tenant: tenantWithoutTransitions,

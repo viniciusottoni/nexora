@@ -40,6 +40,10 @@ internal sealed class ReconcileTenantPlanConfigCommandHandler
                 "Estabelecimento não encontrado.", ApiErrorCodes.TenantNotFound);
         }
 
+        // PlatformAdmin não possui tenant no token. A configuração é tenant-scoped e protegida
+        // por RLS, então a rota global precisa fixar explicitamente o tenant antes de consultá-la.
+        await _db.SetTenantContextAsync(tenant.Id, cancellationToken);
+
         var tenantConfig = await _db.TenantConfigs
             .SingleOrDefaultAsync(c => c.TenantId == tenant.Id, cancellationToken);
 
@@ -71,8 +75,6 @@ internal sealed class ReconcileTenantPlanConfigCommandHandler
                 Consistent: true,
                 Changed: false));
         }
-
-        await _db.SetTenantContextAsync(tenant.Id, cancellationToken);
 
         tenantConfig.ApplyPlanCapabilities(platformPlan.CapabilitiesJson, platformPlan.Version);
 

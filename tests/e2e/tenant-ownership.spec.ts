@@ -36,13 +36,21 @@ const newInviteId = '0198aabb-6666-7000-8000-000000000011';
 
 async function mockLogin(page: Page) {
   await page.route('**/v1/auth/login', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adminSession) });
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(adminSession),
+    });
   });
 }
 
 async function mockPlatformSummary(page: Page) {
   await page.route('**/v1/platform/summary', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(platformSummary) });
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(platformSummary),
+    });
   });
 }
 
@@ -139,7 +147,12 @@ test.describe('Proprietários, usuários iniciais e convites (US-155)', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          owner: { id: '0198aabb-6666-7000-8000-000000000030', name: 'Dona Betinha', email: 'dona.betinha@example.com', status: 'INVITED' },
+          owner: {
+            id: '0198aabb-6666-7000-8000-000000000030',
+            name: 'Dona Betinha',
+            email: 'dona.betinha@example.com',
+            status: 'INVITED',
+          },
           invites,
           transfers: [],
         }),
@@ -148,7 +161,11 @@ test.describe('Proprietários, usuários iniciais e convites (US-155)', () => {
 
     await page.route(`**/v1/platform/tenants/${tenantId}/owner-invites`, async (route) => {
       if (route.request().method() !== 'POST') return route.fallback();
-      const body = route.request().postDataJSON() as { name: string; email: string; reason: string };
+      const body = route.request().postDataJSON() as {
+        name: string;
+        email: string;
+        reason: string;
+      };
       expect(body.reason.trim().length).toBeGreaterThan(0);
       ownershipState = 'REISSUED';
       await route.fulfill({
@@ -168,7 +185,8 @@ test.describe('Proprietários, usuários iniciais e convites (US-155)', () => {
 
     // Seção de titularidade (US-155) — ver docstring do arquivo sobre a integração central pendente.
     await expect(page.getByText('Titularidade e acesso inicial')).toBeVisible();
-    await expect(page.getByText('Expirado')).toBeVisible();
+    // `exact` para não colidir com o badge "Convite expirado" do resumo de proprietário (US-152).
+    await expect(page.getByText('Expirado', { exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: /Reenviar\/corrigir convite/ }).click();
     await expect(page.getByRole('heading', { name: 'Reenviar ou corrigir convite' })).toBeVisible();
@@ -177,9 +195,13 @@ test.describe('Proprietários, usuários iniciais e convites (US-155)', () => {
     await page.getByLabel('Motivo').fill('Convite expirado — reenvio solicitado');
     await page.getByRole('button', { name: 'Confirmar envio' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Reenviar ou corrigir convite' })).not.toBeVisible();
-    await expect(page.getByText('Pendente')).toBeVisible();
-    await expect(page.getByText('Revogado')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Reenviar ou corrigir convite' }),
+    ).not.toBeVisible();
+    // `exact` — "Pendente" (status) é substring case-insensitive de "Entrega pendente" (coluna de
+    // entrega da mesma linha), o que tornaria o locator ambíguo sem a correspondência exata.
+    await expect(page.getByText('Pendente', { exact: true })).toBeVisible();
+    await expect(page.getByText('Revogado', { exact: true })).toBeVisible();
 
     // "Apenas o novo convite deve poder ser aceito" — verificado no contrato de rede: o backend
     // (OwnerInvitationsController, fora desta ficha administrativa) aceita só o token do convite
@@ -194,19 +216,31 @@ test.describe('Proprietários, usuários iniciais e convites (US-155)', () => {
         await route.fulfill({
           status: 401,
           contentType: 'application/problem+json',
-          body: JSON.stringify({ detail: 'Convite inválido ou expirado.', code: 'OWNER_INVITE_INVALID_CREDENTIALS' }),
+          body: JSON.stringify({
+            detail: 'Convite inválido ou expirado.',
+            code: 'OWNER_INVITE_INVALID_CREDENTIALS',
+          }),
         });
       }
     });
 
-    const acceptNew = await page.request.post('http://127.0.0.1:49174/v1/auth/invitations/accept', {
-      data: { token: 'token-do-convite-novo', password: 'senha-com-mais-de-doze-caracteres' },
-    });
-    expect(acceptNew.status()).toBe(204);
+    // `page.request` é um cliente HTTP à parte (Node), NÃO passa por `page.route()` — só fetch
+    // disparado pela própria página é interceptado. `page.evaluate` roda o fetch DENTRO do
+    // navegador para respeitar o mock acima (mesma origem, cookies/mock preservados).
+    const acceptStatus = (token: string) =>
+      page.evaluate(
+        async ({ url, token: t }) => {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ token: t, password: 'senha-com-mais-de-doze-caracteres' }),
+          });
+          return response.status;
+        },
+        { url: 'http://127.0.0.1:49174/v1/auth/invitations/accept', token },
+      );
 
-    const acceptOld = await page.request.post('http://127.0.0.1:49174/v1/auth/invitations/accept', {
-      data: { token: 'token-do-convite-antigo-e-revogado', password: 'senha-com-mais-de-doze-caracteres' },
-    });
-    expect(acceptOld.status()).toBe(401);
+    expect(await acceptStatus('token-do-convite-novo')).toBe(204);
+    expect(await acceptStatus('token-do-convite-antigo-e-revogado')).toBe(401);
   });
 });
