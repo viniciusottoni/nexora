@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { BillResponse, PaymentRequest, RegisterPaymentsResponse } from '@nexora/contracts';
-import { Badge, Button, Card } from '@nexora/ui';
+import { Badge, Button, Card, Icon } from '@nexora/ui';
 import type { OperationalRequestIdentity } from '@nexora/ui';
 import { formatMoneyBrl } from '../table-map/table-map-signals.js';
 import { BillingApi, BillingApiError } from './billing-api.js';
@@ -17,11 +17,11 @@ export interface CheckoutPanelProps {
 }
 
 const PAYMENT_METHODS = [
-  { value: 'CASH', label: 'Dinheiro' },
-  { value: 'CREDIT', label: 'Crédito' },
-  { value: 'DEBIT', label: 'Débito' },
-  { value: 'PIX', label: 'Pix' },
-  { value: 'VOUCHER', label: 'Voucher' },
+  { value: 'CASH', label: 'Dinheiro', icon: 'payments' },
+  { value: 'DEBIT', label: 'Débito', icon: 'credit_card' },
+  { value: 'CREDIT', label: 'Crédito', icon: 'credit_card' },
+  { value: 'PIX', label: 'PIX', icon: 'qr_code_2' },
+  { value: 'VOUCHER', label: 'Voucher', icon: 'confirmation_number' },
 ] as const;
 
 const MACHINE_PROVIDERS = ['CIELO', 'MERCADO_PAGO', 'STONE', 'GETNET'] as const;
@@ -82,6 +82,7 @@ function usesExternalProvider(method: PaymentLine['method']): boolean {
  */
 export function CheckoutPanel({ identity, sessionId, bill, api, onBillChanged, onPaid }: Readonly<CheckoutPanelProps>) {
   const [lines, setLines] = useState<readonly PaymentLine[]>([newLine()]);
+  const [activeLineKey, setActiveLineKey] = useState<string>();
   const [registering, setRegistering] = useState(false);
   const [registerError, setRegisterError] = useState<string>();
   const [duplicateConfirmationRequired, setDuplicateConfirmationRequired] = useState(false);
@@ -104,6 +105,7 @@ export function CheckoutPanel({ identity, sessionId, bill, api, onBillChanged, o
   const totalCents = parseMoneyCents(bill.total);
   const enteredTotalCents = lines.reduce((sum, line) => sum + parseMoneyCents(line.amount), 0);
   const remainingCents = totalCents - enteredTotalCents;
+  const activeLine = lines.find((line) => line.key === activeLineKey) ?? lines[0];
 
   function updateLine(key: string, patch: Partial<PaymentLine>) {
     setLines((prev) => prev.map((line) => (line.key === key ? { ...line, ...patch } : line)));
@@ -116,6 +118,34 @@ export function CheckoutPanel({ identity, sessionId, bill, api, onBillChanged, o
 
   function removeLine(key: string) {
     setLines((prev) => (prev.length > 1 ? prev.filter((line) => line.key !== key) : prev));
+  }
+
+  function selectPaymentMethod(method: PaymentLine['method']) {
+    if (!activeLine) return;
+    setActiveLineKey(activeLine.key);
+    updateLine(activeLine.key, { method });
+  }
+
+  function appendKeypadDigit(digit: number) {
+    if (!activeLine) return;
+    const nextCents = Math.min(parseMoneyCents(activeLine.amount) * 10 + digit, 99_999_999);
+    setActiveLineKey(activeLine.key);
+    updateLine(activeLine.key, { amount: (nextCents / 100).toFixed(2) });
+  }
+
+  function eraseKeypadDigit() {
+    if (!activeLine) return;
+    const nextCents = Math.floor(parseMoneyCents(activeLine.amount) / 10);
+    updateLine(activeLine.key, { amount: nextCents === 0 ? '' : (nextCents / 100).toFixed(2) });
+  }
+
+  function fillRemainingAmount() {
+    if (!activeLine) return;
+    const otherLinesCents = lines.reduce(
+      (sum, line) => (line.key === activeLine.key ? sum : sum + parseMoneyCents(line.amount)),
+      0,
+    );
+    updateLine(activeLine.key, { amount: (Math.max(0, totalCents - otherLinesCents) / 100).toFixed(2) });
   }
 
   async function submitPayments() {
@@ -246,7 +276,25 @@ export function CheckoutPanel({ identity, sessionId, bill, api, onBillChanged, o
 
   return (
     <Card as="section" className="checkout-panel" aria-label="Fechar conta">
-      <h2>Fechar conta</h2>
+      <div className="checkout-panel__heading">
+        <h2>Recebimento</h2>
+        <span>Múltiplas formas na mesma conta</span>
+      </div>
+
+      <div className="checkout-panel__method-grid" aria-label="Formas de pagamento rápidas">
+        {PAYMENT_METHODS.map((method) => (
+          <button
+            key={method.value}
+            type="button"
+            className={activeLine?.method === method.value ? 'checkout-panel__method checkout-panel__method--active' : 'checkout-panel__method'}
+            aria-pressed={activeLine?.method === method.value}
+            onClick={() => selectPaymentMethod(method.value)}
+          >
+            <Icon name={method.icon} size={22} />
+            <span>{method.label}</span>
+          </button>
+        ))}
+      </div>
 
       {bill.serviceFeeOptional && !bill.serviceFeeWaived && parseMoneyCents(bill.serviceFee ?? '0') > 0 ? (
         <div className="checkout-panel__service-fee">
@@ -320,6 +368,7 @@ export function CheckoutPanel({ identity, sessionId, bill, api, onBillChanged, o
               step="0.01"
               inputMode="decimal"
               value={line.amount}
+              onFocus={() => setActiveLineKey(line.key)}
               onChange={(event) => updateLine(line.key, { amount: event.target.value })}
             />
             {line.method === 'CASH' ? (
@@ -386,6 +435,23 @@ export function CheckoutPanel({ identity, sessionId, bill, api, onBillChanged, o
           + Adicionar forma de pagamento
         </Button>
 
+        <div className="checkout-panel__totals" aria-label="Resumo do recebimento">
+          <div>
+            <span>Total</span>
+            <strong>{formatMoneyBrl(bill.total)}</strong>
+          </div>
+          <div>
+            <span>Recebido</span>
+            <strong className="checkout-panel__received">{moneyCents(enteredTotalCents)}</strong>
+          </div>
+          <div>
+            <span>Falta</span>
+            <strong className={remainingCents > 0 ? 'checkout-panel__missing' : ''}>
+              {moneyCents(Math.max(0, remainingCents))}
+            </strong>
+          </div>
+        </div>
+
         <p className="checkout-panel__remaining">
           {remainingCents === 0 ? (
             <Badge tone="success">Soma confere com o total</Badge>
@@ -406,6 +472,30 @@ export function CheckoutPanel({ identity, sessionId, bill, api, onBillChanged, o
           {duplicateConfirmationRequired ? 'Confirmar referência duplicada e fechar' : 'Registrar pagamentos e fechar conta'}
         </Button>
       </div>
+
+      <aside className="checkout-panel__keypad" aria-label="Teclado de valor">
+        <div className="checkout-panel__keypad-heading">
+          <strong>Valor</strong>
+          <span>Vazio = recebe o restante</span>
+        </div>
+        <output className="checkout-panel__keypad-display" aria-live="polite">
+          {activeLine?.amount ? formatMoneyBrl(activeLine.amount) : moneyCents(Math.max(0, remainingCents))}
+        </output>
+        <div className="checkout-panel__keys">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
+            <button key={digit} type="button" onClick={() => appendKeypadDigit(digit)}>
+              {digit}
+            </button>
+          ))}
+          <button type="button" aria-label="Apagar último dígito" onClick={eraseKeypadDigit}>
+            <Icon name="backspace" size={20} />
+          </button>
+          <button type="button" onClick={() => appendKeypadDigit(0)}>0</button>
+          <button type="button" className="checkout-panel__key-confirm" aria-label="Usar valor restante" onClick={fillRemainingAmount}>
+            <Icon name="check" size={24} />
+          </button>
+        </div>
+      </aside>
     </Card>
   );
 }

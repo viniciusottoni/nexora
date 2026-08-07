@@ -20,6 +20,7 @@ public partial class AppDbContext
     public DbSet<Domain.Platform.InstallationNonce> InstallationNonces => Set<Domain.Platform.InstallationNonce>();
     public DbSet<Domain.Platform.PairingCode> PairingCodes => Set<Domain.Platform.PairingCode>();
     public DbSet<Domain.Platform.AuditLog> AuditLogs => Set<Domain.Platform.AuditLog>();
+    public DbSet<Domain.Platform.TenantStatusHistory> TenantStatusHistories => Set<Domain.Platform.TenantStatusHistory>();
 
     /// <inheritdoc cref="Application.Abstractions.Persistence.IApplicationDbContext.AuditLogsWithMinAmount"/>
     public IQueryable<Domain.Platform.AuditLog> AuditLogsWithMinAmount(decimal minAmount) =>
@@ -33,6 +34,22 @@ public partial class AppDbContext
                 (after->>'total')::numeric
             ) >= {minAmount}
             """);
+
+    /// <inheritdoc cref="Application.Abstractions.Persistence.IApplicationDbContext.TenantsMatchingSearchTerm"/>
+    public IQueryable<Domain.Platform.Tenant> TenantsMatchingSearchTerm(string term)
+    {
+        var pattern = $"%{term}%";
+        return Tenants.FromSqlInterpolated(
+            $"""
+            SELECT * FROM tenant
+            WHERE name ILIKE {pattern}
+               OR slug ILIKE {pattern}
+               OR domain ILIKE {pattern}
+               OR document ILIKE {pattern}
+               OR owner_email ILIKE {pattern}
+            """);
+    }
+
     public DbSet<Domain.Platform.IdempotencyKey> IdempotencyKeys => Set<Domain.Platform.IdempotencyKey>();
     public DbSet<Domain.Platform.DomainEvent> DomainEvents => Set<Domain.Platform.DomainEvent>();
     public DbSet<Domain.Platform.MediaAsset> MediaAssets => Set<Domain.Platform.MediaAsset>();

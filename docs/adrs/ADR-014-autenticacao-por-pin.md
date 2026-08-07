@@ -2,13 +2,16 @@
 
 | | |
 |---|---|
-| **Status** | Aceito |
+| **Status** | Substituído |
 | **Data** | 31/07/2026 |
 | **Decisores** | Tech Lead, PO, UX |
+| **Substituído por** | [ADR-041](./ADR-041-autenticacao-sem-rede-local.md) |
 | **Relacionados** | ADR-023, ADR-031 |
 | **Requisitos afetados** | RF-IAM-03, RF-IAM-05, RF-IAM-07, RNF-SEG-04 a 06 |
 
 ---
+
+> ⚠️ **Substituído em 06/08/2026 pelo [ADR-041](./ADR-041-autenticacao-sem-rede-local.md).** Fim do edge (ADR-040) remove a camada de rede local ("dispositivo só acessa pela LAN") da tabela de proteção abaixo. PIN pessoal por operador, dispositivo autorizado e sessão por turno **continuam vigentes** — apenas a camada de rede muda. Ver ADR-041 para o modelo revisado.
 
 ## Contexto
 

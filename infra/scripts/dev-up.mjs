@@ -15,7 +15,15 @@ let shuttingDown = false;
 process.chdir(repoRoot);
 
 function commandName(command) {
-  return process.platform === 'win32' && command === 'pnpm' ? 'pnpm.cmd' : command;
+  return command;
+}
+
+function isWindowsShellCommand(command) {
+  return process.platform === 'win32' && command === 'pnpm';
+}
+
+function shellCommand(command, args) {
+  return [command, ...args].join(' ');
 }
 
 function readDevPostgresPassword() {
@@ -34,10 +42,24 @@ function buildConnection(database) {
   const user = process.env.NEXORA_DEV_DB_USER ?? 'donabetinha';
   const password = process.env.NEXORA_DEV_DB_PASSWORD ?? readDevPostgresPassword();
 
-  return [`Host=${host}`, `Port=${port}`, `Database=${database}`, `Username=${user}`, `Password=${password}`].join(';');
+  return [
+    `Host=${host}`,
+    `Port=${port}`,
+    `Database=${database}`,
+    `Username=${user}`,
+    `Password=${password}`,
+  ].join(';');
 }
 
 function probe(command, args) {
+  if (isWindowsShellCommand(command)) {
+    return spawnSync(shellCommand(command, args), {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      shell: true,
+    });
+  }
+
   return spawnSync(commandName(command), args, {
     cwd: repoRoot,
     encoding: 'utf8',
@@ -77,11 +99,15 @@ function checkPrerequisites() {
 }
 
 function run(command, args, options = {}) {
-  const result = spawnSync(commandName(command), args, {
+  const spawnOptions = {
     cwd: repoRoot,
     env: { ...process.env, ...options.env },
     stdio: 'inherit',
-  });
+  };
+
+  const result = isWindowsShellCommand(command)
+    ? spawnSync(shellCommand(command, args), { ...spawnOptions, shell: true })
+    : spawnSync(commandName(command), args, spawnOptions);
 
   if (result.error?.code === 'ENOENT') {
     throw new Error(`Comando nao encontrado: ${command}`);
@@ -131,13 +157,20 @@ function persistProcessState() {
 }
 
 function start(command, args, env = {}) {
-  const child = spawn(commandName(command), args, {
-    cwd: repoRoot,
-    detached: process.platform !== 'win32',
-    env: { ...process.env, ...env },
-    shell: process.platform === 'win32',
-    stdio: 'inherit',
-  });
+  const child = isWindowsShellCommand(command)
+    ? spawn(shellCommand(command, args), {
+        cwd: repoRoot,
+        detached: process.platform !== 'win32',
+        env: { ...process.env, ...env },
+        shell: true,
+        stdio: 'inherit',
+      })
+    : spawn(commandName(command), args, {
+        cwd: repoRoot,
+        detached: process.platform !== 'win32',
+        env: { ...process.env, ...env },
+        stdio: 'inherit',
+      });
 
   children.push(child);
   persistProcessState();

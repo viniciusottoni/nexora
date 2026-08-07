@@ -9,6 +9,4 @@ public sealed record TenantSummaryResponse(
     string Status,
     DateTimeOffset CreatedAt);
 
-public sealed record TenantListResponse(IReadOnlyList<TenantSummaryResponse> Data);
-
 public sealed record SlugAvailabilityResponse(string Slug, bool Available);

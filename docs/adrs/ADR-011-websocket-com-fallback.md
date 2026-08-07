@@ -2,17 +2,19 @@
 
 | | |
 |---|---|
-| **Status** | Aceito |
+| **Status** | Aceito (revisado) |
 | **Data** | 31/07/2026 |
 | **Decisores** | Tech Lead |
-| **Relacionados** | ADR-001, ADR-027 |
+| **Relacionados** | ADR-040, ADR-041 |
 | **Requisitos afetados** | RF-KDS-01, RNF-PER-01, RNF-DIS-07 |
 
 ---
 
+> **Nota de revisão (06/08/2026, [ADR-040](./ADR-040-arquitetura-100-online-api-unica.md)):** o canal SignalR deixa de rodar "no servidor local" e passa a rodar em `iMenu.Api`, na nuvem — todo dispositivo se conecta pela internet, não pela LAN. O padrão (SignalR + fallback de polling) e as salas por tenant/loja/praça/mesa/papel continuam exatamente os mesmos. O que muda é a meta de latência: RNF-PER-01 sai de < 2 s para < 10 s (p95), porque o caminho agora passa pela internet pública em vez de rede local (ver E-16/US-168). O hub deixa de estar registrado em `Api.Edge` e passa a `iMenu.Api`.
+
 ## Contexto
 
-A promessa central do produto é que o pedido chega à cozinha. O requisito é menos de 2 segundos (RNF-PER-01).
+A promessa central do produto é que o pedido chega à cozinha. O requisito, revisado para o modelo 100% online, é menos de 10 segundos (RNF-PER-01, ver nota de revisão acima).
 
 Mas há um risco pior que a lentidão: **falha silenciosa**. Se o WebSocket cair sem que ninguém perceba, o KDS continua exibindo a tela normalmente, apenas sem pedidos novos. A cozinha acha que está tudo calmo enquanto o salão enche. Esse é exatamente o cenário que o produto existe para eliminar — e seria constrangedor reproduzi-lo por decisão técnica.
 

@@ -1,0 +1,80 @@
+/* US-151 · Diretório de estabelecimentos com busca e filtros — casca/página/tabela vêm de
+   console.css (@nexora/ui); aqui só o que é específico desta tela: barra de busca+ordenação,
+   toolbar de filtros e a fita de chips removíveis. Só tokens já existentes (sem cor/tamanho/
+   duração "solta") — ver packages/ui/src/tokens/*.css e components/motion.css. */
+
+.tenants-directory__search-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-5);
+}
+
+.tenants-directory__search {
+  flex: 1 1 22rem;
+  min-width: 16rem;
+}
+
+.tenants-directory__filters {
+  padding: var(--sp-5) var(--sp-6);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+}
+
+.tenants-directory__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.tenants-directory__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 28px;
+  padding: 0 var(--sp-2) 0 var(--sp-4);
+  border-radius: var(--radius-pill);
+  border: var(--border-1) solid var(--border-brand);
+  background: var(--surface-brand-subtle);
+  color: var(--nx-navy-800);
+  font: var(--type-label);
+  white-space: nowrap;
+  animation: nx-slide-in var(--dur-slow) var(--ease-out) backwards;
+}
+
+.tenants-directory__chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+.tenants-directory__chip-remove:hover {
+  background: var(--surface-card);
+}
+
+.tenants-directory__pager-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+@media (max-width: 48rem) {
+  .tenants-directory__search-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tenants-directory__filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

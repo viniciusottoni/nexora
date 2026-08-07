@@ -10,7 +10,7 @@
 | **Data** | 31/07/2026 |
 | **Responsável** | Sáskia — Replay Studio |
 | **Depende de** | `../01-PRD-Especificacao-Funcional.md`, `../04-Catalogo-de-Eventos-e-Maquinas-de-Estado.md`, `../05-Contratos-de-API.md` |
-| **Resumo** | **16 épicos · 120 histórias · 785 pontos** |
+| **Resumo** | **17 épicos ativos · 121 histórias ativas · 801 pontos** (E-06 cancelado — ver E-16; totais não descontam US-005/006/034 canceladas/substituídas dentro de épicos ativos, ajuste fino pendente de E-16/US-167) |
 
 ---
 
@@ -85,11 +85,17 @@ Docs/User Stories/
 │   ├── README.md                      visão do épico
 │   ├── US-140-Painel-de-instalacoes-com-saude.md
 │   └── … (7 histórias)
-└── E-15-Gestao-Geral-da-Plataforma/
+├── E-15-Gestao-Geral-da-Plataforma/
+│   ├── README.md                      visão do épico
+│   ├── US-150-Estrutura-e-navegacao-do-painel-de-plataforma.md
+│   └── … (8 histórias)
+└── E-16-iMenu-Online/                 fundacional — ver seção 3
     ├── README.md                      visão do épico
-    ├── US-150-Estrutura-e-navegacao-do-painel-de-plataforma.md
-    └── … (8 histórias)
+    ├── US-160-Rebranding-Nexora-para-iMenu.md
+    └── … (10 histórias)
 ```
+
+> **E-06-Sincronizacao-Local-Nuvem** permanece no diretório como registro histórico — épico **cancelado**, ver seu README.
 
 ### O que cada arquivo de história contém
 
@@ -146,8 +152,11 @@ Docs/User Stories/
 
 | Épico | Nome | Histórias | Pontos |
 |---|---|--:|--:|
-| [E-00](./E-00-Fundacao-da-Plataforma/README.md) | Fundacao da Plataforma | 7 | 55 |
-|  | **Subtotal** | **7** | **55** |
+| [E-00](./E-00-Fundacao-da-Plataforma/README.md) | Fundacao da Plataforma † | 7 | 55 |
+| [E-16](./E-16-iMenu-Online/README.md) | iMenu Online (fundacional, revisão) | 10 | 71 |
+|  | **Subtotal** | **17** | **126** |
+
+† E-00 inclui US-006 (cancelada) e US-005 (substituída pela US-163 de E-16) — contagem não ajustada, ver E-16/US-167.
 
 ### Fase 1 — MVP
 
@@ -155,14 +164,16 @@ Docs/User Stories/
 |---|---|--:|--:|
 | [E-01](./E-01-Catalogo-e-Cardapio/README.md) | Catalogo e Cardapio | 8 | 42 |
 | [E-02](./E-02-Mesa-e-Comanda/README.md) | Mesa e Comanda | 9 | 47 |
-| [E-03](./E-03-Pedido-e-Roteamento/README.md) | Pedido e Roteamento | 6 | 53 |
+| [E-03](./E-03-Pedido-e-Roteamento/README.md) | Pedido e Roteamento ‡ | 6 | 53 |
 | [E-04](./E-04-KDS-Cozinha/README.md) | KDS Cozinha | 9 | 50 |
 | [E-05](./E-05-Caixa-e-Pagamento/README.md) | Caixa e Pagamento | 9 | 48 |
-| [E-06](./E-06-Sincronizacao-Local-Nuvem/README.md) | Sincronizacao Local-Nuvem | 9 | 55 |
+| ~~E-06~~ | ~~Sincronizacao Local-Nuvem~~ — ❌ **Cancelado, ver E-16** | ~~9~~ | ~~55~~ |
 | [E-07](./E-07-Painel-do-Dono-v1/README.md) | Painel do Dono v1 | 8 | 47 |
 | [E-08](./E-08-Alertas-e-Notificacoes/README.md) | Alertas e Notificacoes | 4 | 21 |
 | [E-09](./E-09-Auditoria/README.md) | Auditoria | 2 | 13 |
-|  | **Subtotal** | **64** | **376** |
+|  | **Subtotal (ativo, sem E-06)** | **55** | **321** |
+
+‡ E-03 inclui US-034 (cancelada) — contagem não ajustada, ver E-16/US-167.
 
 ### Fase 2 — Custo e controle
 
@@ -194,8 +205,9 @@ Docs/User Stories/
 | [E-15](./E-15-Gestao-Geral-da-Plataforma/README.md) | Gestao Geral da Plataforma | 8 | 58 |
 |  | **Subtotal** | **15** | **105** |
 
-> **Total geral: 16 épicos · 120 histórias · 785 pontos.**  
-> **Fases 0 e 1 (MVP): 71 histórias · 431 pontos.**
+> **Total geral (ativo): 16 épicos · 121 histórias · 801 pontos.** E-06 (9 histórias · 55 pontos) permanece no repositório como registro histórico, cancelado — ver E-16.
+> **Fases 0 e 1 (MVP): 72 histórias · 447 pontos.**
+> Totais não descontam US-005/006 (E-00) e US-034 (E-03), individualmente canceladas/substituídas dentro de épicos ativos — ajuste fino é objeto de E-16/US-167.
 
 ## 4. Índice completo de histórias
 
@@ -207,8 +219,8 @@ Docs/User Stories/
 | [US-002](./E-00-Fundacao-da-Plataforma/US-002-Provisionar-novo-estabelecimento.md) | Provisionar novo estabelecimento | M | 5 | RF-PLT-05 |
 | [US-003](./E-00-Fundacao-da-Plataforma/US-003-Identidade-visual-por-estabelecimento.md) | Identidade visual por estabelecimento | M | 8 | RF-PLT-02, RF-PLT-04 |
 | [US-004](./E-00-Fundacao-da-Plataforma/US-004-Autenticacao-e-perfis-de-acesso.md) | Autenticacao e perfis de acesso | M | 13 | RF-IAM-01, RF-IAM-02, RF-IAM-03, RF-IAM-04, RF-IAM-06, RF-IAM-07 |
-| [US-005](./E-00-Fundacao-da-Plataforma/US-005-Registro-de-dispositivos-autorizados.md) | Registro de dispositivos autorizados | M | 5 | RF-IAM-05 |
-| [US-006](./E-00-Fundacao-da-Plataforma/US-006-Servidor-local-instalavel-por-script.md) | Servidor local instalavel por script | M | 8 | RF-PLT-05, RF-OFF-01 |
+| [US-005](./E-00-Fundacao-da-Plataforma/US-005-Registro-de-dispositivos-autorizados.md) | Registro de dispositivos autorizados — 🔄 substituída pela US-163 (E-16) | M | 5 | RF-IAM-05 |
+| [US-006](./E-00-Fundacao-da-Plataforma/US-006-Servidor-local-instalavel-por-script.md) | Servidor local instalavel por script — ❌ cancelada | M | 8 | RF-PLT-05, RF-OFF-01 |
 | [US-007](./E-00-Fundacao-da-Plataforma/US-007-Pipeline-de-CI-CD-com-travas-de-governanca.md) | Pipeline de CI-CD com travas de governanca | M | 8 | — |
 
 ### [E-01 · Catalogo e Cardapio](./E-01-Catalogo-e-Cardapio/README.md) — Fase 1
@@ -246,7 +258,7 @@ Docs/User Stories/
 | [US-031](./E-03-Pedido-e-Roteamento/US-031-Roteamento-simultaneo-para-cozinha-e-caixa.md) | Roteamento simultaneo para cozinha e caixa | M | 8 | RF-KDS-01, RF-CXA-01 |
 | [US-032](./E-03-Pedido-e-Roteamento/US-032-Carimbos-de-tempo-T0-a-T5.md) | Carimbos de tempo T0 a T5 | M | 8 | RF-PED-02, RF-PED-03 |
 | [US-033](./E-03-Pedido-e-Roteamento/US-033-Cancelar-item-ou-pedido-com-autorizacao.md) | Cancelar item ou pedido com autorizacao | M | 8 | RF-PED-04, RF-PED-05 |
-| [US-034](./E-03-Pedido-e-Roteamento/US-034-Operar-pedido-integralmente-offline.md) | Operar pedido integralmente offline | M | 13 | RF-PED-09, RF-OFF-01, RF-OFF-02, RF-OFF-05 |
+| [US-034](./E-03-Pedido-e-Roteamento/US-034-Operar-pedido-integralmente-offline.md) | Operar pedido integralmente offline — ❌ cancelada | M | 13 | RF-PED-09, RF-OFF-01, RF-OFF-02, RF-OFF-05 |
 | [US-035](./E-03-Pedido-e-Roteamento/US-035-Bloquear-fechamento-com-item-pendente.md) | Bloquear fechamento com item pendente | S | 3 | RF-PED-06 |
 
 ### [E-04 · KDS Cozinha](./E-04-KDS-Cozinha/README.md) — Fase 1
@@ -277,7 +289,7 @@ Docs/User Stories/
 | [US-057](./E-05-Caixa-e-Pagamento/US-057-Comprovante-nao-fiscal-de-consumo.md) | Comprovante nao fiscal de consumo | M | 3 | RF-CXA-12 |
 | [US-058](./E-05-Caixa-e-Pagamento/US-058-Registrar-pagamento-de-maquininha-externa.md) | Registrar pagamento de maquininha externa | M | 3 | RF-CXA-10 |
 
-### [E-06 · Sincronizacao Local-Nuvem](./E-06-Sincronizacao-Local-Nuvem/README.md) — Fase 1
+### [E-06 · Sincronizacao Local-Nuvem](./E-06-Sincronizacao-Local-Nuvem/README.md) — Fase 1 — ❌ **EPICO CANCELADO** (ver E-16)
 
 | ID | História | Prio | Pts | RF |
 |---|---|:-:|--:|---|
@@ -399,11 +411,26 @@ Docs/User Stories/
 | [US-156](./E-15-Gestao-Geral-da-Plataforma/US-156-Recuperacao-do-provisionamento-e-token-de-instalacao.md) | Recuperação do provisionamento e token de instalação | M | 8 | RF-PLT-15 |
 | [US-157](./E-15-Gestao-Geral-da-Plataforma/US-157-Central-operacional-auditoria-e-atalhos-de-suporte.md) | Central operacional, auditoria e atalhos de suporte | M | 5 | RF-PLT-16 |
 
+### [E-16 · iMenu Online](./E-16-iMenu-Online/README.md) — Fase 0 (fundacional, revisão)
+
+| ID | História | Prio | Pts | RF |
+|---|---|:-:|--:|---|
+| [US-160](./E-16-iMenu-Online/US-160-Rebranding-Nexora-para-iMenu.md) | Rebranding Nexora para iMenu | M | 8 | RF-PLT-02, RF-PLT-04 |
+| [US-161](./E-16-iMenu-Online/US-161-Unificacao-da-API-fim-do-edge.md) | Unificação da API — fim do edge | M | 13 | RF-PLT-05 |
+| [US-162](./E-16-iMenu-Online/US-162-Nova-convencao-de-URLs-por-tenant.md) | Nova convenção de URLs por tenant | M | 8 | RF-PLT-03 |
+| [US-163](./E-16-iMenu-Online/US-163-Autorizacao-de-dispositivo-operacional.md) | Autorização de dispositivo operacional | M | 5 | RF-IAM-05 |
+| [US-164](./E-16-iMenu-Online/US-164-Login-pessoal-por-PIN-sem-rede-local.md) | Login pessoal por PIN sem rede local | M | 8 | RF-IAM-03, RF-IAM-07 |
+| [US-165](./E-16-iMenu-Online/US-165-Abertura-de-mesa-por-QR-Code-e-numero.md) | Abertura de mesa por QR Code e número | M | 8 | RF-SAL-01, RF-SAL-04 |
+| [US-166](./E-16-iMenu-Online/US-166-Impressao-de-QR-Codes-numerados-por-mesa.md) | Impressão de QR Codes numerados por mesa | M | 5 | RF-SAL-01 |
+| [US-167](./E-16-iMenu-Online/US-167-Encerramento-da-sincronizacao-e-do-offline.md) | Encerramento da sincronização e do offline | M | 8 | — |
+| [US-168](./E-16-iMenu-Online/US-168-Ajuste-de-metas-de-desempenho-online.md) | Ajuste de metas de desempenho online | M | 3 | — |
+| [US-169](./E-16-iMenu-Online/US-169-Migracao-do-modelo-de-dados.md) | Migração do modelo de dados | M | 5 | — |
+
 ## 5. Ordem de leitura sugerida
 
-**Para começar a implementar:** `E-00 → E-01 → E-03 → E-02 → E-04 → E-05 → E-06 → E-07`
+**Para começar a implementar:** `E-16 → E-00 → E-01 → E-03 → E-02 → E-04 → E-05 → E-07`
 
-A ordem privilegia **fechar o fluxo operacional completo antes da sincronização**. O sync (E-06) é a peça mais arriscada do MVP — só faz sentido construí-lo quando já existe fluxo real gerando eventos reais para sincronizar (doc. 02, seção 13).
+E-16 vem primeiro porque é fundacional: define o nome do produto, a API única e a convenção de URL que todo o resto assume. E-06 (Sincronizacao Local-Nuvem) saiu da ordem de execução — está cancelado (ver E-16).
 
 **Para o PO e o cliente:** comece pelos README de cada épico; eles trazem objetivo, valor e riscos sem o detalhe técnico.
 
@@ -448,7 +475,7 @@ Estas questões continuam abertas e afetam múltiplas histórias. Enquanto não 
 | 2 | Propriedade do produto e modelo comercial | US-002, US-154, E-14, E-15 | Contrato e estratégia |
 | 3 | Prazo, orçamento e priorização do cliente | Todo o roadmap | Dimensionamento |
 | 4 | Modalidade de integração de pagamento (TEF × gateway) | US-058, US-134 | Arquitetura de pagamento |
-| 5 | Contingência para falha do servidor local | US-006, US-034 | Risco operacional crítico |
+| 5 | ~~Contingência para falha do servidor local~~ — resolvida por decisão de negócio: não há mais servidor local (ADR-040) | ~~US-006, US-034~~ (canceladas) | Substituída pelo risco "queda de internet sem fila de contingência", ver E-16/README §8 |
 | 6 | Integração com iFood | E-13 | Escopo da Fase 4 |
 | 7 | App de frios — produto separado ou módulo | Fora do escopo atual | Escopo geral |
 | 8 | Momento da baixa de estoque — RN-007 | US-103 | Modelo de custo |
@@ -476,7 +503,7 @@ Itens da lista da Visão Geral (seção 20.2) que bloqueiam histórias específi
 | Identidade visual da marca | US-003 |
 | Contato do contador | US-128 |
 | Faturas Cielo e Mercado Pago | US-058, US-134 |
-| Infraestrutura de rede e internet da loja | US-006, US-031 |
+| Infraestrutura de rede e internet da loja | US-031 (US-006 cancelada — não há mais servidor local a instalar) |
 
 ## 10. Rastreabilidade de requisitos
 

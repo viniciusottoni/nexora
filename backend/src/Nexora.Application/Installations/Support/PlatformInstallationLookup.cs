@@ -40,4 +40,35 @@ internal static class PlatformInstallationLookup
 
         return null;
     }
+
+    /// <summary>
+    /// Localiza instalação pelo hash do token antes de existir identidade de dispositivo ou
+    /// contexto de tenant. A rota de consumo é anônima por definição; portanto precisa fazer a
+    /// mesma travessia tenant a tenant da busca por id, mantendo RLS fechado por padrão.
+    /// A entidade encontrada permanece rastreada porque o consumo reserva o token na mesma
+    /// transação.
+    /// </summary>
+    public static async Task<EdgeInstallation?> FindByTokenHashAsync(
+        IApplicationDbContext db, string tokenHash, CancellationToken cancellationToken)
+    {
+        var tenantIds = await db.Tenants.AsNoTracking()
+            .Where(t => t.DeletedAt == null)
+            .Select(t => t.Id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var tenantId in tenantIds)
+        {
+            await db.SetTenantContextAsync(tenantId, cancellationToken);
+
+            var installation = await db.EdgeInstallations
+                .FirstOrDefaultAsync(i => i.InstallTokenHash == tokenHash, cancellationToken);
+
+            if (installation is not null)
+            {
+                return installation;
+            }
+        }
+
+        return null;
+    }
 }

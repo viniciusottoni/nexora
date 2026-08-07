@@ -1,0 +1,25 @@
+/* US-150 — visão geral da plataforma. Casca/página vêm de console.css (@nexora/ui); aqui só a
+   grade de indicadores e a grade de atalhos, específicas desta tela. */
+
+.platform-overview__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+
+.platform-overview__shortcuts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--sp-4);
+}
+
+/* US-157 — "Precisam de atenção" leva direto à fila filtrada (cartão de resumo clicável). */
+.platform-overview__stat-link {
+  cursor: pointer;
+}
+
+.platform-overview__stat-link:focus-visible {
+  outline: 2px solid var(--border-brand, currentColor);
+  outline-offset: 2px;
+}

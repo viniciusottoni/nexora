@@ -9,7 +9,7 @@ namespace Nexora.Application.Abstractions.Persistence;
 /// provider Npgsql nem migrations (ver nota em Nexora.Application.csproj e ADR-039).
 /// Um DbSet por entidade de <c>Nexora.Domain</c>, agrupado por área do domínio.
 /// </summary>
-public interface IApplicationDbContext
+public partial interface IApplicationDbContext
 {
     // Platform
     DbSet<Domain.Platform.Tenant> Tenants { get; }
@@ -29,6 +29,9 @@ public interface IApplicationDbContext
     DbSet<Domain.Platform.PairingCode> PairingCodes { get; }
     DbSet<Domain.Platform.AuditLog> AuditLogs { get; }
 
+    /// <summary>US-153 · Ciclo de vida do estabelecimento — histórico imutável de transições de status.</summary>
+    DbSet<Domain.Platform.TenantStatusHistory> TenantStatusHistories { get; }
+
     /// <summary>
     /// E-09/US-091, filtro <c>minAmount</c> — <c>Before</c>/<c>After</c> são JSONB livre sem coluna
     /// tipada de valor (mesma simplificação já documentada em <see cref="Domain.Platform.AuditLog"/>),
@@ -38,6 +41,17 @@ public interface IApplicationDbContext
     /// referencia Npgsql), existe como porta estreita em vez de a Application montar SQL cru.
     /// </summary>
     IQueryable<Domain.Platform.AuditLog> AuditLogsWithMinAmount(decimal minAmount);
+
+    /// <summary>
+    /// US-151 (Diretório de estabelecimentos), filtro <c>query</c> — busca <c>ILIKE</c>
+    /// case-insensitive contra <c>name</c>/<c>slug</c>/<c>domain</c>/<c>document</c>/
+    /// <c>owner_email</c>. <c>ILIKE</c> é específico do Postgres (não existe em
+    /// <c>Microsoft.EntityFrameworkCore</c> puro — só no provider Npgsql, proibido em
+    /// <c>Application</c> por ADR-039), por isso esta porta estreita, implementada em
+    /// <c>AppDbContext</c> (Infrastructure), mesmo padrão de <see cref="AuditLogsWithMinAmount"/>.
+    /// </summary>
+    IQueryable<Domain.Platform.Tenant> TenantsMatchingSearchTerm(string term);
+
     DbSet<Domain.Platform.IdempotencyKey> IdempotencyKeys { get; }
     DbSet<Domain.Platform.DomainEvent> DomainEvents { get; }
     DbSet<Domain.Platform.MediaAsset> MediaAssets { get; }

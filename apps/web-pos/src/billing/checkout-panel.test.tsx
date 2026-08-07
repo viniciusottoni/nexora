@@ -77,6 +77,23 @@ describe('CheckoutPanel', () => {
     expect(screen.getByText(/CLOSED/)).toBeInTheDocument();
   });
 
+  it('permite escolher a forma e preencher o restante pelo teclado visual', () => {
+    const api = new BillingApi('', vi.fn());
+
+    render(<CheckoutPanel identity={identity} sessionId="session-1" bill={bill} api={api} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Débito' }));
+    expect(screen.getByLabelText('Forma de pagamento')).toHaveValue('DEBIT');
+
+    fireEvent.click(screen.getByRole('button', { name: '1' }));
+    fireEvent.click(screen.getByRole('button', { name: '2' }));
+    fireEvent.click(screen.getByRole('button', { name: '3' }));
+    expect(screen.getByLabelText('Valor')).toHaveValue(1.23);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Usar valor restante' }));
+    expect(screen.getByLabelText('Valor')).toHaveValue(110);
+  });
+
   it('bloqueia o envio quando a soma não bate com o total', () => {
     const fetcher = vi.fn();
     const api = new BillingApi('', fetcher);

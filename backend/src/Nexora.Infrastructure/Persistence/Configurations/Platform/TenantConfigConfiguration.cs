@@ -30,6 +30,11 @@ internal sealed class TenantConfigConfiguration : IEntityTypeConfiguration<Tenan
         builder.Property(c => c.TemplateCode).HasColumnName("template_code").HasMaxLength(32); // US-142
         builder.Property(c => c.TemplateVersion).HasColumnName("template_version");
 
+        // US-154 (Gestão de planos e configuração comercial) — capacidades efetivas reconciliadas
+        // a partir do platform_plan corrente do tenant.
+        builder.Property(c => c.PlanCapabilitiesJson).HasColumnName("plan_capabilities").HasColumnType("jsonb").HasDefaultValue("[]").IsRequired();
+        builder.Property(c => c.AppliedPlanVersion).HasColumnName("applied_plan_version");
+
         builder.Property(c => c.CreatedAt).HasColumnName("created_at").HasColumnType("timestamptz");
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamptz");
 

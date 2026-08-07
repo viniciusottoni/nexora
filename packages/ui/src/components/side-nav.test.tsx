@@ -23,8 +23,11 @@ describe('SideNav', () => {
 
     const active = screen.getByRole('button', { name: /Mesas/ });
     expect(active.className).toContain('db-sidenav__item--on');
+    expect(active).toHaveAttribute('aria-current', 'page');
 
-    screen.getByRole('button', { name: /Pulso/ }).click();
+    const inactive = screen.getByRole('button', { name: /Pulso/ });
+    expect(inactive).not.toHaveAttribute('aria-current');
+    inactive.click();
     expect(onSelect).toHaveBeenCalledWith('pulso');
   });
 

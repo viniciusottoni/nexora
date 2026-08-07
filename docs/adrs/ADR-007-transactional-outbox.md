@@ -2,13 +2,16 @@
 
 | | |
 |---|---|
-| **Status** | Aceito |
+| **Status** | Substituído |
 | **Data** | 31/07/2026 |
 | **Decisores** | Tech Lead |
+| **Substituído por** | [ADR-040](./ADR-040-arquitetura-100-online-api-unica.md) |
 | **Relacionados** | ADR-001, ADR-006, ADR-008, ADR-020, ADR-034 |
 | **Requisitos afetados** | RF-OFF-02, RF-OFF-03, RF-OFF-07, RNF-OFF-02, RNF-PER-07/08 |
 
 ---
+
+> ⚠️ **Substituído em 06/08/2026 pelo [ADR-040](./ADR-040-arquitetura-100-online-api-unica.md).** Sem edge, não há mais duas pontas a sincronizar — outbox, worker de envio e recepção idempotente entre edge e nuvem deixam de existir. `domain_event` e `audit_log` continuam vigentes (ADR-006), não são específicos deste padrão. Conteúdo mantido como registro histórico.
 
 ## Contexto
 

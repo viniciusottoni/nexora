@@ -10,7 +10,7 @@ export const grantSupportAccessRequestSchema = z.object({
 
 export const grantSupportAccessResponseSchema = z.object({
   token: z.string().min(16),
-  expiresAt: z.string().datetime(),
+  expiresAt: z.string().datetime({ offset: true }),
   notifiedCustomer: z.boolean(),
 });
 
@@ -22,11 +22,11 @@ export const supportAccessSummarySchema = z.object({
   grantedTo: idSchema.nullable(),
   reason: z.string().min(1),
   durationMinutes: z.number().int().positive(),
-  grantedAt: z.string().datetime(),
-  expiresAt: z.string().datetime(),
-  revokedAt: z.string().datetime().nullable(),
+  grantedAt: z.string().datetime({ offset: true }),
+  expiresAt: z.string().datetime({ offset: true }),
+  revokedAt: z.string().datetime({ offset: true }).nullable(),
   revokedBy: idSchema.nullable(),
-  lastUsedAt: z.string().datetime().nullable(),
+  lastUsedAt: z.string().datetime({ offset: true }).nullable(),
   isActive: z.boolean(),
 });
 

@@ -309,7 +309,7 @@ export function CashSessionPage({ identity, baseUrl = '', fetcher = fetch, onExi
 
   return (
     <main className="cash-session-page">
-      <header className="cash-session-page__header">
+      <header className="cash-session-page__header cash-session-page__header--embedded">
         <div>
           <p className="cash-session-eyebrow">Caixa aberto</p>
           <h1>Fechamento e movimentos</h1>
@@ -322,7 +322,10 @@ export function CashSessionPage({ identity, baseUrl = '', fetcher = fetch, onExi
       </header>
 
       <Card as="section" className="cash-session-expected">
-        <h2>Valor esperado</h2>
+        <div className="cash-session-card-heading">
+          <h2>Fechamento de caixa</h2>
+          <span>Valor esperado</span>
+        </div>
         <dl className="cash-session-expected__list">
           <div>
             <dt>Fundo de abertura</dt>
@@ -348,7 +351,10 @@ export function CashSessionPage({ identity, baseUrl = '', fetcher = fetch, onExi
       </Card>
 
       <Card as="section" className="cash-session-movements">
-        <h2>Sangria e suprimento</h2>
+        <div className="cash-session-card-heading">
+          <h2>Movimentos</h2>
+          <span>Sangria e suprimento</span>
+        </div>
         <div className="cash-session-movement-buttons">
           <Button type="button" variant="secondary" onClick={() => startMovement('WITHDRAWAL')}>
             Retirar (sangria)
@@ -444,7 +450,10 @@ export function CashSessionPage({ identity, baseUrl = '', fetcher = fetch, onExi
       </Card>
 
       <Card as="section" className="cash-session-close">
-        <h2>Fechar caixa</h2>
+        <div className="cash-session-card-heading">
+          <h2>Conferência</h2>
+          <span>Informe o valor contado para fechar o caixa</span>
+        </div>
 
         {openTables && openTables.length > 0 ? (
           <AlertBanner tone="danger" title="Mesas ainda abertas">

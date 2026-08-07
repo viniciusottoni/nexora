@@ -1,8 +1,10 @@
 # US-006 · Servidor local instalavel por script
 
+> ❌ **Cancelada em 06/08/2026.** Mudança de foco de negócio: sem servidor local por loja, não há mais o que instalar na loja. Ver [ADR-040](../../adrs/ADR-040-arquitetura-100-online-api-unica.md) e [E-16 · iMenu Online](../E-16-iMenu-Online/README.md) (US-161 cobre a unificação da API que substitui esta história). Conteúdo mantido como registro histórico.
+
 |  |  |
 |---|---|
-| **Épico** | [E-00 · Fundacao da Plataforma](./README.md) |
+| **Épico** | [E-00 · Fundacao da Plataforma](./README.md) — ❌ **CANCELADA** |
 | **Fase** | 0 — Fundação da plataforma |
 | **Prioridade** | M — Must have |
 | **Estimativa** | 8 pontos |

@@ -44,6 +44,20 @@ public sealed class TenantConfig
     /// <summary>Versão do <c>business_template</c> aplicada — tenants existentes não acompanham atualizações posteriores do modelo (US-142 §4).</summary>
     public int? TemplateVersion { get; private set; }
 
+    /// <summary>
+    /// US-154 · Gestão de planos e configuração comercial — capacidades EFETIVAS do tenant,
+    /// espelhadas do <c>platform_plan.CapabilitiesJson</c> corrente no momento da última
+    /// reconciliação (<see cref="ApplyPlanCapabilities"/>). JSON de array de strings, mesmo padrão
+    /// de JSONB livre já usado pelas demais seções desta entidade — nulo/vazio (<c>"[]"</c>) para
+    /// tenants nunca reconciliados (provisionados antes desta história, ou cuja reconciliação
+    /// ainda não rodou), o que <c>GetTenantPlanQueryHandler</c> trata como divergência a sanar, não
+    /// como corrigido automaticamente (US-154 §10 "sem correção automática silenciosa").
+    /// </summary>
+    public string PlanCapabilitiesJson { get; private set; } = "[]";
+
+    /// <summary>Versão do <see cref="PlatformPlan"/> aplicada na última reconciliação — usada para detectar divergência quando o catálogo muda depois (<see cref="PlatformPlan.Update"/> incrementa a versão do plano).</summary>
+    public int? AppliedPlanVersion { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
@@ -77,7 +91,9 @@ public sealed class TenantConfig
         string paymentsJson,
         string maintenanceJson,
         string? templateCode = null,
-        int? templateVersion = null)
+        int? templateVersion = null,
+        string? planCapabilitiesJson = null,
+        int? appliedPlanVersion = null)
     {
         var now = DateTimeOffset.UtcNow;
 
@@ -97,6 +113,13 @@ public sealed class TenantConfig
             BrandingVersion = 1,
             TemplateCode = templateCode,
             TemplateVersion = templateVersion,
+            // US-154: capacidades efetivas já nascem reconciliadas com o plano confirmado no
+            // provisionamento — nenhum tenant recém-criado começa divergente (ver docstring de
+            // PlanCapabilitiesJson). Não usa ApplyPlanCapabilities aqui de propósito: esse método
+            // incrementa ConfigVersion, e o evento tenant.config_updated já emitido pelo
+            // provisionamento assume ConfigVersion=1 no payload.
+            PlanCapabilitiesJson = string.IsNullOrWhiteSpace(planCapabilitiesJson) ? "[]" : planCapabilitiesJson,
+            AppliedPlanVersion = appliedPlanVersion,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -134,6 +157,24 @@ public sealed class TenantConfig
     public void BumpCatalogVersion()
     {
         CatalogVersion++;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// US-154 · Gestão de planos e configuração comercial — reconcilia as capacidades EFETIVAS com
+    /// o plano comercial corrente (catálogo <see cref="PlatformPlan"/>). Chamada explicitamente
+    /// (nunca automática/silenciosa, US-154 §10): no provisionamento (plano recém-escolhido), na
+    /// efetivação de uma mudança de plano, e pelo comando dedicado de reconciliação quando uma
+    /// divergência é detectada e o administrador confirma a correção. Emite
+    /// <c>tenant.config_updated</c>/EVT-054 (payload <c>source: "PLAN"</c>) — responsabilidade do
+    /// CHAMADOR (Domain não referencia serializador/evento), mesmo padrão de
+    /// <see cref="UpdateOperation"/> e companheiros.
+    /// </summary>
+    public void ApplyPlanCapabilities(string capabilitiesJson, int planVersion)
+    {
+        PlanCapabilitiesJson = string.IsNullOrWhiteSpace(capabilitiesJson) ? "[]" : capabilitiesJson;
+        AppliedPlanVersion = planVersion;
+        ConfigVersion++;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 

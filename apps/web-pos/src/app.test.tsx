@@ -16,11 +16,11 @@ vi.mock('./table-map/table-map-page.js', () => ({
 }));
 
 vi.mock('./cash-panel/cash-panel-page.js', () => ({
-  CashPanelPage: ({ onOpenBilling }: { onOpenBilling: (sessionId: string) => void }) => (
-    <section aria-label="Painel do caixa">
-      <h1>Mesas e comandas abertas</h1>
+  CashPanelPage: ({ onOpenBilling, mode }: { onOpenBilling: (sessionId: string) => void; mode?: 'overview' | 'receiving' }) => (
+    <section aria-label={mode === 'receiving' ? 'Selecao de recebimento' : 'Painel do caixa'}>
+      <h1>{mode === 'receiving' ? 'Selecione a conta para receber' : 'Mesas e comandas abertas'}</h1>
       <button type="button" onClick={() => onOpenBilling('0198aabb-3333-7000-8000-000000000001')}>
-        Dividir a conta
+        {mode === 'receiving' ? 'Receber conta' : 'Dividir a conta'}
       </button>
     </section>
   ),
@@ -88,5 +88,14 @@ describe('PosOperationalWorkArea', () => {
 
     expect(screen.getByRole('heading', { name: 'Dividir a conta' })).toBeInTheDocument();
     expect(screen.getByText('0198aabb-3333-7000-8000-000000000001')).toBeInTheDocument();
+  });
+
+  it('abre Recebimento como selecao de conta mesmo sem uma sessao previamente escolhida', () => {
+    render(<PosOperationalWorkArea identity={identity} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Recebimento' }));
+
+    expect(screen.getByRole('heading', { name: 'Selecione a conta para receber' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Receber conta' })).toBeInTheDocument();
   });
 });

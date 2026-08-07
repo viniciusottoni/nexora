@@ -1,8 +1,10 @@
 # US-005 · Registro de dispositivos autorizados
 
+> 🔄 **Substituída em 06/08/2026 pela [US-163 (E-16 · iMenu Online)](../E-16-iMenu-Online/US-163-Autorizacao-de-dispositivo-operacional.md).** O mecanismo de código de pareamento de 6 dígitos é reaproveitado; o que muda é o pareamento passar a ocorrer direto contra `iMenu.Api` pela internet (sem edge) e o nome do dispositivo passar a ser obrigatório no momento da autorização. As seções 9 ("comportamento offline") e o cenário de teste "pareamento com o edge desconectado" abaixo não se aplicam mais — ver US-163 para o comportamento atual.
+
 |  |  |
 |---|---|
-| **Épico** | [E-00 · Fundacao da Plataforma](./README.md) |
+| **Épico** | [E-00 · Fundacao da Plataforma](./README.md) — 🔄 **SUBSTITUÍDA POR US-163** |
 | **Fase** | 0 — Fundação da plataforma |
 | **Prioridade** | M — Must have |
 | **Estimativa** | 5 pontos |

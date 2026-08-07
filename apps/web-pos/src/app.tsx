@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
+  BrandMark,
   Button,
   Card,
   createNeutralBrandingResponse,
   CreatedByFooter,
   DevicePairingScreen,
-  Icon,
   NotificationCenter,
   OperatorBar,
   OperationalAuthClient,
@@ -13,7 +13,9 @@ import {
   PinScreen,
   readRegisteredDeviceIdentity,
   RuntimeBrandingProvider,
+  SideNav,
   SyncStatus,
+  TopBar,
   useRuntimeBranding,
   type OperationalSession,
 } from '@nexora/ui';
@@ -32,7 +34,7 @@ export interface PosHomeProps {
   readonly logo?: string;
 }
 
-type PosOperationalView = 'tables' | 'cash-panel' | 'cash-session';
+type PosOperationalView = 'tables' | 'cash-panel' | 'billing' | 'cash-session';
 
 export interface PosOperationalWorkAreaProps {
   readonly identity: {
@@ -41,6 +43,10 @@ export interface PosOperationalWorkAreaProps {
     readonly deviceSecret: string;
   };
   readonly onOrderQueued?: () => void;
+  readonly tenantName?: string;
+  readonly logo?: string;
+  readonly headerActions?: ReactNode;
+  readonly queuedOrderCount?: number;
 }
 
 export function PosHome({ tenantName, logo }: Readonly<PosHomeProps>) {
@@ -66,7 +72,13 @@ export function PosHome({ tenantName, logo }: Readonly<PosHomeProps>) {
   );
 }
 
-export function PosOperationalWorkArea({ identity, onOrderQueued }: Readonly<PosOperationalWorkAreaProps>) {
+export function PosOperationalWorkArea({
+  identity,
+  onOrderQueued,
+  tenantName = 'Estabelecimento',
+  headerActions,
+  queuedOrderCount = 0,
+}: Readonly<PosOperationalWorkAreaProps>) {
   const [activeView, setActiveView] = useState<PosOperationalView>('tables');
   const [openingTableId, setOpeningTableId] = useState<string>();
   const [billingSessionId, setBillingSessionId] = useState<string>();
@@ -79,65 +91,100 @@ export function PosOperationalWorkArea({ identity, onOrderQueued }: Readonly<Pos
     setComposingSessionId(undefined);
   }
 
-  return (
-    <>
-      <nav className="pos-view-nav nx-anim-in" aria-label="Navegação do POS">
-        <Button
-          type="button"
-          size="sm"
-          variant={activeView === 'tables' ? 'primary' : 'ghost'}
-          aria-pressed={activeView === 'tables'}
-          onClick={() => changeView('tables')}
-        >
-          <Icon name="table_restaurant" size={16} />
-          Mapa
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={activeView === 'cash-panel' ? 'primary' : 'ghost'}
-          aria-pressed={activeView === 'cash-panel'}
-          onClick={() => changeView('cash-panel')}
-        >
-          <Icon name="point_of_sale" size={16} />
-          Painel do caixa
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={activeView === 'cash-session' ? 'primary' : 'ghost'}
-          aria-pressed={activeView === 'cash-session'}
-          onClick={() => changeView('cash-session')}
-        >
-          <Icon name="payments" size={16} />
-          Caixa
-        </Button>
-      </nav>
+  const title = billingSessionId
+    ? 'Recebimento'
+    : openingTableId
+      ? 'Abrir mesa'
+      : composingSessionId
+        ? 'Lançar pedido'
+        : activeView === 'cash-panel'
+          ? 'Mesas e comandas abertas'
+          : activeView === 'billing'
+            ? 'Recebimento'
+          : activeView === 'cash-session'
+            ? 'Fechamento de caixa'
+            : 'Mapa de mesas';
 
-      {openingTableId ? (
-        <OpenTablePage identity={identity} preselectedTableId={openingTableId} onExit={() => setOpeningTableId(undefined)} />
-      ) : billingSessionId ? (
-        <BillingPage identity={identity} sessionId={billingSessionId} onExit={() => setBillingSessionId(undefined)} />
-      ) : composingSessionId ? (
-        <OrderCompositionPage
-          identity={identity}
-          sessionId={composingSessionId}
-          onExit={() => setComposingSessionId(undefined)}
-          {...(onOrderQueued ? { onOrderQueued } : {})}
+  return (
+    <div className="pos-operation-shell">
+      <SideNav
+        brand={
+          <BrandMark inverse subtitle="Caixa · Terminal 1" size={22} />
+        }
+        activeId={billingSessionId ? 'billing' : activeView}
+        onSelect={(view) => {
+          if (view === 'tables' || view === 'cash-panel' || view === 'billing' || view === 'cash-session') {
+            changeView(view);
+          }
+        }}
+        items={[
+          { group: 'Operação' },
+          {
+            id: 'cash-panel',
+            label: <span aria-label="Painel do caixa">Mesas e comandas</span>,
+            icon: 'table_restaurant',
+          },
+          { id: 'billing', label: 'Recebimento', icon: 'point_of_sale' },
+          {
+            id: 'cash-session',
+            label: <span aria-label="Caixa">Fechamento de caixa</span>,
+            icon: 'lock_clock',
+          },
+          { group: 'Salão' },
+          { id: 'tables', label: 'Mapa de mesas', icon: 'grid_view' },
+        ]}
+        footer={
+          <SyncStatus
+            state={queuedOrderCount > 0 ? 'local' : 'online'}
+            {...(queuedOrderCount > 0 ? { queued: queuedOrderCount } : {})}
+          />
+        }
+      />
+
+      <div className="pos-operation-main">
+        <TopBar
+          title={title}
+          subtitle={`${tenantName} · visão de hoje`}
+          right={
+            <>
+              {headerActions}
+              <SyncStatus
+                state={queuedOrderCount > 0 ? 'local' : 'online'}
+                {...(queuedOrderCount > 0 ? { queued: queuedOrderCount } : {})}
+              />
+            </>
+          }
         />
-      ) : activeView === 'cash-panel' ? (
-        <CashPanelPage identity={identity} onOpenBilling={setBillingSessionId} />
-      ) : activeView === 'cash-session' ? (
-        <CashSessionPage identity={identity} onExit={() => changeView('cash-panel')} />
-      ) : (
-        <TableMapPage
-          identity={identity}
-          onSelectTable={setOpeningTableId}
-          onOpenBilling={setBillingSessionId}
-          onComposeOrder={setComposingSessionId}
-        />
-      )}
-    </>
+
+        <div className="pos-operation-content">
+          {openingTableId ? (
+            <OpenTablePage identity={identity} preselectedTableId={openingTableId} onExit={() => setOpeningTableId(undefined)} />
+          ) : billingSessionId ? (
+            <BillingPage identity={identity} sessionId={billingSessionId} onExit={() => setBillingSessionId(undefined)} />
+          ) : composingSessionId ? (
+            <OrderCompositionPage
+              identity={identity}
+              sessionId={composingSessionId}
+              onExit={() => setComposingSessionId(undefined)}
+              {...(onOrderQueued ? { onOrderQueued } : {})}
+            />
+          ) : activeView === 'cash-panel' ? (
+            <CashPanelPage identity={identity} onOpenBilling={setBillingSessionId} />
+          ) : activeView === 'billing' ? (
+            <CashPanelPage identity={identity} onOpenBilling={setBillingSessionId} mode="receiving" />
+          ) : activeView === 'cash-session' ? (
+            <CashSessionPage identity={identity} onExit={() => changeView('cash-panel')} />
+          ) : (
+            <TableMapPage
+              identity={identity}
+              onSelectTable={setOpeningTableId}
+              onOpenBilling={setBillingSessionId}
+              onComposeOrder={setComposingSessionId}
+            />
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -244,25 +291,6 @@ function BrandedPos() {
     );
   return (
     <div className="pos-authenticated">
-      <div className="pos-top-row">
-        <NotificationCenter
-          items={notificationCenter.items}
-          open={notificationCenterOpen}
-          onOpenChange={setNotificationCenterOpen}
-          onAcknowledge={(id) => void notificationCenter.acknowledge(id)}
-          loading={notificationCenter.loading}
-          pushPermissionPending={notificationCenter.pushPermissionPending}
-          onRequestPushPermission={() => void notificationCenter.requestPushPermission()}
-        />
-        <OperatorBar
-          userName={session.user.name}
-          onSwitchOperator={() => {
-            setSwitching(true);
-            setError(undefined);
-            setIntentionId(crypto.randomUUID());
-          }}
-        />
-      </div>
       {queuedOrderCount > 0 ? (
         // US-034 §10: indicador discreto e PERMANENTE (nunca modal/pop-up) — usa `SyncStatus`
         // (packages/ui) já existente, mais uma legenda sem jargão técnico com a redação exata da
@@ -277,6 +305,30 @@ function BrandedPos() {
       <PosOperationalWorkArea
         identity={{ accessToken: session.accessToken, deviceId: device.deviceId, deviceSecret: device.deviceSecret }}
         onOrderQueued={refreshQueuedOrderCount}
+        tenantName={tenant.name}
+        {...(logo ? { logo } : {})}
+        queuedOrderCount={queuedOrderCount}
+        headerActions={
+          <>
+            <NotificationCenter
+              items={notificationCenter.items}
+              open={notificationCenterOpen}
+              onOpenChange={setNotificationCenterOpen}
+              onAcknowledge={(id) => void notificationCenter.acknowledge(id)}
+              loading={notificationCenter.loading}
+              pushPermissionPending={notificationCenter.pushPermissionPending}
+              onRequestPushPermission={() => void notificationCenter.requestPushPermission()}
+            />
+            <OperatorBar
+              userName={session.user.name}
+              onSwitchOperator={() => {
+                setSwitching(true);
+                setError(undefined);
+                setIntentionId(crypto.randomUUID());
+              }}
+            />
+          </>
+        }
       />
       <CreatedByFooter />
     </div>

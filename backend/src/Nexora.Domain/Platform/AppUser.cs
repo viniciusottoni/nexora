@@ -104,6 +104,32 @@ public sealed class AppUser
         };
     }
 
+    /// <summary>
+    /// US-155 · Corrige nome/e-mail de um usuário ainda CONVIDADO (<see cref="UserStatus.Invited"/>),
+    /// antes de aceitar o convite (<c>ReissueOwnerInviteCommandHandler</c>) — depois da aceitação
+    /// (<see cref="SetPassword"/> já rodou, <see cref="Status"/> é <see cref="UserStatus.Active"/>),
+    /// corrigir e-mail deixaria de ser "corrigir um convite" e viraria "trocar e-mail de login de um
+    /// usuário ativo", fora do escopo desta US (fora de escopo explícito: "cadastro cotidiano" e
+    /// qualquer coisa que não seja o acesso inicial do proprietário). A checagem de unicidade do
+    /// e-mail é responsabilidade do HANDLER (precisa consultar outros tenants, RLS não deixaria o
+    /// Domain fazer isso mesmo se quisesse).
+    /// </summary>
+    public void CorrectInviteDetails(string name, string email)
+    {
+        if (Status != UserStatus.Invited)
+            throw new DomainException("Só é possível corrigir nome/e-mail antes do convite ser aceito.");
+
+        if (string.IsNullOrWhiteSpace(name))
+            throw new DomainException("O nome do usuário é obrigatório.");
+
+        if (string.IsNullOrWhiteSpace(email))
+            throw new DomainException("O e-mail do usuário é obrigatório.");
+
+        Name = name.Trim();
+        Email = email.Trim().ToLowerInvariant();
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     /// <summary>Define a senha do usuário e o ativa — usado no aceite de convite (<see cref="OwnerInvite.Consume"/>).</summary>
     public void SetPassword(string passwordHash)
     {

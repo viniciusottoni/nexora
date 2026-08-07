@@ -1,0 +1,70 @@
+/* US-152 · Visão 360 do estabelecimento — casca/página/tabela vêm de console.css (@nexora/ui);
+   aqui só o que é específico desta tela: a grade de metadados (chave/valor) do Cabeçalho e a
+   lista de links externos/internos. Só tokens já existentes (sem cor/tamanho/duração "solta") —
+   ver packages/ui/src/tokens/*.css e components/motion.css. */
+
+/* US-153 · Ciclo de vida do estabelecimento — ações administrativas de status no cabeçalho
+   (`Card actions`, mesmo slot de "Resumo de branding e configuração" abaixo). */
+.tenant-detail__status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+}
+
+.tenant-detail__kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--sp-6);
+  margin: 0;
+}
+
+.tenant-detail__kv dt {
+  margin: 0 0 var(--sp-1);
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+
+.tenant-detail__kv dd {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+
+.tenant-detail__links {
+  display: grid;
+  gap: var(--sp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tenant-detail__links li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  padding: var(--sp-5) var(--sp-6);
+  border: var(--border-1) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+}
+
+.tenant-detail__links-label {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.tenant-detail__links-value {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 48rem) {
+  .tenant-detail__kv {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tenant-detail__links li {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

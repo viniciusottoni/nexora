@@ -3,13 +3,26 @@ namespace Nexora.Domain.Platform;
 // Enums nativos do PostgreSQL (documento 00, §3), mapeados como enum nativo via
 // Npgsql.MapEnum na configuração do EF Core (documento 13, §2) — não como VARCHAR + CHECK.
 
-/// <summary>Ciclo de vida comercial do tenant (estabelecimento).</summary>
+/// <summary>
+/// Ciclo de vida comercial do tenant (estabelecimento) — US-153, máquina de estados canônica
+/// (único enum/contrato usado em todas as camadas, doc §14 DoD). <see cref="Trial"/> foi renomeado
+/// para <see cref="Provisioned"/> (mesmo valor 0 já persistido — renomear um rótulo de enum mapeado
+/// como <c>integer</c> não exige migração de dado, só recompilar) e <see cref="Installing"/> foi
+/// ACRESCENTADO NO FINAL, mesma convenção já usada em <see cref="UserStatus.Invited"/>: inserir no
+/// meio deslocaria os valores 1/2/3 (Active/Suspended/Cancelled) já persistidos. Ver
+/// <see cref="TenantStatusTransitions"/> para a matriz de transições válidas entre estes cinco
+/// estados.
+/// </summary>
 public enum TenantStatus
 {
-    Trial,
+    /// <summary>Tenant criado, aguardando instalação do servidor edge (renomeado de "Trial").</summary>
+    Provisioned,
     Active,
     Suspended,
-    Cancelled
+    Cancelled,
+
+    /// <summary>Instalação edge registrada; aguardando as pré-condições de ativação (checklist + proprietário ativo).</summary>
+    Installing
 }
 
 /// <summary>Estado de um usuário da plataforma (app_user).</summary>

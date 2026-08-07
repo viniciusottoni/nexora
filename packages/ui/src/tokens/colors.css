@@ -1,5 +1,20 @@
 :root{
-  /* ---- Rampa da marca: extraída do gradiente do logo (navy → azul → ciano → verde) ---- */
+  /* ==== Rampa da MARCA iMenu (borgonha → páprica) — E-16/US-160 ============================
+     Substitui a rampa fria como identidade de marca a partir de 06/08/2026. Escolhida quente
+     por posicionamento (categoria alimentação), e deliberadamente deslocada dos semânticos de
+     alerta: a parada mais próxima fica a ~29 de distância RGB de --nx-danger-700, contra ~16
+     da primeira proposta (vermelho puro → amarelo), que era praticamente a cor de alerta.
+
+     REGRA DE USO (herdada e reforçada): a rampa de marca vive em marca, hero e material
+     institucional. NUNCA em fundo de conteúdo, em chip de status, nem em qualquer superfície
+     do KDS — lá, vermelho e âmbar significam ATRASO e ATENÇÃO, e nada mais.                  */
+  --im-wine-900:#4A1020; --im-wine-700:#6B1722; --im-wine-600:#8A2224;
+  --im-brick-500:#BF4A20; --im-paprika-500:#E2731C; --im-paprika-400:#EC8F3E;
+  --im-wine-100:#F7E7E2;
+  --im-ink:#2E1016;                      /* tinta do wordmark sobre fundo claro */
+
+  /* ---- Rampa fria: permanece como cor de UI e cromo neutro (navy → azul → ciano → verde).
+          NÃO é mais a identidade de marca — ver rampa iMenu acima e E-16/US-160. ---- */
   --nx-navy-950:#071731; --nx-navy-900:#0B1F3F; --nx-navy-800:#10305E; --nx-navy-700:#16407C;
   --nx-navy-600:#1D5299; --nx-navy-500:#2463B5;
   --nx-blue-600:#1657B0; --nx-blue-500:#1F6FD0; --nx-blue-400:#3B8AE6; --nx-blue-100:#DCEAFB; --nx-blue-50:#EFF6FE;
@@ -24,7 +39,12 @@
   --nx-time-warn:#E8A302; --nx-time-warn-bg:#33260A;
   --nx-time-late:#E0393F; --nx-time-late-bg:#3A1214;
 
-  /* ---- Gradiente da marca (usar só em marca/hero, nunca em fundo de conteúdo) ---- */
-  --nx-gradient-brand:linear-gradient(103deg,var(--nx-navy-900) 0%,var(--nx-blue-500) 38%,var(--nx-cyan-500) 66%,var(--nx-green-500) 100%);
-  --nx-gradient-brand-soft:linear-gradient(103deg,var(--nx-navy-800) 0%,var(--nx-cyan-600) 100%);
+  /* ---- Gradiente da marca (usar só em marca/hero, nunca em fundo de conteúdo) ----
+          Repontado para a rampa iMenu em 06/08/2026 (E-16/US-160). O gradiente frio anterior
+          fica preservado abaixo como --nx-gradient-ui, para quem o usava como cromo e não
+          como marca — a auditoria dos 6 arquivos que consomem --nx-gradient-brand é parte
+          da US-160. */
+  --nx-gradient-brand:linear-gradient(103deg,var(--im-wine-900) 0%,var(--im-wine-600) 38%,var(--im-brick-500) 66%,var(--im-paprika-500) 100%);
+  --nx-gradient-brand-soft:linear-gradient(103deg,var(--im-wine-900) 0%,var(--im-brick-500) 100%);
+  --nx-gradient-ui:linear-gradient(103deg,var(--nx-navy-900) 0%,var(--nx-blue-500) 38%,var(--nx-cyan-500) 66%,var(--nx-green-500) 100%);
 }

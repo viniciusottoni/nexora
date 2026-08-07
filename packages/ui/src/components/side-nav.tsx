@@ -69,6 +69,7 @@ export function SideNav({
               key={item.id}
               type="button"
               className={`db-sidenav__item ${item.id === activeId ? 'db-sidenav__item--on' : ''}`.trim()}
+              aria-current={item.id === activeId ? 'page' : undefined}
               onClick={() => {
                 if (item.id) onSelect?.(item.id);
               }}

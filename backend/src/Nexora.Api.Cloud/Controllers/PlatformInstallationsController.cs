@@ -21,7 +21,7 @@ namespace Nexora.Api.Cloud.Controllers;
 [ApiController]
 [Authorize(Policy = "PlatformAdmin")]
 [Route("v1/platform/installations")]
-public sealed class PlatformInstallationsController : ControllerBase
+public partial class PlatformInstallationsController : ControllerBase
 {
     private readonly ISender _sender;
 

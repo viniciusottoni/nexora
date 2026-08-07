@@ -2,7 +2,7 @@
 
 |  |  |
 |---|---|
-| **Épico** | [E-06 · Sincronizacao Local-Nuvem](./README.md) |
+| **Épico** | [E-06 · Sincronizacao Local-Nuvem](./README.md) — ❌ **CANCELADA** |
 | **Fase** | 1 — MVP |
 | **Prioridade** | M — Must have |
 | **Estimativa** | 5 pontos |
@@ -15,6 +15,8 @@
 | **Autoridade do dado** | Nuvem → loja |
 
 ---
+
+> ❌ **Cancelada em 06/08/2026.** Mudança de foco de negócio: o produto passa a operar 100% online, sem edge nem sincronização (ver [ADR-040](../../adrs/ADR-040-arquitetura-100-online-api-unica.md) e [E-16](../E-16-iMenu-Online/README.md)). Conteúdo mantido como registro histórico.
 
 ## 1. História
 

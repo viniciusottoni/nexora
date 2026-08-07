@@ -1,6 +1,9 @@
+using System.Text.Json;
 using Nexora.Application.Abstractions.Messaging;
 using Nexora.Application.Abstractions.Persistence;
 using Nexora.Application.Installations.Abstractions;
+using Nexora.Application.Installations.Support;
+using Nexora.Application.Tenants.Support;
 using Nexora.Contracts.Installations;
 using Nexora.Domain.Platform;
 using Nexora.Shared.Errors;
@@ -43,9 +46,17 @@ internal sealed class RegisterInstallationCommandHandler
         RegisterInstallationCommand request,
         CancellationToken cancellationToken)
     {
-        var installation = await _db.EdgeInstallations
-            .FirstOrDefaultAsync(e => e.Id == request.InstallationId, cancellationToken);
+        var locatedInstallation = await PlatformInstallationLookup.FindAsync(
+            _db, request.InstallationId, cancellationToken);
 
+        if (locatedInstallation is null)
+        {
+            return Result<RegisterInstallationResponse>.Failure(
+                "Instalação não encontrada.", ApiErrorCodes.InstallationNotFound);
+        }
+
+        var installation = await _db.LockEdgeInstallationForUpdateAsync(
+            locatedInstallation.Id, cancellationToken);
         if (installation is null)
         {
             return Result<RegisterInstallationResponse>.Failure(
@@ -83,6 +94,42 @@ internal sealed class RegisterInstallationCommandHandler
         }
 
         installation.CompleteRegistration(request.PublicKey, request.Version, request.Hostname);
+
+        // US-153 · Ciclo de vida do estabelecimento — instalação edge registrada é o gatilho de
+        // PROVISIONED → INSTALLING (doc §4, cenário "Ativação após implantação" pressupõe um tenant
+        // já INSTALLING). Só dispara na primeira instalação de um tenant recém-provisionado; um
+        // tenant já Active/Suspended/etc. que reinstala (nova loja, chave rotacionada) não regride
+        // de status.
+        var tenant = await _db.Tenants.FirstOrDefaultAsync(t => t.Id == installation.TenantId, cancellationToken);
+        if (tenant is not null && tenant.Status == TenantStatus.Provisioned)
+        {
+            var transitionAt = DateTimeOffset.UtcNow;
+            var previousStatus = tenant.TransitionStatus(TenantStatus.Installing, transitionAt);
+
+            var statusChangedEvent = DomainEvent.Create(
+                tenant.Id,
+                type: "tenant.status_changed",
+                aggregateType: "tenant",
+                aggregateId: tenant.Id,
+                payload: JsonSerializer.Serialize(new
+                {
+                    tenantId = tenant.Id,
+                    previousStatus = previousStatus.ToWireLabel(),
+                    status = TenantStatus.Installing.ToWireLabel(),
+                    reason = "Instalação edge registrada.",
+                    effectiveAt = transitionAt,
+                    actorId = (Guid?)null,
+                }),
+                origin: "CLOUD",
+                occurredAt: transitionAt,
+                storeId: installation.StoreId,
+                installationId: installation.Id);
+            _db.DomainEvents.Add(statusChangedEvent);
+
+            _db.TenantStatusHistories.Add(TenantStatusHistory.Create(
+                tenant.Id, previousStatus, TenantStatus.Installing, "Instalação edge registrada.",
+                origin: "SYSTEM", effectiveAt: transitionAt, domainEventId: statusChangedEvent.Id));
+        }
 
         _db.AuditLogs.Add(AuditLog.Create(
             installation.TenantId,

@@ -34,6 +34,7 @@
     var(--brand-surface);
   font: var(--type-body);
   line-height: var(--lh-normal);
+  scroll-behavior: smooth;
 }
 
 /* Button — porte fiel de components/core/Button.jsx (Design System/) */
@@ -267,7 +268,7 @@
 }
 .db-card__head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--sp-5);
   padding: var(--sp-6) var(--sp-6) 0;
@@ -285,6 +286,7 @@
   display: flex;
   gap: var(--sp-3);
   align-items: center;
+  padding-top: 1px;
 }
 .db-card__body {
   padding: var(--sp-6);

@@ -89,9 +89,9 @@ body {
   font-size: 1rem;
 }
 .pos-authenticated {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Chrome fixo do produto (Design System readme.md § "Espaço, densidade e layout") reserva a
@@ -133,6 +133,85 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+}
+
+/* Caixa autenticado — composição definida no UI kit oficial. */
+.pos-operation-shell {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--surface-page);
+}
+
+.pos-operation-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pos-operation-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--surface-page);
+}
+
+.pos-operation-main .db-topbar__right > .db-operator-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  height: 40px;
+  padding: var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-1);
+  border-radius: var(--radius-md);
+}
+
+.pos-operation-main .db-operator-avatar {
+  width: 30px;
+  height: 30px;
+  font-size: var(--fs-13);
+}
+
+.pos-operation-main .db-operator-bar small {
+  display: none;
+}
+
+.pos-operation-main .db-operator-bar strong {
+  max-width: 9rem;
+  overflow: hidden;
+  font: var(--type-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pos-operation-main .db-operator-bar button {
+  min-height: 30px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12);
+}
+
+.pos-operation-main .db-notification-center__panel {
+  top: calc(100% + var(--sp-2));
+}
+
+.pos-operation-main .cash-panel {
+  min-height: 100%;
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .pos-operation-shell > .db-sidenav {
+    width: 210px;
+  }
+
+  .pos-operation-main .db-topbar__right > .db-operator-bar {
+    display: none;
+  }
 }
 
 /* US-034 §10 — indicador discreto e permanente da fila local de pedidos (queda de LAN), visível

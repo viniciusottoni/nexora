@@ -2,13 +2,15 @@
 
 | | |
 |---|---|
-| **Status** | Aceito |
+| **Status** | Aceito (revisado) |
 | **Data** | 31/07/2026 |
 | **Decisores** | Tech Lead, UX |
-| **Relacionados** | ADR-009, ADR-013, ADR-028, ADR-030, ADR-032 |
+| **Relacionados** | ADR-009, ADR-013, ADR-028, ADR-030, ADR-032, ADR-040 |
 | **Requisitos afetados** | RF-PLT-02, RF-PLT-03, RF-PLT-04 |
 
 ---
+
+> **Nota de revisão (06/08/2026, E-16/US-162):** a resolução de tenant passa a ser primariamente **por segmento de URL** (`https://{base}/{tenantName}/...`), não mais por host/subdomínio. O passo 1 do fluxo abaixo muda de "resolve o tenant pelo host ou pelo token" para "resolve o tenant pelo `{tenantName}` no path"; o passo 2 muda de `?host=...` para `?tenant=<slug>`. Domínio próprio por cliente (US-143, Fase 5) continua planejado como camada opcional por cima do path — quando presente, o domínio próprio resolve o tenant sem exigir o segmento `{tenantName}`.
 
 ## Contexto
 

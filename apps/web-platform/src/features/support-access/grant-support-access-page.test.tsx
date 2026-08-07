@@ -8,6 +8,7 @@ import type { SupportAccessApi } from './support-access-api.js';
 
 afterEach(() => {
   cleanup();
+  window.history.pushState({}, '', '/');
 });
 
 const successResponse: GrantSupportAccessResponse = {
@@ -60,6 +61,24 @@ describe('GrantSupportAccessPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Revelar token' }));
     expect(screen.getByText(successResponse.token)).toBeInTheDocument();
+  });
+
+  it('US-152 — pré-preenche o estabelecimento a partir de ?tenantId=..., mas ainda exige motivo e duração antes de solicitar', async () => {
+    window.history.pushState({}, '', '/auditoria-suporte?tenantId=tenant-456');
+    const api = buildApi();
+    render(<GrantSupportAccessPage api={api} />);
+
+    expect(screen.getByLabelText('Estabelecimento (id)')).toHaveValue('tenant-456');
+
+    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'Chamado #9' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Solicitar acesso' }));
+
+    await waitFor(() =>
+      expect(api.grant).toHaveBeenCalledWith('tenant-456', {
+        reason: 'Chamado #9',
+        durationMinutes: 60,
+      }),
+    );
   });
 
   it('mostra erro quando a concessao falha', async () => {

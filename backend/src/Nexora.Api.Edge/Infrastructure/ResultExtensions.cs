@@ -362,6 +362,31 @@ public static class ResultExtensions
         ApiErrorCodes.TenantSlugAlreadyTaken => (StatusCodes.Status422UnprocessableEntity, true, false),
         ApiErrorCodes.OwnerInviteInvalidCredentials => (StatusCodes.Status401Unauthorized, false, false),
 
+        // Ciclo de vida do estabelecimento (US-153) — autoridade do dado é o cloud (só ele expõe
+        // TenantsController); mapeado aqui só para manter o catálogo idêntico ao gêmeo de
+        // Nexora.Api.Cloud, como a docstring desta classe pede.
+        ApiErrorCodes.TenantStatusTransitionInvalid => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.ConcurrencyConflict => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.ReasonRequired => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // Gestão de planos (US-154), proprietários/convites (US-155) e token de instalação
+        // (US-156) — autoridade do dado é o cloud (só ele expõe estes controllers); mapeado aqui
+        // só para manter o catálogo idêntico ao gêmeo de Nexora.Api.Cloud, como a docstring desta
+        // classe pede.
+        ApiErrorCodes.PlanNotAvailable => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnershipOwnerNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.OwnershipOwnerAlreadyActive => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnershipEmailAlreadyInUse => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnershipInviteNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.OwnershipInviteAlreadyConsumed => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnershipInviteAlreadyRevoked => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnershipTargetUserNotFound => (StatusCodes.Status404NotFound, false, false),
+        ApiErrorCodes.OwnershipSameOwner => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnershipNoOwnerRoleConfigured => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.OwnershipOwnerNotBlocked => (StatusCodes.Status422UnprocessableEntity, true, false),
+        ApiErrorCodes.InstallationAlreadyRegistered => (StatusCodes.Status409Conflict, true, false),
+        ApiErrorCodes.InstallationCredentialNotFound => (StatusCodes.Status404NotFound, false, false),
+
         // Operação — ambientes e mesas do salão (US-020). Nenhum controller de escrita existe
         // hoje em Nexora.Api.Edge (autoridade do dado é a nuvem, US-020 cabeçalho "Aplicações:
         // web-admin, api-cloud") — mapeado aqui só para manter o catálogo de códigos idêntico ao
@@ -506,6 +531,11 @@ public static class ResultExtensions
 
         ApiErrorCodes.ReleaseNotFound => (StatusCodes.Status404NotFound, false, false),
         ApiErrorCodes.ReleaseRolloutCannotDecrease => (StatusCodes.Status422UnprocessableEntity, true, false),
+
+        // US-157 · Central operacional, auditoria e atalhos de suporte — mapeado aqui só para
+        // manter o catálogo idêntico ao gêmeo de Nexora.Api.Cloud (nenhuma rota deste módulo é
+        // exposta pelo edge).
+        ApiErrorCodes.AttentionItemNotFound => (StatusCodes.Status404NotFound, false, false),
 
         // Catch-all: código não catalogado -> 500, tratado como bug de mapeamento (não vaza
         // stack trace nem mensagem interna — ADR-021).

@@ -58,6 +58,19 @@ Escopo: técnico de campo. Meta: servidor operacional em até 30 minutos.
 
 Nunca copie `edge-private.pem`, `backup-encryption.key`, `postgres-password` ou `edge.env` para chamado, chat ou repositório.
 
+## Recuperar comando ou token perdido
+
+Use este fluxo somente antes do pareamento da instalação. Instalação já registrada segue manutenção do parque, nunca reemissão do token inicial.
+
+1. No painel da plataforma, abra **Estabelecimentos** e selecione o tenant existente. Não crie outro tenant, loja ou instalação.
+2. Em **Credencial de instalação**, confirme que o estado é pendente e escolha **Reemitir token de instalação**.
+3. Informe motivo do chamado e validade necessária. A reemissão revoga imediatamente todas as credenciais pendentes anteriores daquela instalação.
+4. Copie ou baixe o novo comando uma única vez. Guarde-o em cofre seguro; a plataforma não mostra o segredo novamente, nem em repetição idempotente.
+5. Execute o novo comando no mini-PC. Comando antigo deve falhar.
+6. Confirme no detalhe do tenant que a instalação foi registrada e que o checklist avançou.
+
+Se houver suspeita de exposição antes do uso, escolha **Revogar agora**, informe o motivo e gere outra credencial. Nunca cole token, hash ou comando completo em logs, chamados, chat ou e-mail.
+
 ## Aceite de campo
 
 - [ ] `doctor.sh` sem falhas

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Badge,
   BrandMark,
   Button,
   clearCloudSession,
@@ -7,40 +8,89 @@ import {
   CreatedByFooter,
   hasCloudSession,
   Icon,
+  IconButton,
+  readCloudSessionClaims,
   SideNav,
   ThemeProvider,
   TopBar,
   type SideNavItem,
 } from '@nexora/ui';
+import type { PlatformSummaryResponse } from '@nexora/contracts';
 
+import { PlatformAttentionPage } from './features/attention/platform-attention-page.js';
 import { BusinessTemplateManagementPage } from './features/business-templates/business-template-management-page.js';
 import { createBusinessTemplatesApi } from './features/business-templates/business-templates-api.js';
 import { InstallationsPanelPage } from './features/installations/installations-panel-page.js';
 import { OnboardingChecklistPage } from './features/onboarding/onboarding-checklist-page.js';
+import { PlatformOverviewPage } from './features/overview/platform-overview-page.js';
+import { createPlatformSummaryApi } from './features/overview/platform-summary-api.js';
 import { PublishReleasePage } from './features/releases/publish-release-page.js';
 import { GrantSupportAccessPage } from './features/support-access/grant-support-access-page.js';
+import { TenantDetailPage } from './features/tenants/tenant-detail-page.js';
 import { ProvisionTenantPage } from './features/tenants/provision-tenant-page.js';
-
-type PlatformSection = 'provision' | 'installations' | 'templates' | 'support-access' | 'releases';
+import { TenantsDirectoryPage } from './features/tenants/tenants-directory-page.js';
+import { AccessDeniedPage } from './routing/access-denied-page.js';
+import { reportAccessDenied, reportSessionExpired } from './routing/observability.js';
+import { NotFoundPage } from './routing/not-found-page.js';
+import {
+  matchRoute,
+  navItemIdForRoute,
+  pathForRoute,
+  pathForTenantDetail,
+  pathWithSearch,
+  type PlatformRouteId,
+  type PlatformRouteMatch,
+} from './routing/route-map.js';
+import { usePathname } from './routing/use-pathname.js';
 
 const PLATFORM_NAV_ITEMS: readonly SideNavItem[] = [
   { group: 'Plataforma' },
-  { id: 'provision', label: 'Provisionar estabelecimento', icon: 'add_business' },
+  { id: 'overview', label: 'Visão geral', icon: 'space_dashboard' },
+  { id: 'tenants', label: 'Estabelecimentos', icon: 'storefront' },
   { id: 'installations', label: 'Instalações', icon: 'dns' },
-  { id: 'templates', label: 'Modelos de negócio', icon: 'category' },
-  { id: 'support-access', label: 'Solicitar acesso de suporte', icon: 'support_agent' },
+  { id: 'attention', label: 'Central de atenção', icon: 'priority_high' },
+  { id: 'support-access', label: 'Auditoria e suporte', icon: 'verified_user' },
+  { group: 'Configuração da plataforma' },
+  { id: 'business-templates', label: 'Modelos de negócio', icon: 'category' },
   { id: 'releases', label: 'Versões', icon: 'system_update_alt' },
 ];
 
+const ROUTE_LABEL: Record<PlatformRouteId, string> = {
+  overview: 'Visão geral',
+  tenants: 'Estabelecimentos',
+  'tenants-new': 'Novo estabelecimento',
+  'tenant-detail': 'Estabelecimento',
+  installations: 'Instalações',
+  attention: 'Central de atenção',
+  'support-access': 'Auditoria e suporte',
+  'business-templates': 'Modelos de negócio',
+  releases: 'Versões',
+  onboarding: 'Implantação',
+};
+
+const summaryApi = createPlatformSummaryApi();
 const businessTemplatesApi = createBusinessTemplatesApi();
 
+function platformEnvironmentLabel(): string {
+  const hostname = (globalThis.location?.hostname ?? '').toLowerCase();
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '')
+    return 'Ambiente local';
+  if (hostname.includes('staging') || hostname.includes('homolog'))
+    return 'Ambiente de homologação';
+  return 'Ambiente de produção';
+}
+
 /**
- * Navegação da plataforma. Cada item leva para uma tela real já implementada.
+ * US-150 "Estrutura e navegação do painel de plataforma" — raiz do `web-platform`. Login sempre
+ * primeiro (qualquer rota exige uma sessão). Só depois de autenticado é que o checklist de
+ * implantação (US-141) desvia do shell administrativo: é uma rota de TENANT (o dono recém-
+ * convidado com a PRÓPRIA sessão, não um administrador de plataforma), então nunca passa pela
+ * policy `PlatformAdmin` nem pela sonda de `PlatformAdminGate`.
  */
 export function App() {
-  const pathname = globalThis.location?.pathname ?? '/';
-  const [authenticated, setAuthenticated] = useState(() => hasCloudSession());
+  const [pathname] = usePathname();
   const onboardingTenantId = getOnboardingTenantId(pathname);
+  const [authenticated, setAuthenticated] = useState(() => hasCloudSession());
 
   return (
     <ThemeProvider>
@@ -49,8 +99,8 @@ export function App() {
       ) : onboardingTenantId ? (
         <OnboardingChecklistPage tenantId={onboardingTenantId} />
       ) : (
-        <PlatformShell
-          onLogout={() => {
+        <PlatformAdminGate
+          onSignOut={() => {
             clearCloudSession();
             setAuthenticated(false);
           }}
@@ -60,41 +110,155 @@ export function App() {
   );
 }
 
-function PlatformShell({ onLogout }: Readonly<{ onLogout: () => void }>) {
-  const [section, setSection] = useState<PlatformSection>('provision');
+type GateState =
+  | { readonly kind: 'checking' }
+  | { readonly kind: 'denied' }
+  | { readonly kind: 'ready'; readonly summary: PlatformSummaryResponse | undefined };
+
+/**
+ * US-150 §4, cenários "Acesso direto a uma rota protegida" e "Sessão expirada" — a ÚNICA fonte de
+ * verdade sobre `PlatformAdmin` é a resposta do backend (nunca a claim decodificada isolada, ver
+ * docstring de `PlatformSummaryApi`): uma sonda a `GET /v1/platform/summary` roda uma vez por
+ * sessão, cobre qualquer rota (não só a atual) e decide entre renderizar o shell, negar acesso ou
+ * voltar ao login — sem revelar nenhum dado antes disso (RN-015).
+ */
+function PlatformAdminGate({ onSignOut }: Readonly<{ onSignOut: () => void }>) {
+  const [pathname, navigate] = usePathname();
+  const [state, setState] = useState<GateState>({ kind: 'checking' });
+
+  useEffect(() => {
+    let cancelled = false;
+    summaryApi
+      .get()
+      .then((summary) => {
+        if (!cancelled) setState({ kind: 'ready', summary });
+      })
+      .catch((reason: unknown) => {
+        if (cancelled) return;
+        const status = (reason as { status?: number }).status;
+
+        if (status === 401) {
+          reportSessionExpired({ pathname });
+          onSignOut();
+          return;
+        }
+
+        if (status === 403) {
+          reportAccessDenied({ pathname });
+          setState({ kind: 'denied' });
+          return;
+        }
+
+        // Sem `status` = falha de rede, não de autorização (US-150 §9 "sem conexão, mantém
+        // apenas a estrutura visual"). A claim do token já decodificada localmente é o único
+        // sinal disponível offline — nunca mais permissivo do que a resposta do backend seria.
+        const claims = readCloudSessionClaims();
+        setState(
+          claims?.isPlatformAdmin ? { kind: 'ready', summary: undefined } : { kind: 'denied' },
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+    // A sonda roda uma única vez por sessão autenticada — cobre toda rota, não só a de entrada.
+  }, []);
+
+  if (state.kind === 'checking') {
+    return (
+      <p className="db-loading" role="status">
+        <span className="nx-spinner" aria-hidden="true" />
+        Preparando a plataforma…
+      </p>
+    );
+  }
+
+  if (state.kind === 'denied') {
+    return <AccessDeniedPage onSignOut={onSignOut} />;
+  }
 
   return (
-    <div className="db-console">
+    <PlatformShell
+      summary={state.summary}
+      pathname={pathname}
+      navigate={navigate}
+      onSignOut={onSignOut}
+    />
+  );
+}
+
+function PlatformShell({
+  summary,
+  pathname,
+  navigate,
+  onSignOut,
+}: Readonly<{
+  summary: PlatformSummaryResponse | undefined;
+  pathname: string;
+  navigate: (path: string) => void;
+  onSignOut: () => void;
+}>) {
+  const matched = matchRoute(pathname);
+  const activeNavId = matched ? navItemIdForRoute(matched.routeId) : undefined;
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
+
+  const selectNavigationItem = (id: string) => {
+    setMobileNavigationOpen(false);
+    navigate(pathForRoute(id as Exclude<PlatformRouteId, 'onboarding' | 'tenant-detail'>));
+  };
+
+  return (
+    <div className="db-console db-console--responsive-drawer">
       <SideNav
+        aria-label="Navegação da plataforma"
+        className="db-console__desktop-nav"
         variant="dark"
         brand={<BrandMark inverse subtitle="Plataforma" />}
         items={PLATFORM_NAV_ITEMS}
-        activeId={section}
-        onSelect={(id) => setSection(id as PlatformSection)}
+        {...(activeNavId ? { activeId: activeNavId } : {})}
+        onSelect={selectNavigationItem}
         footer={<span className="db-sidenav__foot-note">Replay Studio · plataforma</span>}
       />
+      {mobileNavigationOpen ? (
+        <MobileNavigationDrawer
+          {...(activeNavId ? { activeNavId } : {})}
+          onSelect={selectNavigationItem}
+          onClose={() => setMobileNavigationOpen(false)}
+        />
+      ) : null}
       <div className="db-console__main">
         <TopBar
           left={
-            <nav className="db-crumbs" aria-label="Trilha de navegação">
-              <span>Plataforma</span>
-              <Icon name="chevron_right" size={16} />
-              <span className="db-crumbs__current">{sectionLabel(section)}</span>
-            </nav>
+            <>
+              <IconButton
+                className="db-navigation-trigger"
+                icon="menu"
+                label="Abrir navegação"
+                aria-controls="platform-mobile-navigation"
+                aria-expanded={mobileNavigationOpen}
+                onClick={() => setMobileNavigationOpen(true)}
+              />
+              <nav className="db-crumbs" aria-label="Trilha de navegação">
+                <span>Plataforma</span>
+                <Icon name="chevron_right" size={16} />
+                <span className="db-crumbs__current">
+                  {matched ? ROUTE_LABEL[matched.routeId] : 'Página não encontrada'}
+                </span>
+              </nav>
+            </>
           }
           right={
-            <Button type="button" variant="ghost" size="sm" onClick={onLogout}>
-              Sair
-            </Button>
+            <>
+              <span className="db-hint">Administrador da plataforma</span>
+              <Badge tone="neutral">{platformEnvironmentLabel()}</Badge>
+              <Button type="button" variant="ghost" size="sm" onClick={onSignOut}>
+                Sair
+              </Button>
+            </>
           }
         />
         <div className="db-console__content">
           <div className="db-console__column">
-            {section === 'provision' ? <ProvisionTenantPage /> : null}
-            {section === 'installations' ? <InstallationsPanelPage /> : null}
-            {section === 'templates' ? <BusinessTemplateManagementPage api={businessTemplatesApi} /> : null}
-            {section === 'support-access' ? <GrantSupportAccessPage /> : null}
-            {section === 'releases' ? <PublishReleasePage /> : null}
+            {renderRoute(matched, { summary, navigate })}
             <CreatedByFooter />
           </div>
         </div>
@@ -103,12 +267,142 @@ function PlatformShell({ onLogout }: Readonly<{ onLogout: () => void }>) {
   );
 }
 
-function getOnboardingTenantId(pathname: string): string | undefined {
-  const match = pathname.match(/^\/tenants\/([^/]+)\/onboarding\/?$/);
-  return match?.[1];
+function MobileNavigationDrawer({
+  activeNavId,
+  onSelect,
+  onClose,
+}: Readonly<{
+  activeNavId?: string;
+  onSelect: (id: string) => void;
+  onClose: () => void;
+}>) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+
+    return () => {
+      if (dialog.open && typeof dialog.close === 'function') dialog.close();
+    };
+  }, []);
+
+  return (
+    <dialog
+      ref={dialogRef}
+      id="platform-mobile-navigation"
+      className="db-navigation-dialog"
+      aria-label="Navegação principal"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div className="db-navigation-dialog__panel">
+        <IconButton
+          autoFocus
+          className="db-navigation-dialog__close"
+          icon="close"
+          label="Fechar navegação"
+          onClick={onClose}
+        />
+        <SideNav
+          aria-label="Navegação da plataforma"
+          variant="dark"
+          brand={<BrandMark inverse subtitle="Plataforma" />}
+          items={PLATFORM_NAV_ITEMS}
+          {...(activeNavId ? { activeId: activeNavId } : {})}
+          onSelect={onSelect}
+          footer={<span className="db-sidenav__foot-note">Replay Studio · plataforma</span>}
+        />
+      </div>
+    </dialog>
+  );
 }
 
-function sectionLabel(section: PlatformSection): string {
-  const item = PLATFORM_NAV_ITEMS.find((candidate) => candidate.id === section);
-  return typeof item?.label === 'string' ? item.label : 'Plataforma';
+function renderRoute(
+  matched: PlatformRouteMatch | undefined,
+  ctx: {
+    readonly summary: PlatformSummaryResponse | undefined;
+    readonly navigate: (path: string) => void;
+  },
+) {
+  if (!matched) {
+    return <NotFoundPage onGoToOverview={() => ctx.navigate(pathForRoute('overview'))} />;
+  }
+
+  switch (matched.routeId) {
+    case 'overview':
+      return (
+        <PlatformOverviewPage
+          summary={ctx.summary}
+          onCreateTenant={() => ctx.navigate(pathForRoute('tenants-new'))}
+          onOpenTenants={() => ctx.navigate(pathForRoute('tenants'))}
+          onOpenInstallations={() => ctx.navigate(pathForRoute('installations'))}
+          onOpenSupportAccess={() => ctx.navigate(pathForRoute('support-access'))}
+          onOpenAttention={() => ctx.navigate(pathForRoute('attention'))}
+        />
+      );
+    case 'tenants':
+      return (
+        <TenantsDirectoryPage
+          onCreateTenant={() => ctx.navigate(pathForRoute('tenants-new'))}
+          onOpenTenant={(tenantId) =>
+            ctx.navigate(
+              pathWithSearch(pathForTenantDetail(tenantId), globalThis.location?.search ?? ''),
+            )
+          }
+        />
+      );
+    case 'tenants-new':
+      return <ProvisionTenantPage onDone={() => ctx.navigate(pathForRoute('tenants'))} />;
+    case 'tenant-detail':
+      return (
+        <TenantDetailPage
+          tenantId={matched.params.tenantId ?? ''}
+          onBack={() =>
+            ctx.navigate(pathWithSearch(pathForRoute('tenants'), globalThis.location?.search ?? ''))
+          }
+          onRequestSupportAccess={(tenantId) =>
+            ctx.navigate(
+              `${pathForRoute('support-access')}?tenantId=${encodeURIComponent(tenantId)}`,
+            )
+          }
+          onOpenInstallations={() => ctx.navigate(pathForRoute('installations'))}
+          onOpenBusinessTemplates={() => ctx.navigate(pathForRoute('business-templates'))}
+        />
+      );
+    case 'installations':
+      return <InstallationsPanelPage />;
+    case 'attention':
+      return (
+        <PlatformAttentionPage
+          navigate={ctx.navigate}
+          onRequestSupportAccess={(tenantId) =>
+            ctx.navigate(
+              `${pathForRoute('support-access')}?tenantId=${encodeURIComponent(tenantId)}`,
+            )
+          }
+        />
+      );
+    case 'support-access':
+      return <GrantSupportAccessPage />;
+    case 'business-templates':
+      return <BusinessTemplateManagementPage api={businessTemplatesApi} />;
+    case 'releases':
+      return <PublishReleasePage />;
+    case 'onboarding':
+      return null;
+  }
+}
+
+function getOnboardingTenantId(pathname: string): string | undefined {
+  const matched = matchRoute(pathname);
+  return matched?.routeId === 'onboarding' ? matched.params.tenantId : undefined;
 }
